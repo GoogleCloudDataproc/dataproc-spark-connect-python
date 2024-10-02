@@ -50,6 +50,9 @@ class bridged_socket(object):
         msg = bytes.hex(msg_bytes)
         self._conn.send(msg)
 
+    def close(self):
+        return self._conn.close()
+
 
 def connect_tcp_bridge(hostname):
     """Create a socket-like connection to the given hostname using websocket.
@@ -96,6 +99,7 @@ def forward_bytes(name, from_sock, to_sock):
             to_sock.send(bs)
         except Exception as ex:
             logger.debug(f"[{name}] Exception forwarding bytes: {ex}")
+            to_sock.close()
             return
 
 
