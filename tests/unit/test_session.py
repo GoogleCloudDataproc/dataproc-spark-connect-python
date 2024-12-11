@@ -108,8 +108,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
           }
           spark_connect_session {
           }
-          spark {
-          }
         }
         session_id: "sc-20240702-103952-abcdef"
         """.replace(
@@ -202,8 +200,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             }
           }
           spark_connect_session {
-          }
-          spark {
           }
         }
         session_id: "sc-20240702-103952-abcdef"
@@ -314,8 +310,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
           }
           spark_connect_session {
           }
-          spark {
-          }
           session_template: "projects/test-project/locations/test-region/sessionTemplates/test_template"
         }
         session_id: "sc-20240702-103952-abcdef"
@@ -421,8 +415,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             }
           }
           spark_connect_session {
-          }
-          spark {
           }
           session_template: "projects/test-project/locations/test-region/sessionTemplates/test_template"
         }

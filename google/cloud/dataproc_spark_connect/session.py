@@ -185,12 +185,8 @@ class DataprocSparkSession(SparkSession):
                     dataproc_config, session_template
                 )
 
-                spark = self._get_spark(dataproc_config, session_template)
-
                 if not spark_connect_session:
                     dataproc_config.spark_connect_session = {}
-                if not spark:
-                    dataproc_config.spark = {}
                 os.environ["SPARK_CONNECT_MODE_ENABLED"] = "1"
                 session_request = CreateSessionRequest()
                 session_id = self.generate_dataproc_session_id()
@@ -434,14 +430,6 @@ class DataprocSparkSession(SparkSession):
             elif session_template and session_template.spark_connect_session:
                 spark_connect_session = session_template.spark_connect_session
             return spark_connect_session
-
-        def _get_spark(self, dataproc_config, session_template):
-            spark = None
-            if dataproc_config and dataproc_config.spark:
-                spark = dataproc_config.spark
-            elif session_template and session_template.spark:
-                spark = session_template.spark
-            return spark
 
         def generate_dataproc_session_id(self):
             timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
