@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.2.0...v0.2.1) (2024-12-16)
+
+
+### Bug Fixes
+
+* Remove unused/invalid "spark" field in session config proto ([d349b15](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/d349b159e7f00072f4003830246815a23b86d3be))
+
 ## [0.2.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.1.0...v0.2.0) (2024-12-05)
 
 
