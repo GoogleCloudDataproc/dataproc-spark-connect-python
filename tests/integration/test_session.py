@@ -34,7 +34,7 @@ from pyspark.errors.exceptions import connect as connect_exceptions
 
 import pytest
 
-from google.cloud.dataproc_spark_connect import DataprocSparkSession
+from google.cloud.spark_connect import GoogleSparkSession
 
 
 _SERVICE_ACCOUNT_KEY_FILE_ = "service_account_key.json"
@@ -128,12 +128,12 @@ def session_template_controller_client(test_client_options):
 
 @pytest.fixture
 def connect_session(test_project, test_region, os_environment):
-    return DataprocSparkSession.builder.getOrCreate()
+    return GoogleSparkSession.builder.getOrCreate()
 
 
 @pytest.fixture
 def session_name(test_project, test_region, connect_session):
-    return f"projects/{test_project}/locations/{test_region}/sessions/{DataprocSparkSession._active_s8s_session_id}"
+    return f"projects/{test_project}/locations/{test_region}/sessions/{GoogleSparkSession._active_s8s_session_id}"
 
 
 @pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
@@ -160,7 +160,7 @@ def test_create_spark_session_with_default_notebook_behavior(
 
         assert "[TABLE_OR_VIEW_ALREADY_EXISTS]" in str(ex)
 
-    assert DataprocSparkSession._active_s8s_session_uuid is not None
+    assert GoogleSparkSession._active_s8s_session_uuid is not None
 
     connect_session.stop()
     session = session_controller_client.get_session(get_session_request)
@@ -169,25 +169,25 @@ def test_create_spark_session_with_default_notebook_behavior(
         Session.State.TERMINATING,
         Session.State.TERMINATED,
     ]
-    assert DataprocSparkSession._active_s8s_session_uuid is None
+    assert GoogleSparkSession._active_s8s_session_uuid is None
 
 
 def test_reuse_s8s_spark_session(
     connect_session, session_name, session_controller_client
 ):
-    assert DataprocSparkSession._active_s8s_session_uuid is not None
+    assert GoogleSparkSession._active_s8s_session_uuid is not None
 
-    first_session_id = DataprocSparkSession._active_s8s_session_id
-    first_session_uuid = DataprocSparkSession._active_s8s_session_uuid
+    first_session_id = GoogleSparkSession._active_s8s_session_id
+    first_session_uuid = GoogleSparkSession._active_s8s_session_uuid
 
-    connect_session = DataprocSparkSession.builder.getOrCreate()
-    second_session_id = DataprocSparkSession._active_s8s_session_id
-    second_session_uuid = DataprocSparkSession._active_s8s_session_uuid
+    connect_session = GoogleSparkSession.builder.getOrCreate()
+    second_session_id = GoogleSparkSession._active_s8s_session_id
+    second_session_uuid = GoogleSparkSession._active_s8s_session_uuid
 
     assert first_session_id == second_session_id
     assert first_session_uuid == second_session_uuid
-    assert DataprocSparkSession._active_s8s_session_uuid is not None
-    assert DataprocSparkSession._active_s8s_session_id is not None
+    assert GoogleSparkSession._active_s8s_session_uuid is not None
+    assert GoogleSparkSession._active_s8s_session_id is not None
 
     connect_session.stop()
 
@@ -195,7 +195,7 @@ def test_reuse_s8s_spark_session(
 def test_stop_spark_session_with_deleted_serverless_session(
     connect_session, session_name, session_controller_client
 ):
-    assert DataprocSparkSession._active_s8s_session_uuid is not None
+    assert GoogleSparkSession._active_s8s_session_uuid is not None
 
     delete_session_request = DeleteSessionRequest()
     delete_session_request.name = session_name
@@ -203,14 +203,14 @@ def test_stop_spark_session_with_deleted_serverless_session(
     opeation.result()
     connect_session.stop()
 
-    assert DataprocSparkSession._active_s8s_session_uuid is None
-    assert DataprocSparkSession._active_s8s_session_id is None
+    assert GoogleSparkSession._active_s8s_session_uuid is None
+    assert GoogleSparkSession._active_s8s_session_id is None
 
 
 def test_stop_spark_session_with_terminated_serverless_session(
     connect_session, session_name, session_controller_client
 ):
-    assert DataprocSparkSession._active_s8s_session_uuid is not None
+    assert GoogleSparkSession._active_s8s_session_uuid is not None
 
     terminate_session_request = TerminateSessionRequest()
     terminate_session_request.name = session_name
@@ -220,8 +220,8 @@ def test_stop_spark_session_with_terminated_serverless_session(
     opeation.result()
     connect_session.stop()
 
-    assert DataprocSparkSession._active_s8s_session_uuid is None
-    assert DataprocSparkSession._active_s8s_session_id is None
+    assert GoogleSparkSession._active_s8s_session_uuid is None
+    assert GoogleSparkSession._active_s8s_session_id is None
 
 
 def test_get_or_create_spark_session_with_terminated_serverless_session(
@@ -234,22 +234,22 @@ def test_get_or_create_spark_session_with_terminated_serverless_session(
     first_session_name = session_name
     second_session_name = None
 
-    assert DataprocSparkSession._active_s8s_session_uuid is not None
+    assert GoogleSparkSession._active_s8s_session_uuid is not None
 
-    first_session = DataprocSparkSession._active_s8s_session_uuid
+    first_session = GoogleSparkSession._active_s8s_session_uuid
     terminate_session_request = TerminateSessionRequest()
     terminate_session_request.name = first_session_name
     opeation = session_controller_client.terminate_session(
         terminate_session_request
     )
     opeation.result()
-    connect_session = DataprocSparkSession.builder.getOrCreate()
-    second_session = DataprocSparkSession._active_s8s_session_uuid
-    second_session_name = f"projects/{test_project}/locations/{test_region}/sessions/{DataprocSparkSession._active_s8s_session_id}"
+    connect_session = GoogleSparkSession.builder.getOrCreate()
+    second_session = GoogleSparkSession._active_s8s_session_uuid
+    second_session_name = f"projects/{test_project}/locations/{test_region}/sessions/{GoogleSparkSession._active_s8s_session_id}"
 
     assert first_session != second_session
-    assert DataprocSparkSession._active_s8s_session_uuid is not None
-    assert DataprocSparkSession._active_s8s_session_id is not None
+    assert GoogleSparkSession._active_s8s_session_uuid is not None
+    assert GoogleSparkSession._active_s8s_session_id is not None
 
     get_session_request = GetSessionRequest()
     get_session_request.name = first_session_name
@@ -317,12 +317,12 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
     dataproc_config.environment_config.execution_config.ttl = {"seconds": 64800}
     dataproc_config.session_template = session_template_name
     connect_session = (
-        DataprocSparkSession.builder.config("spark.executor.cores", "7")
+        GoogleSparkSession.builder.config("spark.executor.cores", "7")
         .dataprocConfig(dataproc_config)
         .config("spark.executor.cores", "16")
         .getOrCreate()
     )
-    session_name = f"projects/{test_project}/locations/{test_region}/sessions/{DataprocSparkSession._active_s8s_session_id}"
+    session_name = f"projects/{test_project}/locations/{test_region}/sessions/{GoogleSparkSession._active_s8s_session_id}"
 
     get_session_request = GetSessionRequest()
     get_session_request.name = session_name
@@ -337,7 +337,7 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
     assert (
         session.runtime_config.properties["spark:spark.executor.cores"] == "16"
     )
-    assert DataprocSparkSession._active_s8s_session_uuid is not None
+    assert GoogleSparkSession._active_s8s_session_uuid is not None
 
     connect_session.stop()
     get_session_request = GetSessionRequest()
@@ -348,4 +348,4 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
         Session.State.TERMINATING,
         Session.State.TERMINATED,
     ]
-    assert DataprocSparkSession._active_s8s_session_uuid is None
+    assert GoogleSparkSession._active_s8s_session_uuid is None

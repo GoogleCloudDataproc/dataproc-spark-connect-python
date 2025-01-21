@@ -39,7 +39,7 @@ If you are running the client outside of Google Cloud, you must set following en
 
       .. code-block:: python
 
-            from google.cloud.dataproc_spark_connect import DataprocSparkSession
+            from google.cloud.spark_connect import GoogleSparkSession
 
 3. There are two ways to create a spark session,
 
@@ -47,7 +47,7 @@ If you are running the client outside of Google Cloud, you must set following en
 
       .. code-block:: python
 
-            spark = DataprocSparkSession.builder.getOrCreate()
+            spark = GoogleSparkSession.builder.getOrCreate()
 
    2. Start a Spark session with the following code instead of using a config file:
 
@@ -59,7 +59,7 @@ If you are running the client outside of Google Cloud, you must set following en
             dataproc_config.spark_connect_session = SparkConnectConfig()
             dataproc_config.environment_config.execution_config.subnetwork_uri = "<subnet>"
             dataproc_config.runtime_config.version = '3.0'
-            spark = DataprocSparkSession.builder.dataprocConfig(dataproc_config).getOrCreate()
+            spark = GoogleSparkSession.builder.dataprocConfig(dataproc_config).getOrCreate()
 
 ## Billing
 As this client runs the spark workload on Dataproc, your project will be billed as per [Dataproc Serverless Pricing](https://cloud.google.com/dataproc-serverless/pricing).
