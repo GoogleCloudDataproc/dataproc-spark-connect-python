@@ -143,9 +143,7 @@ class GoogleSparkSession(SparkSession):
         def __create_spark_connect_session_from_s8s(
             self, session_response
         ) -> "SparkSession":
-            GoogleSparkSession._active_s8s_session_uuid = (
-                session_response.uuid
-            )
+            GoogleSparkSession._active_s8s_session_uuid = session_response.uuid
             GoogleSparkSession._project_id = self._project_id
             GoogleSparkSession._region = self._region
             GoogleSparkSession._client_options = self._client_options
