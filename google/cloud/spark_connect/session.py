@@ -215,10 +215,10 @@ class GoogleSparkSession(SparkSession):
                         "Creating Spark session. It may take few minutes."
                     )
                     if (
-                        "SERVERLESS_SESSSION_SHUTDOWN_HOOK_ENABLED"
+                        "GOOGLE_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT"
                         in os.environ
                         and os.getenv(
-                            "SERVERLESS_SESSSION_SHUTDOWN_HOOK_ENABLED"
+                            "GOOGLE_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT"
                         ).lower()
                         == "true"
                     ):
