@@ -223,7 +223,7 @@ class GoogleSparkSession(SparkSession):
                         == "true"
                     ):
                         atexit.register(
-                            lambda: ServerlessSessionHelper.terminate_s8s_session(
+                            lambda: terminate_s8s_session(
                                 self._project_id,
                                 self._region,
                                 session_id,
@@ -490,7 +490,7 @@ class GoogleSparkSession(SparkSession):
     def stop(self) -> None:
         with GoogleSparkSession._lock:
             if GoogleSparkSession._active_s8s_session_id is not None:
-                ServerlessSessionHelper.terminate_s8s_session(
+                terminate_s8s_session(
                     GoogleSparkSession._project_id,
                     GoogleSparkSession._region,
                     GoogleSparkSession._active_s8s_session_id,
@@ -513,41 +513,37 @@ class GoogleSparkSession(SparkSession):
                 GoogleSparkSession._active_session.session = None
 
 
-class ServerlessSessionHelper:
+def terminate_s8s_session(
+    project_id, region, active_s8s_session_id, client_options=None
+):
+    from google.cloud.dataproc_v1 import SessionControllerClient
 
-    @staticmethod
-    def terminate_s8s_session(
-        project_id, region, active_s8s_session_id, client_options=None
-    ):
-        from google.cloud.dataproc_v1 import SessionControllerClient
-
-        logger.debug(f"Terminating serverless session: {active_s8s_session_id}")
-        terminate_session_request = TerminateSessionRequest()
-        session_name = f"projects/{project_id}/locations/{region}/sessions/{active_s8s_session_id}"
-        terminate_session_request.name = session_name
-        state = None
-        try:
-            SessionControllerClient(
-                client_options=client_options
-            ).terminate_session(terminate_session_request)
-            get_session_request = GetSessionRequest()
-            get_session_request.name = session_name
-            state = Session.State.ACTIVE
-            while (
-                state != Session.State.TERMINATING
-                and state != Session.State.TERMINATED
-                and state != Session.State.FAILED
-            ):
-                session = SessionControllerClient(
-                    client_options=client_options
-                ).get_session(get_session_request)
-                state = session.state
-                sleep(1)
-        except NotFound:
-            logger.debug(f"Session {active_s8s_session_id} already deleted")
-        except FailedPrecondition:
-            logger.debug(
-                f"Session {active_s8s_session_id} already terminated manually or terminated automatically through session ttl limits"
-            )
-        if state is not None and state == Session.State.FAILED:
-            raise RuntimeError("Serverless session termination failed")
+    logger.debug(f"Terminating serverless session: {active_s8s_session_id}")
+    terminate_session_request = TerminateSessionRequest()
+    session_name = f"projects/{project_id}/locations/{region}/sessions/{active_s8s_session_id}"
+    terminate_session_request.name = session_name
+    state = None
+    try:
+        SessionControllerClient(
+            client_options=client_options
+        ).terminate_session(terminate_session_request)
+        get_session_request = GetSessionRequest()
+        get_session_request.name = session_name
+        state = Session.State.ACTIVE
+        session_client = SessionControllerClient(client_options=client_options)
+        while (
+            state != Session.State.TERMINATING
+            and state != Session.State.TERMINATED
+            and state != Session.State.FAILED
+        ):
+            session = session_client.get_session(get_session_request)
+            state = session.state
+            sleep(1)
+    except NotFound:
+        logger.debug(f"Session {active_s8s_session_id} already deleted")
+    except FailedPrecondition:
+        logger.debug(
+            f"Session {active_s8s_session_id} already terminated manually or terminated automatically through session ttl limits"
+        )
+    if state is not None and state == Session.State.FAILED:
+        raise RuntimeError("Serverless session termination failed")
