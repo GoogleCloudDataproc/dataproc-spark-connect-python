@@ -214,7 +214,14 @@ class GoogleSparkSession(SparkSession):
                     logger.info(
                         "Creating Spark session. It may take few minutes."
                     )
-                    atexit.register(
+                    if (
+                        "SERVERLESS_SESSSION_SHUTDOWN_HOOK_ENABLED"
+                        in os.environ
+                        and os.getenv(
+                            "SERVERLESS_SESSSION_SHUTDOWN_HOOK_ENABLED"
+                        ).lower()
+                        == "true"
+                    ):
                         atexit.register(
                             lambda: ServerlessSessionHelper.terminate_s8s_session(
                                 self._project_id,
@@ -223,7 +230,6 @@ class GoogleSparkSession(SparkSession):
                                 self._client_options,
                             )
                         )
-                    )
                     operation = SessionControllerClient(
                         client_options=self._client_options
                     ).create_session(session_request)
