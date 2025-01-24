@@ -524,13 +524,11 @@ def terminate_s8s_session(
     terminate_session_request.name = session_name
     state = None
     try:
-        SessionControllerClient(
-            client_options=client_options
-        ).terminate_session(terminate_session_request)
+        session_client = SessionControllerClient(client_options=client_options)
+        session_client.terminate_session(terminate_session_request)
         get_session_request = GetSessionRequest()
         get_session_request.name = session_name
         state = Session.State.ACTIVE
-        session_client = SessionControllerClient(client_options=client_options)
         while (
             state != Session.State.TERMINATING
             and state != Session.State.TERMINATED
