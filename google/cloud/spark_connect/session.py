@@ -57,7 +57,7 @@ class GoogleSparkSession(SparkSession):
     Examples
     --------
 
-    Create a Spark session with Dataproc Spark Connect.
+    Create a Spark session with Google Spark Connect.
 
     >>> spark = (
     ...     GoogleSparkSession.builder

@@ -11,4 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib.metadata
+import warnings
+
 from .session import GoogleSparkSession
+
+package_name = "dataproc-spark-connect"
+try:
+  importlib.metadata.distribution(package_name)
+  warning_message = (
+      f"Package '{package_name}' is already installed in your environment. "
+      f"This might cause conflicts. Consider uninstalling '{package_name}'."
+  )
+  warnings.warn(warning_message)
+except:
+  pass

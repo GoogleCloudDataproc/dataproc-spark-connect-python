@@ -19,9 +19,9 @@ long_description = (this_directory / "README.md").read_text()
 
 
 setup(
-    name="dataproc-spark-connect",
-    version="0.2.0",
-    description="Dataproc client library for Spark Connect",
+    name="google-spark-connect",
+    version="0.4.0",
+    description="Google client library for Spark Connect",
     long_description=long_description,
     author="Google LLC",
     url="https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python",
