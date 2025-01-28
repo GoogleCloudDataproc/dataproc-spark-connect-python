@@ -16,13 +16,14 @@ import warnings
 
 from .session import GoogleSparkSession
 
-package_name = "dataproc-spark-connect"
+old_package_name = "dataproc-spark-connect"
+current_package_name = "google-spark-connect"
 try:
-    importlib.metadata.distribution(package_name)
-    warning_message = (
-        f"Package '{package_name}' is already installed in your environment. "
-        f"This might cause conflicts. Consider uninstalling '{package_name}'."
+    importlib.metadata.distribution(old_package_name)
+    warnings.warn(
+        f"Package '{old_package_name}' is already installed in your environment. "
+        f"This might cause conflicts with '{current_package_name}'. "
+        f"Consider uninstalling '{old_package_name}' and only install '{current_package_name}'."
     )
-    warnings.warn(warning_message)
 except:
     pass
