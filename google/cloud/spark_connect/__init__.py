@@ -18,11 +18,11 @@ from .session import GoogleSparkSession
 
 package_name = "dataproc-spark-connect"
 try:
-  importlib.metadata.distribution(package_name)
-  warning_message = (
-      f"Package '{package_name}' is already installed in your environment. "
-      f"This might cause conflicts. Consider uninstalling '{package_name}'."
-  )
-  warnings.warn(warning_message)
+    importlib.metadata.distribution(package_name)
+    warning_message = (
+        f"Package '{package_name}' is already installed in your environment. "
+        f"This might cause conflicts. Consider uninstalling '{package_name}'."
+    )
+    warnings.warn(warning_message)
 except:
-  pass
+    pass
