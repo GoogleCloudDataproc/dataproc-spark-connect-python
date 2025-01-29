@@ -21,7 +21,4 @@ package_deprecation_message = (
     "see https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/blob/main/README.md. "
 )
 
-warnings.warn(
-    package_deprecation_message,
-    DeprecationWarning
-)
+warnings.warn(package_deprecation_message, DeprecationWarning)
