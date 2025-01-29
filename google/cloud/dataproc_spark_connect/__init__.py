@@ -14,11 +14,10 @@
 from .session import DataprocSparkSession
 import warnings
 
-package_deprecation_message = (
+warnings.warn(
     "The package 'dataproc-spark-connect' has been renamed to 'google-spark-connect'. "
     "'dataproc-spark-connect' will no longer be updated. "
     "For help using 'google-spark-connect', "
-    "see https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/blob/main/README.md. "
+    "see https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/blob/main/README.md. ",
+    DeprecationWarning,
 )
-
-warnings.warn(package_deprecation_message, DeprecationWarning)
