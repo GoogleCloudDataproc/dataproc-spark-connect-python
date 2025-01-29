@@ -1,5 +1,10 @@
 # Dataproc Spark Connect Client
 
+> ⚠️ **Warning:**  
+The package `dataproc-spark-connect` has been renamed to `google-spark-connect`. `dataproc-spark-connect` will no longer be updated.
+For help using `google-spark-connect`, please see [guide](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/blob/main/README.md). 
+
+
 A wrapper of the Apache [Spark Connect](https://spark.apache.org/spark-connect/) client with
 additional functionalities that allow applications to communicate with a remote Dataproc
 Spark cluster using the Spark Connect protocol without requiring additional steps.

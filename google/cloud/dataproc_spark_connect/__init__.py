@@ -12,3 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from .session import DataprocSparkSession
+import warnings
+
+warnings.warn(
+    "The package 'dataproc-spark-connect' has been renamed to 'google-spark-connect'. "
+    "'dataproc-spark-connect' will no longer be updated. "
+    "For help using 'google-spark-connect', "
+    "see https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/blob/main/README.md. ",
+    DeprecationWarning,
+)
