@@ -20,7 +20,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="google-spark-connect",
-    version="0.2.0",
+    version="0.4.0",
     description="Google client library for Spark Connect",
     long_description=long_description,
     author="Google LLC",
