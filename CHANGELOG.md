@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.2.0...v0.2.1) (2025-01-30)
+
+
+### Documentation
+
+* raise deprecate warning when dataproc-spark-connect is installed ([081c1d0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/081c1d0eeddfad413efc7797c1bdffcc8dbaa9ce))
+
 ## [0.2.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.1.0...v0.2.0) (2024-12-05)
 
 
