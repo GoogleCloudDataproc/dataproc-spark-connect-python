@@ -1,2 +1,6 @@
 releaseType: python
 handleGHRelease: true
+branches:
+- handleGHRelease: true
+  releaseType: python
+  branch: release-0.2.0
