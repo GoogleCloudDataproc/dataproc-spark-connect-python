@@ -424,11 +424,11 @@ class GoogleSparkSession(SparkSession):
             ]
             import importlib.metadata
 
-            dataproc_connect_version = importlib.metadata.version(
-                "dataproc-spark-connect"
+            google_connect_version = importlib.metadata.version(
+                "google-spark-connect"
             )
             client_version = importlib.metadata.version("pyspark")
-            version_message = f"Spark Connect: {dataproc_connect_version} (PySpark: {client_version}) Session Runtime: {version} (Spark: {server_version})"
+            version_message = f"Spark Connect: {google_connect_version} (PySpark: {client_version}) Session Runtime: {version} (Spark: {server_version})"
             logger.info(version_message)
             if trimmed_version(client_version) != trimmed_version(
                 server_version
