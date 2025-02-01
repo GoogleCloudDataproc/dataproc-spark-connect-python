@@ -25,7 +25,7 @@ from typing import Any, cast, ClassVar, Dict, Optional
 from google.api_core import retry
 from google.api_core.future.polling import POLLING_PREDICATE
 from google.api_core.client_options import ClientOptions
-from google.api_core.exceptions import FailedPrecondition, InvalidArgument, NotFound
+from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound
 from google.cloud.dataproc_v1.types import sessions
 
 from google.cloud.spark_connect.client import DataprocChannelBuilder
@@ -539,7 +539,7 @@ def terminate_s8s_session(
             sleep(1)
     except NotFound:
         logger.debug(f"Session {active_s8s_session_id} already deleted")
-    except FailedPrecondition:
+    except (FailedPrecondition, Aborted):
         logger.debug(
             f"Session {active_s8s_session_id} already terminated manually or terminated automatically through session ttl limits"
         )

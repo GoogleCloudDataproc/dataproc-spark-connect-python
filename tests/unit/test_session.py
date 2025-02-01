@@ -16,6 +16,7 @@ import unittest
 from unittest import mock
 
 from google.api_core.exceptions import (
+    Aborted,
     FailedPrecondition,
     InvalidArgument,
     NotFound,
@@ -600,6 +601,46 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         finally:
             mock_session_controller_client_instance.terminate_session.side_effect = FailedPrecondition(
                 "Already terminated"
+            )
+            if session is not None:
+                session.stop()
+            self.assertIsNone(GoogleSparkSession._active_s8s_session_uuid)
+    
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    def test_stop_spark_session_with_creating_s8s_session(
+        self,
+        mock_session_controller_client,
+        mock_credentials,
+        mock_client_config,
+    ):
+        session = None
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+        try:
+            mock_operation = mock.Mock()
+            session_response = Session()
+            session_response.runtime_info.endpoints = {
+                "Spark Connect Server": "https://spark-connect-server/"
+            }
+            session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+            mock_operation.result.side_effect = [session_response]
+            mock_session_controller_client_instance.create_session.return_value = (
+                mock_operation
+            )
+            cred = mock.MagicMock()
+            cred.token = "token"
+            mock_credentials.return_value = (cred, "")
+            mock_client_config.return_value = ConfigResult.fromProto(
+                ConfigResponse()
+            )
+            session = GoogleSparkSession.builder.getOrCreate()
+
+        finally:
+            mock_session_controller_client_instance.terminate_session.side_effect = Aborted(
+                "still being created"
             )
             if session is not None:
                 session.stop()
