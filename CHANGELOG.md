@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.4.1...v0.5.0) (2025-02-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename dataprocConfig to googleSessionConfig
+
+### Bug Fixes
+
+* rename dataprocConfig to googleSessionConfig ([f041e9d](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/f041e9d857d33634361bf2399a2f8b7790d04a76))
+
 ## [0.4.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.4.0...v0.4.1) (2025-01-31)
 
 
