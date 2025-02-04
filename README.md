@@ -55,11 +55,11 @@ If you are running the client outside of Google Cloud, you must set following en
 
             from google.cloud.dataproc_v1 import SparkConnectConfig
             from google.cloud.dataproc_v1 import Session
-            dataproc_config = Session()
-            dataproc_config.spark_connect_session = SparkConnectConfig()
-            dataproc_config.environment_config.execution_config.subnetwork_uri = "<subnet>"
-            dataproc_config.runtime_config.version = '3.0'
-            spark = GoogleSparkSession.builder.dataprocConfig(dataproc_config).getOrCreate()
+            google_session_config = Session()
+            google_session_config.spark_connect_session = SparkConnectConfig()
+            google_session_config.environment_config.execution_config.subnetwork_uri = "<subnet>"
+            google_session_config.runtime_config.version = '3.0'
+            spark = GoogleSparkSession.builder.googleSessionConfig(google_session_config).getOrCreate()
 
 ## Billing
 As this client runs the spark workload on Dataproc, your project will be billed as per [Dataproc Serverless Pricing](https://cloud.google.com/dataproc-serverless/pricing).

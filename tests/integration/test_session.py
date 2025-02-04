@@ -318,7 +318,7 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
     dataproc_config.session_template = session_template_name
     connect_session = (
         GoogleSparkSession.builder.config("spark.executor.cores", "7")
-        .dataprocConfig(dataproc_config)
+        .googleSessionConfig(dataproc_config)
         .config("spark.executor.cores", "16")
         .getOrCreate()
     )

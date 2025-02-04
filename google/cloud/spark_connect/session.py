@@ -62,7 +62,7 @@ class GoogleSparkSession(SparkSession):
     >>> spark = (
     ...     GoogleSparkSession.builder
     ...         .appName("Word Count")
-    ...         .dataprocConfig(Session())
+    ...         .googleSessionConfig(Session())
     ...         .getOrCreate()
     ... ) # doctest: +SKIP
     """
@@ -121,7 +121,7 @@ class GoogleSparkSession(SparkSession):
             )
             return self
 
-        def dataprocConfig(self, dataproc_config: Session):
+        def googleSessionConfig(self, dataproc_config: Session):
             with self._lock:
                 self._dataproc_config = dataproc_config
                 for k, v in dataproc_config.runtime_config.properties.items():

@@ -223,7 +223,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             }
             session = (
                 GoogleSparkSession.builder.config("spark.executor.cores", "6")
-                .dataprocConfig(dataproc_config)
+                .googleSessionConfig(dataproc_config)
                 .config("spark.executor.cores", "16")
                 .getOrCreate()
             )
@@ -323,7 +323,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         try:
             dataproc_config = Session()
             dataproc_config.session_template = "projects/test-project/locations/test-region/sessionTemplates/test_template"
-            session = GoogleSparkSession.builder.dataprocConfig(
+            session = GoogleSparkSession.builder.googleSessionConfig(
                 dataproc_config
             ).getOrCreate()
             mock_session_controller_client_instance.create_session.assert_called_once_with(
@@ -432,7 +432,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 "seconds": 10
             }
             dataproc_config.session_template = "projects/test-project/locations/test-region/sessionTemplates/test_template"
-            session = GoogleSparkSession.builder.dataprocConfig(
+            session = GoogleSparkSession.builder.googleSessionConfig(
                 dataproc_config
             ).getOrCreate()
             mock_session_controller_client_instance.create_session.assert_called_once_with(
@@ -530,7 +530,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         cred.token = "token"
         mock_credentials.return_value = (cred, "")
         with self.assertRaises(RuntimeError) as e:
-            GoogleSparkSession.builder.dataprocConfig(Session()).getOrCreate()
+            GoogleSparkSession.builder.googleSessionConfig(
+                Session()
+            ).getOrCreate()
         self.assertEqual(
             e.exception.args[0],
             "Error while creating serverless session "
@@ -559,7 +561,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         cred.token = "token"
         mock_credentials.return_value = (cred, "")
         with self.assertRaises(RuntimeError) as e:
-            GoogleSparkSession.builder.dataprocConfig(Session()).getOrCreate()
+            GoogleSparkSession.builder.googleSessionConfig(
+                Session()
+            ).getOrCreate()
             self.assertEqual(
                 e.exception.args[0],
                 "Error while creating serverless session: "
