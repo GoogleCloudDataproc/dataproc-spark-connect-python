@@ -475,6 +475,7 @@ class GoogleSparkSession(SparkSession):
                 logger.error(
                     f"Exception while removing active session in file {file_path} , {e}"
                 )
+
     """
     Install PyPi packages (with their dependencies) in the active Spark 
     session on the driver and executors. 
@@ -492,24 +493,30 @@ class GoogleSparkSession(SparkSession):
     This is an API available only in Google Spark Session as of today.
     If there are conflicts/package doesn't exist, it throws an exception.
     """
+
     def addArtifact(self, package: str) -> None:
         if package in self._installed_pypi_libs:
             logger.info("Ignoring as artifact has already been added earlier")
             return
 
         if package.startswith("pypi://") is False:
-            raise ValueError("Only PyPi packages are supported in format `pypi://spacy`")
+            raise ValueError(
+                "Only PyPi packages are supported in format `pypi://spacy`"
+            )
 
-        dependencies = {
-            "Version": "1.0",
-            "packages": [package]
-        }
+        dependencies = {"Version": "1.0", "packages": [package]}
 
         # Can't use the same file as Spark throws exception that file already exists
-        file_path = tempfile.tempdir + \
-                    "/.deps-" + self._active_s8s_session_uuid + "-" + package.removeprefix("pypi://") + ".json"
+        file_path = (
+            tempfile.tempdir
+            + "/.deps-"
+            + self._active_s8s_session_uuid
+            + "-"
+            + package.removeprefix("pypi://")
+            + ".json"
+        )
 
-        with open(file_path, 'w') as json_file:
+        with open(file_path, "w") as json_file:
             json.dump(dependencies, json_file, indent=4)
         self.addArtifacts(file_path, file=True)
         self._installed_pypi_libs.add(package)

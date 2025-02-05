@@ -149,6 +149,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.get_session.assert_called_once_with(
                 get_session_request
             )
+
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     def test_custom_add_artifact(
         self,
@@ -172,13 +173,18 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         self.assertTrue(isinstance(session, GoogleSparkSession))
 
         # Invalid input format throws Error
-        with self.assertRaises(ValueError, msg="Only PyPi packages are supported in format `pypi://spacy`"):
+        with self.assertRaises(
+            ValueError,
+            msg="Only PyPi packages are supported in format `pypi://spacy`",
+        ):
             session.addArtifact("spacy")
 
         # Happy case, also validating content of the file
         session.addArtifacts = mock.MagicMock()
         session.addArtifact("pypi://spacy")
-        file_name = tempfile.tempdir + '/.deps-' + session_response.uuid + '-spacy.json'
+        file_name = (
+            tempfile.tempdir + "/.deps-" + session_response.uuid + "-spacy.json"
+        )
         session.addArtifacts.assert_called_once_with(file_name, file=True)
         expected_file_content = {"Version": "1.0", "packages": ["pypi://spacy"]}
         self.assertEqual(json.load(open(file_name)), expected_file_content)
