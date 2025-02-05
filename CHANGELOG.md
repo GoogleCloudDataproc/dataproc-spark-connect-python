@@ -6,8 +6,6 @@
 ### Bug Fixes
 
 * Support Spark Connect Server URIs w/o trailing / ([23dff94](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/23dff94c204548a61efd49d33f7525efc27d186b))
-* Support Spark Connect Server URIs w/o trailing / ([8392bfc](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/8392bfc15bf70e3afc2140ccf43f40c6d778ad6e))
-* Support Spark Connect Server URIs w/o trailing / ([6eab9d0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/6eab9d0601856b14c3f31efe2a2b8edbecdf9485))
 
 ## [0.5.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.4.1...v0.5.0) (2025-02-04)
 
