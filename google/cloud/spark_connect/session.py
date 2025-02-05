@@ -17,6 +17,7 @@ import logging
 import os
 import random
 import string
+import tempfile
 import time
 import datetime
 from time import sleep
@@ -72,6 +73,7 @@ class GoogleSparkSession(SparkSession):
     _region = None
     _client_options = None
     _active_s8s_session_id: ClassVar[Optional[str]] = None
+    _installed_pypi_libs = set()
 
     class Builder(SparkSession.Builder):
 
@@ -136,14 +138,14 @@ class GoogleSparkSession(SparkSession):
             else:
                 return self
 
-        def create(self) -> "SparkSession":
+        def create(self) -> "GoogleSparkSession":
             raise NotImplemented(
                 "GoogleSparkSession allows session creation only through getOrCreate"
             )
 
         def __create_spark_connect_session_from_s8s(
             self, session_response
-        ) -> "SparkSession":
+        ) -> "GoogleSparkSession":
             GoogleSparkSession._active_s8s_session_uuid = session_response.uuid
             GoogleSparkSession._project_id = self._project_id
             GoogleSparkSession._region = self._region
@@ -163,7 +165,7 @@ class GoogleSparkSession(SparkSession):
             self.__apply_options(session)
             return session
 
-        def __create(self) -> "SparkSession":
+        def __create(self) -> "GoogleSparkSession":
             with self._lock:
 
                 if self._options.get("spark.remote", False):
@@ -300,7 +302,7 @@ class GoogleSparkSession(SparkSession):
                 return get_session_response
             return None
 
-        def _get_exiting_active_session(self) -> Optional["SparkSession"]:
+        def _get_exiting_active_session(self) -> Optional["GoogleSparkSession"]:
             s8s_session_id = GoogleSparkSession._active_s8s_session_id
             session_response = self._is_s8s_session_active(s8s_session_id)
 
@@ -326,7 +328,7 @@ class GoogleSparkSession(SparkSession):
 
                 return None
 
-        def getOrCreate(self) -> "SparkSession":
+        def getOrCreate(self) -> "GoogleSparkSession":
             with GoogleSparkSession._lock:
                 session = self._get_exiting_active_session()
                 if session is None:
@@ -486,6 +488,44 @@ class GoogleSparkSession(SparkSession):
                 logger.error(
                     f"Exception while removing active session in file {file_path} , {e}"
                 )
+    """
+    Install PyPi packages (with their dependencies) in the active Spark 
+    session on the driver and executors. 
+    We recommend to pin the version to have consistent environment.
+    
+    Examples
+    --------
+    >>> spark.addArtifacts("pypi://spacy==3.8.4")
+    >>> spark.addArtifacts("pypi://spacy") 
+    
+    Notes
+    -----
+    Popular packages are already pre-installed in s8s runtime. 
+     https://cloud.google.com/dataproc-serverless/docs/concepts/versions/spark-runtime-2.2#python_libraries
+    This is an API available only in Google Spark Session as of today.
+    If there are conflicts/package doesn't exist, it throws an exception.
+    """
+    def addArtifact(self, package: str) -> None:
+        if package in self._installed_pypi_libs:
+            logger.info("Ignoring as artifact has already been added earlier")
+            return
+
+        if package.startswith("pypi://") is False:
+            raise ValueError("Only PyPi packages are supported in format `pypi://spacy`")
+
+        dependencies = {
+            "Version": "1.0",
+            "packages": [package]
+        }
+
+        # Can't use the same file as Spark throws exception that file already exists
+        file_path = tempfile.tempdir + \
+                    "/.deps-" + self._active_s8s_session_uuid + "-" + package.removeprefix("pypi://") + ".json"
+
+        with open(file_path, 'w') as json_file:
+            json.dump(dependencies, json_file, indent=4)
+        self.addArtifacts(file_path, file=True)
+        self._installed_pypi_libs.add(package)
 
     def stop(self) -> None:
         with GoogleSparkSession._lock:
@@ -503,6 +543,7 @@ class GoogleSparkSession(SparkSession):
                 GoogleSparkSession._project_id = None
                 GoogleSparkSession._region = None
                 GoogleSparkSession._client_options = None
+                GoogleSparkSession._installed_pypi_libs = set()
 
             self.client.close()
             if self is GoogleSparkSession._default_session:
