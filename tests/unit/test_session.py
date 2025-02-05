@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 import os
+import tempfile
 import unittest
 from unittest import mock
 
@@ -147,6 +149,47 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.get_session.assert_called_once_with(
                 get_session_request
             )
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    def test_custom_add_artifact(
+        self,
+        mock_session_controller_client,
+    ):
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+        mock_operation = mock.Mock()
+        session_response = Session()
+        session_response.runtime_info.endpoints = {
+            "Spark Connect Server": "https://spark-connect-server/"
+        }
+        session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+        mock_operation.result.side_effect = [session_response]
+        mock_session_controller_client_instance.create_session.return_value = (
+            mock_operation
+        )
+        session = GoogleSparkSession.builder.getOrCreate()
+
+        self.assertTrue(isinstance(session, GoogleSparkSession))
+
+        # Invalid input format throws Error
+        with self.assertRaises(ValueError, msg="Only PyPi packages are supported in format `pypi://spacy`"):
+            session.addArtifact("spacy")
+
+        # Happy case, also validating content of the file
+        session.addArtifacts = mock.MagicMock()
+        session.addArtifact("pypi://spacy")
+        file_name = tempfile.tempdir + '/.deps-' + session_response.uuid + '-spacy.json'
+        session.addArtifacts.assert_called_once_with(file_name, file=True)
+        expected_file_content = {"Version": "1.0", "packages": ["pypi://spacy"]}
+        self.assertEqual(json.load(open(file_name)), expected_file_content)
+
+        # Do nothing if package already installed earlier
+        session.addArtifact("pypi://spacy")
+        self.assertEqual(session.addArtifacts.call_count, 1)
+
+        # When same package called with different version, trigger installation
+        session.addArtifact("pypi://spacy==1.2.3")
+        self.assertEqual(session.addArtifacts.call_count, 2)
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")

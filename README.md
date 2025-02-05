@@ -5,17 +5,13 @@ additional functionalities that allow applications to communicate with a remote 
 Spark cluster using the Spark Connect protocol without requiring additional steps.
 
 ## Install
-
-.. code-block:: console
-
-      pip install google_spark_connect
-
+```shell
+pip install dataproc_spark_connect
+```
 ## Uninstall
-
-.. code-block:: console
-
-      pip uninstall google_spark_connect
-
+```shell
+pip uninstall dataproc_spark_connect
+```
 
 ## Setup
 This client requires permissions to manage [Dataproc sessions and session templates](https://cloud.google.com/dataproc-serverless/docs/concepts/iam).
