@@ -151,7 +151,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
 
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
-    def test_custom_add_artifact(
+    def test_pypi_add_artifacts(
         self,
         mock_session_controller_client,
     ):
@@ -172,30 +172,21 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
 
         self.assertTrue(isinstance(session, GoogleSparkSession))
 
-        # Invalid input format throws Error
-        with self.assertRaises(
-            ValueError,
-            msg="Only PyPi packages are supported in format `pypi://spacy`",
-        ):
-            session.addArtifact("spacy")
-
-        # Happy case, also validating content of the file
-        session.addArtifacts = mock.MagicMock()
-        session.addArtifact("pypi://spacy")
-        file_name = (
-            tempfile.tempdir + "/.deps-" + session_response.uuid + "-spacy.json"
-        )
-        session.addArtifacts.assert_called_once_with(file_name, file=True)
-        expected_file_content = {"Version": "1.0", "packages": ["pypi://spacy"]}
-        self.assertEqual(json.load(open(file_name)), expected_file_content)
+        session.addArtifact = mock.MagicMock()
+        # Happy case
+        session.addArtifacts("spacy", pypi=True)
 
         # Do nothing if package already installed earlier
-        session.addArtifact("pypi://spacy")
-        self.assertEqual(session.addArtifacts.call_count, 1)
+        session.addArtifacts("spacy", pypi=True)
+        self.assertEqual(session.addArtifact.call_count, 1)
 
         # When same package called with different version, trigger installation
-        session.addArtifact("pypi://spacy==1.2.3")
-        self.assertEqual(session.addArtifacts.call_count, 2)
+        session.addArtifacts("spacy==1.2.3", pypi=True)
+        self.assertEqual(session.addArtifact.call_count, 2)
+
+        # test multiple packages, when already installed
+        session.addArtifacts("spacy==1.2.3", "spacy", pypi=True)
+        self.assertEqual(session.addArtifact.call_count, 2)
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
