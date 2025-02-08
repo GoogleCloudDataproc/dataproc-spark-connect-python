@@ -28,6 +28,7 @@ from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound
 from google.cloud.dataproc_v1.types import sessions
 
+from google.cloud.spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.spark_connect.client import DataprocChannelBuilder
 from google.cloud.dataproc_v1 import (
     CreateSessionRequest,
@@ -72,6 +73,7 @@ class GoogleSparkSession(SparkSession):
     _region = None
     _client_options = None
     _active_s8s_session_id: ClassVar[Optional[str]] = None
+    _installed_artifacts: set[str] = set()
 
     class Builder(SparkSession.Builder):
 
@@ -136,14 +138,14 @@ class GoogleSparkSession(SparkSession):
             else:
                 return self
 
-        def create(self) -> "SparkSession":
+        def create(self) -> "GoogleSparkSession":
             raise NotImplemented(
                 "GoogleSparkSession allows session creation only through getOrCreate"
             )
 
         def __create_spark_connect_session_from_s8s(
             self, session_response
-        ) -> "SparkSession":
+        ) -> "GoogleSparkSession":
             GoogleSparkSession._active_s8s_session_uuid = session_response.uuid
             GoogleSparkSession._project_id = self._project_id
             GoogleSparkSession._region = self._region
@@ -165,7 +167,7 @@ class GoogleSparkSession(SparkSession):
             self.__apply_options(session)
             return session
 
-        def __create(self) -> "SparkSession":
+        def __create(self) -> "GoogleSparkSession":
             with self._lock:
 
                 if self._options.get("spark.remote", False):
@@ -302,7 +304,7 @@ class GoogleSparkSession(SparkSession):
                 return get_session_response
             return None
 
-        def _get_exiting_active_session(self) -> Optional["SparkSession"]:
+        def _get_exiting_active_session(self) -> Optional["GoogleSparkSession"]:
             s8s_session_id = GoogleSparkSession._active_s8s_session_id
             session_response = self._is_s8s_session_active(s8s_session_id)
 
@@ -328,7 +330,7 @@ class GoogleSparkSession(SparkSession):
 
                 return None
 
-        def getOrCreate(self) -> "SparkSession":
+        def getOrCreate(self) -> "GoogleSparkSession":
             with GoogleSparkSession._lock:
                 session = self._get_exiting_active_session()
                 if session is None:
@@ -489,6 +491,69 @@ class GoogleSparkSession(SparkSession):
                     f"Exception while removing active session in file {file_path} , {e}"
                 )
 
+    def addArtifacts(
+        self,
+        *artifact: str,
+        pyfile: bool = False,
+        archive: bool = False,
+        file: bool = False,
+        pypi: bool = False,
+    ) -> None:
+        """
+        Add artifact(s) to the client session. Currently only local files & pypi installations are supported.
+
+        .. versionadded:: 3.5.0
+
+        Parameters
+        ----------
+        *path : tuple of str
+            Artifact's URIs to add.
+        pyfile : bool
+            Whether to add them as Python dependencies such as .py, .egg, .zip or .jar files.
+            The pyfiles are directly inserted into the path when executing Python functions
+            in executors.
+        archive : bool
+            Whether to add them as archives such as .zip, .jar, .tar.gz, .tgz, or .tar files.
+            The archives are unpacked on the executor side automatically.
+        file : bool
+            Add a file to be downloaded with this Spark job on every node.
+            The ``path`` passed can only be a local file for now.
+        pypi : bool
+            This option is only available with GoogleSparkSession. eg. `spark.addArtifacts("spacy==3.8.4", "torch",  pypi=True)`
+            Installs PyPi package (with its dependencies) in the active Spark session on the driver and executors.
+
+        Notes
+        -----
+        This is an API dedicated to Spark Connect client only. With regular Spark Session, it throws
+        an exception.
+        Regarding pypi: Popular packages are already pre-installed in s8s runtime.
+        https://cloud.google.com/dataproc-serverless/docs/concepts/versions/spark-runtime-2.2#python_libraries
+        If there are conflicts/package doesn't exist, it throws an exception.
+        """
+        if sum([pypi, file, pyfile, archive]) > 1:
+            raise ValueError(
+                "'pyfile', 'archive', 'file' and/or 'pypi' cannot be True together."
+            )
+        if pypi:
+            to_install = set([p for p in artifact]).difference(
+                self._installed_artifacts
+            )
+            if len(to_install) == 0:
+                logger.info(
+                    "Ignoring as all artifacts have already been added earlier"
+                )
+                return
+            artifacts = PyPiArtifacts(to_install)
+
+            self.addArtifact(
+                artifacts.dump_to_file(self._active_s8s_session_uuid), file=True
+            )
+            self._installed_artifacts.update(to_install)
+        else:
+            super().addArtifacts(
+                *artifact, pyfile=pyfile, archive=archive, file=file
+            )
+
     def stop(self) -> None:
         with GoogleSparkSession._lock:
             if GoogleSparkSession._active_s8s_session_id is not None:
@@ -505,6 +570,7 @@ class GoogleSparkSession(SparkSession):
                 GoogleSparkSession._project_id = None
                 GoogleSparkSession._region = None
                 GoogleSparkSession._client_options = None
+                GoogleSparkSession._installed_artifacts = set()
 
             self.client.close()
             if self is GoogleSparkSession._default_session:
