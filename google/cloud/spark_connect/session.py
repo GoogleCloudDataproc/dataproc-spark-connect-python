@@ -113,8 +113,8 @@ class GoogleSparkSession(SparkSession):
             self._project_id = project_id
             return self
 
-        def region(self, region):
-            self._region = region
+        def location(self, location):
+            self._region = location
             self._client_options.api_endpoint = os.environ.get(
                 "GOOGLE_CLOUD_DATAPROC_API_ENDPOINT",
                 f"{self._region}-dataproc.googleapis.com",
@@ -236,7 +236,7 @@ class GoogleSparkSession(SparkSession):
                         client_options=self._client_options
                     ).create_session(session_request)
                     print(
-                        f"Interactive Session Detail View:  https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}"
+                        f"Interactive Session Detail View:  https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
                     session_response: Session = operation.result(
                         polling=session_polling
@@ -270,7 +270,7 @@ class GoogleSparkSession(SparkSession):
                 except Exception as e:
                     GoogleSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
-                        f"Error while creating serverless session https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id} : {e}"
+                        f"Error while creating serverless session https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id} : {e}"
                     ) from None
 
                 logger.debug(
@@ -312,7 +312,7 @@ class GoogleSparkSession(SparkSession):
 
             if session_response is not None:
                 print(
-                    f"Using existing session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}, configuration changes may not be applied."
+                    f"Using existing session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}, configuration changes may not be applied."
                 )
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
@@ -464,7 +464,7 @@ class GoogleSparkSession(SparkSession):
             <div>No Active Dataproc Spark Session</div>
             """
 
-        s8s_session = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._active_s8s_session_id}"
+        s8s_session = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._active_s8s_session_id}?project={self._project_id}"
         ui = f"{s8s_session}/sparkApplications/applications"
         version = ""
         return f"""
