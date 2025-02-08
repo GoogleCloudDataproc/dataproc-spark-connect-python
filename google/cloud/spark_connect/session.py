@@ -464,15 +464,15 @@ class GoogleSparkSession(SparkSession):
             <div>No Active Dataproc Spark Session</div>
             """
 
-        s8s_session = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._active_s8s_session_id}?project={self._project_id}"
+        s8s_session = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._active_s8s_session_id}"
         ui = f"{s8s_session}/sparkApplications/applications"
         version = ""
         return f"""
         <div>
             <p><b>Spark Connect</b></p>
 
-            <p><a href="{s8s_session}">Serverless Session</a></p>
-            <p><a href="{ui}">Spark UI</a></p>
+            <p><a href="{s8s_session}?project={self._project_id}">Serverless Session</a></p>
+            <p><a href="{ui}?project={self._project_id}">Spark UI</a></p>
         </div>
         """
 
