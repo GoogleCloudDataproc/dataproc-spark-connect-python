@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.1...v0.5.2) (2025-02-11)
+
+
+### Bug Fixes
+
+* append project to session URIs and use location instead of the region in the builder ([#40](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/40)) ([b7134d9](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/b7134d90722f22b8511c46f861737f968fdb8eb0))
+
 ## [0.5.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.0...v0.5.1) (2025-02-05)
 
 
