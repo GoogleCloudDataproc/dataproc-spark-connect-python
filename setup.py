@@ -30,10 +30,7 @@ setup(
     install_requires=[
         "google-api-core>=2.19.1",
         "google-cloud-dataproc>=5.15.1",
-        "wheel",
         "websockets",
         "pyspark>=3.5",
-        "pandas",
-        "pyarrow",
     ],
 )

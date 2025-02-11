@@ -1,7 +1,5 @@
 google-api-core>=2.19.1
 google-cloud-dataproc>=5.15.1
-pandas>=2.2.2
-pyarrow>=17.0.0
 pyspark==3.5
 setuptools>=72.0.0
 websockets>=12.0
