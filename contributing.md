@@ -25,6 +25,10 @@ Guidelines](https://opensource.google/conduct/).
 
 ## Contribution process
 
+### Developing
+
+See the [developing guide](DEVELOPING.md)
+
 ### Code Reviews
 
 All submissions, including submissions by project members, require review. We
