@@ -10,4 +10,5 @@ COPY requirements-test.txt ./
 RUN python3 -m pip install -U --no-cache-dir -r requirements-dev.txt -r requirements-test.txt pip
 COPY . .
 RUN python setup.py sdist bdist_wheel egg_info
+RUN pip install dst/google_spark_connect-*-py2.py3-none-any.whl
 RUN ls -lR
