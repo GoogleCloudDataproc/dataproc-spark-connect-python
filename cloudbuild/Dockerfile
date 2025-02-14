@@ -7,7 +7,7 @@ WORKDIR /opt/tests
 # individual source files change.
 COPY requirements-dev.txt ./
 COPY requirements-test.txt ./
-RUN pip install -U --no-cache-dir -r requirements-dev.txt -r requirements-test.txt pip
+RUN python3 -m pip install -U --no-cache-dir -r requirements-dev.txt -r requirements-test.txt pip
 COPY . .
-RUN python setup.py sdist bdist_wheel
+RUN python setup.py sdist bdist_wheel egg_info
 RUN ls -lR
