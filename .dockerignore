@@ -1,0 +1,14 @@
+*.egg-info/
+*~
+.*.sw[nop]
+.DS_Store
+.idea
+/.git/
+/.github/
+/.gitignore/
+/.kokoro/
+/.pytest_cache/
+/build/
+/cloudbuild/
+/dist/
+__pycache__
