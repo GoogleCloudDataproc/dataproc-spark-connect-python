@@ -8,7 +8,7 @@ steps:
     waitFor: ['build-container-image']
     id: 'list-directory'
     entrypoint: 'ls'
-    args: ['-R']
+    args: ['-lR']
   - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
     id: 'run-unit-tests'
     waitFor: ['build-container-image']

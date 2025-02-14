@@ -10,3 +10,4 @@ COPY requirements-test.txt ./
 RUN pip install -U pip && pip install --no-cache-dir -r requirements-dev.txt -r requirements-test.txt
 COPY . .
 RUN python setup.py sdist bdist_wheel
+RUN ls -lR
