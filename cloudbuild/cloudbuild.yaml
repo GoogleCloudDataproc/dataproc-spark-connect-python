@@ -5,6 +5,11 @@ steps:
     id: 'build-container-image'
     args: ['build', '--tag=gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit', -f, 'cloudbuild/Dockerfile', '.']
   - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
+    waitFor: ['build-container-image']
+    id: 'list-directory'
+    entrypoint: 'ls'
+    args: ['-R']
+  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
     id: 'run-unit-tests'
     waitFor: ['build-container-image']
     entrypoint: 'pytest'
