@@ -1,0 +1,12 @@
+steps:
+  # Build a container image which bakes in a source code snapshot and built
+  # distribution artifacts.
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-container-image'
+    args: ['build', '--tag=gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit', -f, 'cloudbuild/Dockerfile', '.']
+  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
+    id: 'run-unit-tests'
+    waitFor: ['build-container-image']
+    entrypoint: 'pytest'
+    args: ['-n', 'auto', 'tests/unit']
+timeout: 600s
