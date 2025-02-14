@@ -1,4 +1,3 @@
-*.egg-info/
 *~
 .*.sw[nop]
 .DS_Store
@@ -8,7 +7,5 @@
 /.gitignore/
 /.kokoro/
 /.pytest_cache/
-/build/
 /cloudbuild/
-/dist/
 __pycache__
