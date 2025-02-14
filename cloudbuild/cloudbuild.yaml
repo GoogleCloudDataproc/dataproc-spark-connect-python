@@ -4,11 +4,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-container-image'
     args: ['build', '--tag=gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}', -f, 'cloudbuild/Dockerfile', '.']
-  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}'
-    waitFor: ['build-container-image']
-    id: 'list-directory'
-    entrypoint: 'ls'
-    args: ['-lR']
+  # Run all unit tests
   - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}'
     id: 'run-unit-tests'
     waitFor: ['build-container-image']
