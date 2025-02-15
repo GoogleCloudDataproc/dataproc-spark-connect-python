@@ -536,7 +536,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         self.assertEqual(
             e.exception.args[0],
             "Error while creating serverless session "
-            "https://console.cloud.google.com/dataproc/interactive/test-region/sc-20240702-103952-abcdef : "
+            "https://console.cloud.google.com/dataproc/interactive/test-region/sc-20240702-103952-abcdef?project=test-project : "
             "Testing create session failure",
         )
 
