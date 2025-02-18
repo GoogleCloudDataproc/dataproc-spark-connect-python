@@ -1,15 +1,36 @@
 #!/usr/bin/env bash
 
+# TODO: Consider rewriting all of these test drivers into a single python script
+# to share names and logic.
+
 set -euo pipefail
 
+readonly TESTS=(
+    'unit-tests'
+    'integration-tests'
+)
+
 function main() {
-    echo "/workspace contents:"
-    ls -R /workspace
-    echo ""
-    echo "BUILD RESULTS:"
-    describe_build
-    describe_build | verify_statuses
-    jq_program
+    #echo "/workspace contents:"
+    #ls -R /workspace
+    local failed_tests=()
+    local sentinel=""
+    for test in "${TESTS[@]}" ; do
+        # sentinel="/tmp/${test}.SUCCESS"
+        sentinel="/workspace/${test}.SUCCESS"
+        if [ ! -f "$sentinel" ] ; then
+            failed_tests+=("$test")
+        fi
+    done
+    if [ "${#failed_tests[@]}" -gt 0 ] ; then
+        echo "failed tests: ${failed_tests[@]}"
+        return 1
+    fi
+    # echo ""
+    # echo "BUILD RESULTS:"
+    # describe_build
+    # describe_build | verify_statuses
+    # jq_program
 }
 
 function describe_build() {
