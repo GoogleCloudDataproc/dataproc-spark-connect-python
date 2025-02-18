@@ -30,4 +30,4 @@ steps:
     env:
       - 'BUILD_ID=${BUILD_ID}'
       - 'GOOGLE_CLOUD_PROJECT=${PROJECT_ID}'
-timeout: 600s
+timeout: 1800s
