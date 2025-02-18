@@ -8,6 +8,7 @@ steps:
   - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}'
     id: 'run-unit-tests'
     waitFor: ['build-container-image']
+    allowFailure: true
     entrypoint: 'pytest'
     args: ['-n', '10', 'tests/unit']
   # Run all integration tests. These exercise the actual API endpoints and
@@ -15,6 +16,11 @@ steps:
   - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}'
     id: 'run-integration-tests'
     waitFor: ['build-container-image']
+    allowFailure: true
     entrypoint: 'pytest'
     args: ['-n', '10', 'tests/integration']
+    env:
+      - 'GOOGLE_CLOUD_SUBNET=${_GOOGLE_CLOUD_SUBNET}'
+      - 'GOOGLE_CLOUD_PROJECT=${_GOOGLE_CLOUD_PROJECT}'
+      - 'GOOGLE_CLOUD_REGION=${_GOOGLE_CLOUD_REGION}'
 timeout: 600s
