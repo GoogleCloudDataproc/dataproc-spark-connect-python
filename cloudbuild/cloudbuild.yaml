@@ -23,4 +23,11 @@ steps:
       - 'GOOGLE_CLOUD_SUBNET=${_GOOGLE_CLOUD_SUBNET}'
       - 'GOOGLE_CLOUD_PROJECT=${_GOOGLE_CLOUD_PROJECT}'
       - 'GOOGLE_CLOUD_REGION=${_GOOGLE_CLOUD_REGION}'
+  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}'
+    id: 'verify-status'
+    waitFor: ['run-unit-tests', 'run-integration-tests']
+    entrypoint: '/opt/tests/cloudbuild/verify-status.sh'
+    env:
+      - 'BUILD_ID=${BUILD_ID}'
+      - 'GOOGLE_CLOUD_PROJECT=${PROJECT_ID}'
 timeout: 600s
