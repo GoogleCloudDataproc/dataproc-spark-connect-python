@@ -9,16 +9,14 @@ steps:
     id: 'run-unit-tests'
     waitFor: ['build-container-image']
     allowFailure: true
-    entrypoint: 'pytest'
-    args: ['-n', '10', 'tests/unit']
+    entrypoint: '/opt/tests/cloudbuild/run-unit-tests.sh'
   # Run all integration tests. These exercise the actual API endpoints and
   # require credentials.
   - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
     id: 'run-integration-tests'
     waitFor: ['build-container-image']
     allowFailure: true
-    entrypoint: 'pytest'
-    args: ['-n', '10', 'tests/integration']
+    entrypoint: '/opt/tests/cloudbuild/run-integration-tests.sh'
     env:
       - 'GOOGLE_CLOUD_SUBNET=${_GOOGLE_CLOUD_SUBNET}'
       - 'GOOGLE_CLOUD_PROJECT=${_GOOGLE_CLOUD_PROJECT}'
