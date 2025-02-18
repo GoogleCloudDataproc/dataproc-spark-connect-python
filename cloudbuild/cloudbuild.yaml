@@ -3,9 +3,9 @@ steps:
   # distribution artifacts.
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-container-image'
-    args: ['build', '--tag=gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}', -f, 'cloudbuild/Dockerfile', '.']
+    args: ['build', '--tag=gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit', -f, 'cloudbuild/Dockerfile', '.']
   # Run all unit tests
-  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}'
+  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
     id: 'run-unit-tests'
     waitFor: ['build-container-image']
     allowFailure: true
@@ -13,7 +13,7 @@ steps:
     args: ['-n', '10', 'tests/unit']
   # Run all integration tests. These exercise the actual API endpoints and
   # require credentials.
-  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}'
+  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
     id: 'run-integration-tests'
     waitFor: ['build-container-image']
     allowFailure: true
@@ -23,7 +23,7 @@ steps:
       - 'GOOGLE_CLOUD_SUBNET=${_GOOGLE_CLOUD_SUBNET}'
       - 'GOOGLE_CLOUD_PROJECT=${_GOOGLE_CLOUD_PROJECT}'
       - 'GOOGLE_CLOUD_REGION=${_GOOGLE_CLOUD_REGION}'
-  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit:${BUILD_ID}'
+  - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
     id: 'verify-status'
     waitFor: ['run-unit-tests', 'run-integration-tests']
     entrypoint: '/opt/tests/cloudbuild/verify-status.sh'
