@@ -21,7 +21,7 @@ function verify_statuses() {
 function jq_program() {
     cat <<'EOF'
 reduce
-    .steps[] as $step
+    (.steps[] | select(.allowFailure)) as $step
     (
         [];
         if $step.status != "SUCCESS" then . + [$step.id] else . end
