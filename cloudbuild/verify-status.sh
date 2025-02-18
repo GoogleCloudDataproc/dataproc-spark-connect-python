@@ -3,6 +3,8 @@
 set -euo pipefail
 
 function main() {
+    echo "BUILD RESULTS:"
+    describe_build
     describe_build | verify_statuses
     jq_program
 }
