@@ -3,6 +3,9 @@
 set -euo pipefail
 
 function main() {
+    echo "/workspace contents:"
+    ls -R /workspace
+    echo ""
     echo "BUILD RESULTS:"
     describe_build
     describe_build | verify_statuses
