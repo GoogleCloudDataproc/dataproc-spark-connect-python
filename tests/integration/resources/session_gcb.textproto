@@ -1,7 +1,6 @@
 environment_config: {
   execution_config: {
     subnetwork_uri: "subnet-placeholder"
-    service_account: "service-account-placeholder"
     authentication_config: {
         user_workload_authentication_type: "SYSTEM_SERVICE_ACCOUNT"
     }
