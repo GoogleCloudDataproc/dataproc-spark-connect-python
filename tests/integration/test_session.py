@@ -84,7 +84,7 @@ def default_config(
         contents = (
             template.replace("2.2", image_version)
             .replace("subnet-placeholder", test_subnetwork_uri)
-            .replace("service-account-placeholder", test_service_account)
+            # .replace("service-account-placeholder", test_service_account)
             # .replace("SYSTEM_SERVICE_ACCOUNT", auth_type)
         )
         with tempfile.NamedTemporaryFile(delete=False) as t:
