@@ -64,6 +64,9 @@ def test_region():
 def test_subnet():
     return os.environ.get("GOOGLE_CLOUD_SUBNET")
 
+@pytest.fixture
+def test_service_account():
+    return os.environ.get("GOOGLE_SERVICE_ACCOUNT")
 
 @pytest.fixture
 def test_subnetwork_uri(test_project, test_region, test_subnet):
@@ -72,16 +75,17 @@ def test_subnetwork_uri(test_project, test_region, test_subnet):
 
 @pytest.fixture
 def default_config(
-    auth_type, image_version, test_project, test_region, test_subnetwork_uri
+    auth_type, image_version, test_project, test_region, test_service_account, test_subnetwork_uri
 ):
     resources_dir = os.path.join(os.path.dirname(__file__), "resources")
-    template_file = os.path.join(resources_dir, "session.textproto")
+    template_file = os.path.join(resources_dir, "session_gcb.textproto")
     with open(template_file) as f:
         template = f.read()
         contents = (
             template.replace("2.2", image_version)
             .replace("subnet-placeholder", test_subnetwork_uri)
-            .replace("SYSTEM_SERVICE_ACCOUNT", auth_type)
+            .replace("service-account-placeholder", test_service_account)
+            # .replace("SYSTEM_SERVICE_ACCOUNT", auth_type)
         )
         with tempfile.NamedTemporaryFile(delete=False) as t:
             t.write(contents.encode("utf-8"))
