@@ -29,7 +29,7 @@ class PyPiArtifacts:
 
         # Can't use the same file as Spark throws exception that file already exists
         file_path = os.path.join(
-            tempfile.tempdir,
+            tempfile.gettempdir(),
             ".deps-" + s8s_uuid + "-" + self.__str__() + ".json",
         )
 

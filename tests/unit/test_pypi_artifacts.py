@@ -18,6 +18,7 @@ class PyPiArtifactsTest(unittest.TestCase):
                 "spacy>=1.2",
                 "spacy==1.2.*",
                 "spacy==1.*",
+                "abc.whl"
             }
         ).dump_to_file("uuid")
         os.remove(file)
