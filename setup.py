@@ -29,7 +29,7 @@ setup(
     packages=find_namespace_packages(include=["google.*"]),
     install_requires=[
         "google-api-core>=2.19.1",
-        "google-cloud-dataproc>=5.15.1",
+        "google-cloud-dataproc>=5.18.0",
         "websockets",
         "pyspark[connect]>=3.5",
     ],
