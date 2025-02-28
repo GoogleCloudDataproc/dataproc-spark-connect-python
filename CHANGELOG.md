@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.2...v0.5.3) (2025-02-28)
+
+
+### Bug Fixes
+
+* fixed a bug in the TCP-over-websocket proxy where  one end of the connection might not be closed when the other end is closed. ([932cb48](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/932cb482646cbec4acaead035a4f68750e4878ae))
+* Switch pyspark dependency to pyspark[connect] ([#43](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/43)) ([23aec22](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/23aec22642a7d7e11999047e31fef4f2b90dd67b))
+
+
+### Documentation
+
+* Add basic developer docs ([#44](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/44)) ([d77626b](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/d77626b85d786660c20e0a8fd7f05decc64cf334))
+
 ## [0.5.2](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.1...v0.5.2) (2025-02-11)
 
 
