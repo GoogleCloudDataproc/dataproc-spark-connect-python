@@ -265,12 +265,12 @@ class GoogleSparkSession(SparkSession):
                 except InvalidArgument as e:
                     GoogleSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
-                        f"Error while creating serverless session: {e}"
+                        f"Error while creating serverless session: {e.message}"
                     ) from None
                 except Exception as e:
                     GoogleSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
-                        f"Error while creating serverless session https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id} : {e}"
+                        f"Error while creating serverless session https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id} : {e.args[0]}"
                     ) from None
 
                 logger.debug(
