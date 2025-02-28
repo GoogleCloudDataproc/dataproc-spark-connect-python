@@ -101,6 +101,7 @@ def forward_bytes(name, from_sock, to_sock):
         try:
             bs = from_sock.recv(1024)
             if not bs:
+                to_sock.close()
                 return
             while bs:
                 try:
