@@ -213,9 +213,7 @@ class GoogleSparkSession(SparkSession):
                         multiplier=1.0,
                         timeout=600,  # seconds
                     )
-                    logger.info(
-                        "Creating Spark session. It may take few minutes."
-                    )
+                    print("Creating Spark session. It may take few minutes.")
                     if (
                         "GOOGLE_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT"
                         in os.environ
@@ -270,8 +268,8 @@ class GoogleSparkSession(SparkSession):
                 except Exception as e:
                     GoogleSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
-                        f"Error while creating serverless session https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id} : {e.args[0]}"
-                    ) from None
+                        f"Error while creating serverless session"
+                    ) from e
 
                 logger.debug(
                     f"Serverless session created: {session_id}, creation time taken: {int(time.time() - s8s_creation_start_time)} seconds"
