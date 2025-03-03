@@ -25,7 +25,7 @@ from typing import Any, cast, ClassVar, Dict, Optional
 from google.api_core import retry
 from google.api_core.future.polling import POLLING_PREDICATE
 from google.api_core.client_options import ClientOptions
-from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound
+from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound, PermissionDenied
 from google.cloud.dataproc_v1.types import sessions
 
 from google.cloud.spark_connect.client import DataprocChannelBuilder
@@ -261,6 +261,11 @@ class GoogleSparkSession(SparkSession):
                                 f"Exception while writing active session to file {file_path} , {e}"
                             )
                 except InvalidArgument as e:
+                    GoogleSparkSession._active_s8s_session_id = None
+                    raise RuntimeError(
+                        f"Error while creating serverless session: {e.message}"
+                    ) from None
+                except PermissionDenied as e:
                     GoogleSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
                         f"Error while creating serverless session: {e.message}"
