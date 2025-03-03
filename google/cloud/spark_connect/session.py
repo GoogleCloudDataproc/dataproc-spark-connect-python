@@ -260,12 +260,7 @@ class GoogleSparkSession(SparkSession):
                             logger.error(
                                 f"Exception while writing active session to file {file_path} , {e}"
                             )
-                except InvalidArgument as e:
-                    GoogleSparkSession._active_s8s_session_id = None
-                    raise RuntimeError(
-                        f"Error while creating serverless session: {e.message}"
-                    ) from None
-                except PermissionDenied as e:
+                except (InvalidArgument, PermissionDenied) as e:
                     GoogleSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
                         f"Error while creating serverless session: {e.message}"
