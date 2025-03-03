@@ -16,6 +16,7 @@ import grpc
 from pyspark.sql.connect.client import ChannelBuilder
 
 from . import proxy
+from .session_helper import is_s8s_session_active
 
 
 class DataprocChannelBuilder(ChannelBuilder):
@@ -35,6 +36,9 @@ class DataprocChannelBuilder(ChannelBuilder):
     ... cb.secure
     True
     """
+    def __init__(self, url, session_name):
+        self.session_name = session_name
+        super().__init__(url)
 
     def toChannel(self) -> grpc.Channel:
         """
@@ -51,7 +55,7 @@ class DataprocChannelBuilder(ChannelBuilder):
         return self._proxied_channel()
 
     def _proxied_channel(self) -> grpc.Channel:
-        return ProxiedChannel(self.host)
+        return ProxiedChannel(self.host, self.session_name)
 
     def _direct_channel(self) -> grpc.Channel:
         destination = f"{self.host}:{self.port}"
@@ -75,11 +79,12 @@ class DataprocChannelBuilder(ChannelBuilder):
 
 class ProxiedChannel(grpc.Channel):
 
-    def __init__(self, target_host):
-        self._proxy = proxy.DataprocSessionProxy(0, target_host)
+    def __init__(self, target_host, session_name):
+        self._proxy = proxy.DataprocSessionProxy(0, target_host, is_s8s_session_active)
         self._proxy.start()
         self._proxied_connect_url = f"sc://localhost:{self._proxy.port}"
         self._wrapped = ChannelBuilder(self._proxied_connect_url).toChannel()
+        self._session_name = session_name
 
     def __enter__(self):
         return self

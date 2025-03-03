@@ -184,12 +184,13 @@ class DataprocSessionProxy(object):
     Default Credentials.
     """
 
-    def __init__(self, port, target_host):
+    def __init__(self, port, target_host, callback):
         self._port = port
         self._target_host = target_host
         self._started = False
         self._killed = False
         self._conn_number = 0
+        self.callback = callback
 
     @property
     def port(self):
