@@ -520,7 +520,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client.return_value
         )
         mock_operation = mock.Mock()
-        mock_operation.result.side_effect = Exception(
+        mock_operation.result.side_effect = InvalidArgument(
             "Testing create session failure"
         )
         mock_session_controller_client_instance.create_session.return_value = (
@@ -535,7 +535,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             ).getOrCreate()
         self.assertEqual(
             e.exception.args[0],
-            "Error while creating serverless session "
+            "Error while creating serverless session: "
             "Testing create session failure",
         )
 
