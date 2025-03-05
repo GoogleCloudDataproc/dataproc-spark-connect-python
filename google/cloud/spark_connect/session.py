@@ -44,8 +44,8 @@ from pyspark.sql.utils import to_str
 
 
 from google.cloud.spark_connect.exceptions import GoogleSparkConnectException
-from google.cloud.spark_connect.client.session_helper import \
-    get_active_s8s_session_response
+from google.cloud.spark_connect.session_helper import get_active_s8s_session_response
+
 
 
 # Set up logging
@@ -161,7 +161,9 @@ class GoogleSparkSession(SparkSession):
                 spark_connect_url += "/"
             url = f"{spark_connect_url.replace('.com/', '.com:443/')};session_id={session_response.uuid};use_ssl=true"
             logger.debug(f"Spark Connect URL: {url}")
-            self._channel_builder = DataprocChannelBuilder(url, session_name)
+            self._channel_builder = DataprocChannelBuilder(
+                url, session_name, self._client_options
+            )
 
             assert self._channel_builder is not None
             session = GoogleSparkSession(connection=self._channel_builder)
@@ -286,7 +288,10 @@ class GoogleSparkSession(SparkSession):
         def _get_exiting_active_session(self) -> Optional["SparkSession"]:
             s8s_session_id = GoogleSparkSession._active_s8s_session_id
             session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{s8s_session_id}"
-            session_response = get_active_s8s_session_response(session_name, self._client_options)
+            logger.info(f"session name: {session_name}")
+            session_response = get_active_s8s_session_response(
+                session_name, self._client_options
+            )
 
             session = GoogleSparkSession.getActiveSession()
             if session is None:
@@ -532,5 +537,3 @@ def terminate_s8s_session(
         )
     if state is not None and state == Session.State.FAILED:
         raise RuntimeError("Serverless session termination failed")
-
-

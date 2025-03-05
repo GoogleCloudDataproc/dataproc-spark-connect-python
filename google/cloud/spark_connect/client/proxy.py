@@ -17,8 +17,9 @@ import argparse
 import contextlib
 import logging
 import socket
+import sys
 import threading
-import time
+
 
 import websockets.sync.client as websocketclient
 
@@ -184,12 +185,21 @@ class DataprocSessionProxy(object):
     Default Credentials.
     """
 
-    def __init__(self, port, target_host, callback):
+    def __init__(
+        self,
+        port,
+        target_host,
+        session_name=None,
+        client_options=None,
+        callback=None,
+    ):
         self._port = port
         self._target_host = target_host
         self._started = False
         self._killed = False
         self._conn_number = 0
+        self.session_name = session_name
+        self.client_options = client_options
         self.callback = callback
 
     @property
@@ -217,14 +227,25 @@ class DataprocSessionProxy(object):
                 self._port = frontend_socket.getsockname()[1]
             s.release()
             while not self._killed:
-                conn, addr = frontend_socket.accept()
-                logger.debug(f"Accepted a connection from {addr}...")
-                self._conn_number += 1
-                threading.Thread(
-                    target=forward_connection,
-                    args=[self._conn_number, conn, addr, self._target_host],
-                    daemon=True,
-                ).start()
+                if (
+                    self.callback is not None
+                    and self.callback(self.session_name, self.client_options)
+                    is False
+                ):
+                    self.stop()
+                    logger.error(
+                        f"The serverless session {self.session_name} is not active. Please create a new session"
+                    )
+                    sys.exit(1)
+                if self._killed is False:
+                    conn, addr = frontend_socket.accept()
+                    logger.debug(f"Accepted a connection from {addr}...")
+                    self._conn_number += 1
+                    threading.Thread(
+                        target=forward_connection,
+                        args=[self._conn_number, conn, addr, self._target_host],
+                        daemon=True,
+                    ).start()
 
     def stop(self):
         """Stop the proxy."""

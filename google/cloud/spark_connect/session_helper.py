@@ -17,9 +17,9 @@ from typing import Optional
 from google.cloud.dataproc_v1.types import sessions
 
 from google.cloud.dataproc_v1 import (
-  GetSessionRequest,
-  Session,
-  SessionControllerClient,
+    GetSessionRequest,
+    Session,
+    SessionControllerClient,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -27,28 +27,26 @@ logger = logging.getLogger(__name__)
 
 
 def get_active_s8s_session_response(
-    session_name: str, client_options=None
+    session_name, client_options
 ) -> Optional[sessions.Session]:
-  get_session_request = GetSessionRequest()
-  get_session_request.name = session_name
-  try:
-    get_session_response = SessionControllerClient(
-        client_options=client_options
-    ).get_session(get_session_request)
-    state = get_session_response.state
-  except Exception as e:
-    logger.debug(f"{session_name} deleted: {e}")
+    get_session_request = GetSessionRequest()
+    get_session_request.name = session_name
+    try:
+        get_session_response = SessionControllerClient(
+            client_options=client_options
+        ).get_session(get_session_request)
+        state = get_session_response.state
+    except Exception as e:
+        logger.info(f"{session_name} deleted: {e}")
+        return None
+    if state is not None and (
+        state == Session.State.ACTIVE or state == Session.State.CREATING
+    ):
+        return get_session_response
     return None
 
-  if state is not None and (
-      state == Session.State.ACTIVE or state == Session.State.CREATING
-  ):
-    return get_session_response
-  return None
 
-def is_s8s_session_active(
-    session_name : str
-) -> bool:
-  if get_active_s8s_session_response(session_name) is None:
-    return False
-  return True
+def is_s8s_session_active(session_name, client_options) -> bool:
+    if get_active_s8s_session_response(session_name, client_options) is None:
+        return False
+    return True
