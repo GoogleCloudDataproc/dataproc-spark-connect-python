@@ -17,8 +17,9 @@ import argparse
 import contextlib
 import logging
 import socket
+import sys
 import threading
-import time
+
 
 import websockets.sync.client as websocketclient
 
@@ -161,10 +162,13 @@ def forward_connection(conn_number, conn, addr, target_host):
     This method should be run inside of a daemon thread so that it will not
     block program termination.
     """
-    with conn:
-        with connect_tcp_bridge(target_host) as websocket_conn:
-            backend_socket = bridged_socket(websocket_conn)
-            connect_sockets(conn_number, conn, backend_socket)
+    try:
+        with conn:
+            with connect_tcp_bridge(target_host) as websocket_conn:
+                backend_socket = bridged_socket(websocket_conn)
+                connect_sockets(conn_number, conn, backend_socket)
+    except Exception as e:
+        logger.error(f"forward_connection failed: {e}")
 
 
 class DataprocSessionProxy(object):
@@ -178,12 +182,22 @@ class DataprocSessionProxy(object):
     Default Credentials.
     """
 
-    def __init__(self, port, target_host):
+    def __init__(
+        self,
+        port,
+        target_host,
+        session_name=None,
+        client_options=None,
+        callback=None,
+    ):
         self._port = port
         self._target_host = target_host
         self._started = False
         self._killed = False
         self._conn_number = 0
+        self.session_name = session_name
+        self.client_options = client_options
+        self.callback = callback
 
     @property
     def port(self):
@@ -210,22 +224,33 @@ class DataprocSessionProxy(object):
                 self._port = frontend_socket.getsockname()[1]
             s.release()
             while not self._killed:
-                conn, addr = frontend_socket.accept()
-                # Set a timeout on how long we will allow send/recv calls to block
-                #
-                # The code that reads and writes to this connection will retry
-                # on timeouts, so this is a safe change.
-                #
-                # The chosen timeout is a very short one because it allows us
-                # to more quickly detect when a connection has been closed.
-                conn.settimeout(1)
-                logger.debug(f"Accepted a connection from {addr}...")
-                self._conn_number += 1
-                threading.Thread(
-                    target=forward_connection,
-                    args=[self._conn_number, conn, addr, self._target_host],
-                    daemon=True,
-                ).start()
+                if (
+                    self.callback is not None
+                    and self.callback(self.session_name, self.client_options)
+                    is False
+                ):
+                    self.stop()
+                    logger.error(
+                        f"The serverless session {self.session_name} is not active. Please create a new session"
+                    )
+                    sys.exit(1)
+                if self._killed is False:
+                    conn, addr = frontend_socket.accept()
+                    # Set a timeout on how long we will allow send/recv calls to block
+                    #
+                    # The code that reads and writes to this connection will retry
+                    # on timeouts, so this is a safe change.
+                    #
+                    # The chosen timeout is a very short one because it allows us
+                    # to more quickly detect when a connection has been closed.
+                    conn.settimeout(1)
+                    logger.debug(f"Accepted a connection from {addr}...")
+                    self._conn_number += 1
+                    threading.Thread(
+                        target=forward_connection,
+                        args=[self._conn_number, conn, addr, self._target_host],
+                        daemon=True,
+                    ).start()
 
     def stop(self):
         """Stop the proxy."""
