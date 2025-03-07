@@ -42,6 +42,7 @@ from google.protobuf.text_format import ParseError
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
 
+from google.cloud.spark_connect.exceptions import GoogleSparkConnectException
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -262,9 +263,9 @@ class GoogleSparkSession(SparkSession):
                             )
                 except (InvalidArgument, PermissionDenied) as e:
                     GoogleSparkSession._active_s8s_session_id = None
-                    raise RuntimeError(
+                    raise GoogleSparkConnectException(
                         f"Error while creating serverless session: {e.message}"
-                    ) from None
+                    )
                 except Exception as e:
                     GoogleSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
