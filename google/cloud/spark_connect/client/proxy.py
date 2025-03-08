@@ -81,6 +81,7 @@ def connect_tcp_bridge(hostname):
     return websocketclient.connect(
         f"wss://{hostname}/{path}",
         additional_headers={"Authorization": f"Bearer {creds.token}"},
+        open_timeout=30,
     )
 
 
@@ -163,6 +164,14 @@ def forward_connection(conn_number, conn, addr, target_host):
     """
     with conn:
         with connect_tcp_bridge(target_host) as websocket_conn:
+            # Set a timeout on how long we will allow send/recv calls to block
+            #
+            # The code that reads and writes to this connection will retry
+            # on timeouts, so this is a safe change.
+            #
+            # The chosen timeout is a very short one because it allows us
+            # to more quickly detect when a connection has been closed.
+            conn.settimeout(1)
             backend_socket = bridged_socket(websocket_conn)
             connect_sockets(conn_number, conn, backend_socket)
 
@@ -211,14 +220,6 @@ class DataprocSessionProxy(object):
             s.release()
             while not self._killed:
                 conn, addr = frontend_socket.accept()
-                # Set a timeout on how long we will allow send/recv calls to block
-                #
-                # The code that reads and writes to this connection will retry
-                # on timeouts, so this is a safe change.
-                #
-                # The chosen timeout is a very short one because it allows us
-                # to more quickly detect when a connection has been closed.
-                conn.settimeout(1)
                 logger.debug(f"Accepted a connection from {addr}...")
                 self._conn_number += 1
                 threading.Thread(
