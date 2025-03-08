@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.4](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.3...v0.5.4) (2025-03-08)
+
+
+### Bug Fixes
+
+* catch PermissionDenied errors while creating session ([#53](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/53)) ([b0905cf](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/b0905cfd0916af2d92b892f206f6bc7275e78976))
+* only use error message to throw RuntimError ([#51](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/51)) ([1f9136e](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/1f9136eda682cade422bc1fae68cc2b23273888c))
+* unit test expected error message ([#54](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/54)) ([e43c8bd](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/e43c8bddb28ca0c95c68dc19e0c8abfb24c34460))
+
 ## [0.5.3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.2...v0.5.3) (2025-02-28)
 
 
