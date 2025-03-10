@@ -17,8 +17,9 @@ import argparse
 import contextlib
 import logging
 import socket
+import sys
 import threading
-import time
+
 
 import websockets.sync.client as websocketclient
 
@@ -77,12 +78,15 @@ def connect_tcp_bridge(hostname):
         scopes=["https://www.googleapis.com/auth/cloud-platform"]
     )
     creds.refresh(googleauthrequests.Request())
-
-    return websocketclient.connect(
-        f"wss://{hostname}/{path}",
-        additional_headers={"Authorization": f"Bearer {creds.token}"},
-        open_timeout=30,
-    )
+    try:
+        return websocketclient.connect(
+            f"wss://{hostname}/{path}",
+            additional_headers={"Authorization": f"Bearer {creds.token}"},
+            open_timeout=30,
+        )
+    except Exception as e:
+        logger.error(f"connection failed: {e}")
+        raise e
 
 
 def forward_bytes(name, from_sock, to_sock):
@@ -184,12 +188,22 @@ class DataprocSessionProxy(object):
     Default Credentials.
     """
 
-    def __init__(self, port, target_host):
+    def __init__(
+        self,
+        port,
+        target_host,
+        session_name=None,
+        client_options=None,
+        is_active_callback=None,
+    ):
         self._port = port
         self._target_host = target_host
         self._started = False
         self._killed = False
         self._conn_number = 0
+        self.session_name = session_name
+        self.client_options = client_options
+        self._is_active_callback = is_active_callback
 
     @property
     def port(self):
@@ -210,12 +224,19 @@ class DataprocSessionProxy(object):
         t.start()
         s.acquire()
 
+    def _is_active(self):
+        if self._killed:
+            return False
+        if self._is_active_callback is not None:
+            return self._is_active_callback(self.session_name, self.client_options)
+        return True
+
     def _run(self, s):
         with socket.create_server(("127.0.0.1", self._port)) as frontend_socket:
             if self._port == 0:
                 self._port = frontend_socket.getsockname()[1]
             s.release()
-            while not self._killed:
+            while self._is_active():
                 conn, addr = frontend_socket.accept()
                 logger.debug(f"Accepted a connection from {addr}...")
                 self._conn_number += 1

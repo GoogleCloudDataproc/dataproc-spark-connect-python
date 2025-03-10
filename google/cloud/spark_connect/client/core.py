@@ -11,13 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
+
 import google
 import grpc
 from pyspark.sql.connect.client import ChannelBuilder
 
 from . import proxy
+from ..session_helper import is_s8s_session_active
 
-
+logger = logging.getLogger(__name__)
 class DataprocChannelBuilder(ChannelBuilder):
     """
     This is a helper class that is used to create a GRPC channel based on the given
@@ -36,6 +39,12 @@ class DataprocChannelBuilder(ChannelBuilder):
     True
     """
 
+    def __init__(self, url, session_name, client_options):
+        self._session_name = session_name
+        self._client_options = client_options
+        self._is_active_callback = is_s8s_session_active
+        super().__init__(url)
+
     def toChannel(self) -> grpc.Channel:
         """
         Applies the parameters of the connection string and creates a new
@@ -48,10 +57,14 @@ class DataprocChannelBuilder(ChannelBuilder):
         """
         # TODO: Replace with a direct channel once all compatibility issues with
         # grpc have been resolved.
-        return self._proxied_channel()
+        if self._is_active_callback(self._session_name, self._client_options):
+            return self._proxied_channel()
+        else:
+            print("Session not active. Please create a new session")
+            raise RuntimeError("Session not active. Please create a new session")
 
     def _proxied_channel(self) -> grpc.Channel:
-        return ProxiedChannel(self.host)
+        return ProxiedChannel(self.host, self._session_name, self._client_options)
 
     def _direct_channel(self) -> grpc.Channel:
         destination = f"{self.host}:{self.port}"
@@ -75,8 +88,10 @@ class DataprocChannelBuilder(ChannelBuilder):
 
 class ProxiedChannel(grpc.Channel):
 
-    def __init__(self, target_host):
-        self._proxy = proxy.DataprocSessionProxy(0, target_host)
+    def __init__(self, target_host, session_name, client_options):
+        self._proxy = proxy.DataprocSessionProxy(
+            0, target_host, session_name, client_options, is_s8s_session_active
+        )
         self._proxy.start()
         self._proxied_connect_url = f"sc://localhost:{self._proxy.port}"
         self._wrapped = ChannelBuilder(self._proxied_connect_url).toChannel()
