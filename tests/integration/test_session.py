@@ -149,7 +149,7 @@ def test_create_spark_session_with_default_notebook_behavior(
         "id", "name"
     )
     assert str(df) == "DataFrame[id: bigint, name: string]"
-
+    connect_session.sql("DROP TABLE IF EXISTS FOO")
     connect_session.sql(
         """CREATE TABLE FOO (bar long, baz long) USING PARQUET"""
     )
@@ -161,7 +161,7 @@ def test_create_spark_session_with_default_notebook_behavior(
         assert "[TABLE_OR_VIEW_ALREADY_EXISTS]" in str(ex)
 
     assert GoogleSparkSession._active_s8s_session_uuid is not None
-
+    connect_session.sql("DROP TABLE IF EXISTS FOO")
     connect_session.stop()
     session = session_controller_client.get_session(get_session_request)
 
