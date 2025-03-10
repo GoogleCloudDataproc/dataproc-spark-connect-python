@@ -34,6 +34,7 @@ from pyspark.sql.connect.client.core import ConfigResult
 from pyspark.sql.connect.proto import ConfigResponse
 
 from google.cloud.spark_connect import GoogleSparkSession
+from google.cloud.spark_connect.exceptions import GoogleSparkConnectException
 
 
 class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
@@ -520,7 +521,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client.return_value
         )
         mock_operation = mock.Mock()
-        mock_operation.result.side_effect = InvalidArgument(
+        mock_operation.result.side_effect = Exception(
             "Testing create session failure"
         )
         mock_session_controller_client_instance.create_session.return_value = (
@@ -534,9 +535,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 Session()
             ).getOrCreate()
         self.assertEqual(
-            e.exception.args[0],
-            "Error while creating serverless session: "
-            "Testing create session failure",
+            e.exception.args[0], "Error while creating serverless session"
         )
 
     @mock.patch("google.auth.default")
@@ -559,12 +558,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         cred = mock.MagicMock()
         cred.token = "token"
         mock_credentials.return_value = (cred, "")
-        with self.assertRaises(RuntimeError) as e:
+        with self.assertRaises(GoogleSparkConnectException) as e:
             GoogleSparkSession.builder.googleSessionConfig(
                 Session()
             ).getOrCreate()
             self.assertEqual(
-                e.exception.args[0],
+                e.exception.error_message,
                 "Error while creating serverless session: "
                 "400 Network does not have permissions",
             )
