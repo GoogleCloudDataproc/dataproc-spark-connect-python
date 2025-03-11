@@ -105,7 +105,10 @@ class ProxiedChannel(grpc.Channel):
 
     def _wrap_method(self, wrapped_method):
         def checked_method(*margs, **mkwargs):
-            if not self._is_active_callback():
+            if (
+                self._is_active_callback is not None
+                and not self._is_active_callback()
+            ):
                 logger.warning(f"Session is no longer active")
                 raise RuntimeError(
                     "Session not active. Please create a new session"
