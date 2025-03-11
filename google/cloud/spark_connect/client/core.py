@@ -18,9 +18,10 @@ import grpc
 from pyspark.sql.connect.client import ChannelBuilder
 
 from . import proxy
-from ..session_helper import is_s8s_session_active
 
 logger = logging.getLogger(__name__)
+
+
 class DataprocChannelBuilder(ChannelBuilder):
     """
     This is a helper class that is used to create a GRPC channel based on the given
@@ -39,13 +40,9 @@ class DataprocChannelBuilder(ChannelBuilder):
     True
     """
 
-    def __init__(self, url, session_name, client_options):
-        self._session_name = session_name
-        self._client_options = client_options
+    def __init__(self, url, is_active_callback=None):
+        self._is_active_callback = is_active_callback
         super().__init__(url)
-
-    def is_session_active(self):
-        return is_s8s_session_active(self._session_name, self._client_options)
 
     def toChannel(self) -> grpc.Channel:
         """
@@ -59,14 +56,16 @@ class DataprocChannelBuilder(ChannelBuilder):
         """
         # TODO: Replace with a direct channel once all compatibility issues with
         # grpc have been resolved.
-        if self.is_session_active():
+        if self._is_active_callback():
             return self._proxied_channel()
         else:
             print("Session not active. Please create a new session")
-            raise RuntimeError("Session not active. Please create a new session")
+            raise RuntimeError(
+                "Session not active. Please create a new session"
+            )
 
     def _proxied_channel(self) -> grpc.Channel:
-        return ProxiedChannel(self.host, self.is_session_active)
+        return ProxiedChannel(self.host, self._is_active_callback)
 
     def _direct_channel(self) -> grpc.Channel:
         destination = f"{self.host}:{self.port}"
@@ -90,9 +89,9 @@ class DataprocChannelBuilder(ChannelBuilder):
 
 class ProxiedChannel(grpc.Channel):
 
-    def __init__(self, target_host, is_active):
-        self._is_active = is_active
-        self._proxy = proxy.DataprocSessionProxy(0, target_host, self._is_active)
+    def __init__(self, target_host, is_active_callback):
+        self._is_active_callback = is_active_callback
+        self._proxy = proxy.DataprocSessionProxy(0, target_host)
         self._proxy.start()
         self._proxied_connect_url = f"sc://localhost:{self._proxy.port}"
         self._wrapped = ChannelBuilder(self._proxied_connect_url).toChannel()
@@ -112,12 +111,15 @@ class ProxiedChannel(grpc.Channel):
 
     def _wrap_method(self, wrapped_method):
         def checked_method(*margs, **mkwargs):
-            if not self._is_active():
-                logger.warn(f'Session is no longer active')
-                raise RuntimeError("Session not active. Please create a new session")
+            if not self._is_active_callback():
+                logger.warning(f"Session is no longer active")
+                raise RuntimeError(
+                    "Session not active. Please create a new session"
+                )
             return wrapped_method(*margs, **mkwargs)
+
         return checked_method
-        
+
     def stream_stream(self, *args, **kwargs):
         return self._wrap_method(self._wrapped.stream_stream(*args, **kwargs))
 

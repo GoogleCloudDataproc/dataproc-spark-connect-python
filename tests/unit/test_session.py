@@ -61,14 +61,17 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
     )
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_create_spark_session_with_default_notebook_behavior(
         self,
+        mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
         mock_session_controller_client,
         mock_credentials,
     ):
         session = None
+        mock_is_s8s_session_active.return_value = True
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
@@ -151,14 +154,17 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
     )
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_create_session_with_user_provided_dataproc_config(
         self,
+        mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
         mock_session_controller_client,
         mock_credentials,
     ):
         session = None
+        mock_is_s8s_session_active.return_value = True
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
@@ -260,8 +266,10 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
     )
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_create_session_with_session_template(
         self,
+        mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
         mock_session_controller_client,
@@ -269,6 +277,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_session_template_controller_client,
     ):
         session = None
+        mock_is_s8s_session_active.return_value = True
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
@@ -359,8 +368,10 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
     )
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_create_session_with_user_provided_dataproc_config_and_session_template(
         self,
+        mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
         mock_session_controller_client,
@@ -368,6 +379,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_session_template_controller_client,
     ):
         session = None
+        mock_is_s8s_session_active.return_value = True
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
@@ -568,16 +580,58 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 "400 Network does not have permissions",
             )
 
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch(
+        "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
+    def test_spark_session_with_inactive_s8s_session(
+        self,
+        mock_is_s8s_session_active,
+        mock_dataproc_session_id,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        mock_is_s8s_session_active.return_value = False
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+
+        mock_dataproc_session_id.return_value = "sc-20240702-103952-abcdef"
+        cred = mock.MagicMock()
+        cred.token = "token"
+        mock_credentials.return_value = (cred, "")
+        mock_operation = mock.Mock()
+        session_response = Session()
+        session_response.runtime_info.endpoints = {
+            "Spark Connect Server": "https://spark-connect-server/"
+        }
+        session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+        mock_operation.result.side_effect = [session_response]
+        mock_session_controller_client_instance.create_session.return_value = (
+            mock_operation
+        )
+        with self.assertRaises(RuntimeError) as e:
+            GoogleSparkSession.builder.getOrCreate()
+            self.assertEqual(
+                e.exception.args[0],
+                "Session not active. Please create a new session ",
+            )
+
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_stop_spark_session_with_terminated_s8s_session(
         self,
+        mock_is_s8s_session_active,
         mock_session_controller_client,
         mock_credentials,
         mock_client_config,
     ):
         session = None
+        mock_is_s8s_session_active.return_value = True
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
@@ -611,13 +665,16 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_stop_spark_session_with_creating_s8s_session(
         self,
+        mock_is_s8s_session_active,
         mock_session_controller_client,
         mock_credentials,
         mock_client_config,
     ):
         session = None
+        mock_is_s8s_session_active.return_value = True
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
@@ -651,13 +708,16 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_stop_spark_session_with_deleted_s8s_session(
         self,
+        mock_is_s8s_session_active,
         mock_session_controller_client,
         mock_credentials,
         mock_client_config,
     ):
         session = None
+        mock_is_s8s_session_active.return_value = True
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
@@ -694,14 +754,17 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
     )
+    @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_stop_spark_session_wait_for_terminating_state(
         self,
+        mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_session_controller_client,
         mock_credentials,
         mock_client_config,
     ):
         session = None
+        mock_is_s8s_session_active.return_value = True
         mock_dataproc_session_id.return_value = "sc-20240702-103952-abcdef"
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
