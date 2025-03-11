@@ -42,7 +42,6 @@ from google.protobuf.text_format import ParseError
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
 
-
 from google.cloud.spark_connect.exceptions import GoogleSparkConnectException
 
 # Set up logging
