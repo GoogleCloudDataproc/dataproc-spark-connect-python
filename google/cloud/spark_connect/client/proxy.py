@@ -192,8 +192,6 @@ class DataprocSessionProxy(object):
         self,
         port,
         target_host,
-        session_name=None,
-        client_options=None,
         is_active_callback=None,
     ):
         self._port = port
@@ -201,8 +199,6 @@ class DataprocSessionProxy(object):
         self._started = False
         self._killed = False
         self._conn_number = 0
-        self.session_name = session_name
-        self.client_options = client_options
         self._is_active_callback = is_active_callback
 
     @property
@@ -228,7 +224,7 @@ class DataprocSessionProxy(object):
         if self._killed:
             return False
         if self._is_active_callback is not None:
-            return self._is_active_callback(self.session_name, self.client_options)
+            return self._is_active_callback()
         return True
 
     def _run(self, s):
