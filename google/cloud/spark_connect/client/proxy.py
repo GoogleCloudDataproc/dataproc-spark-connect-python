@@ -17,9 +17,8 @@ import argparse
 import contextlib
 import logging
 import socket
-import sys
 import threading
-
+import time
 
 import websockets.sync.client as websocketclient
 
@@ -185,11 +184,7 @@ class DataprocSessionProxy(object):
     Default Credentials.
     """
 
-    def __init__(
-        self,
-        port,
-        target_host,
-    ):
+    def __init__(self, port, target_host):
         self._port = port
         self._target_host = target_host
         self._started = False

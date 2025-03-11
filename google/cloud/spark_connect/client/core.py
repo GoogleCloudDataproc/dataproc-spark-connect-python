@@ -56,13 +56,7 @@ class DataprocChannelBuilder(ChannelBuilder):
         """
         # TODO: Replace with a direct channel once all compatibility issues with
         # grpc have been resolved.
-        if self._is_active_callback():
-            return self._proxied_channel()
-        else:
-            print("Session not active. Please create a new session")
-            raise RuntimeError(
-                "Session not active. Please create a new session"
-            )
+        return self._proxied_channel()
 
     def _proxied_channel(self) -> grpc.Channel:
         return ProxiedChannel(self.host, self._is_active_callback)
