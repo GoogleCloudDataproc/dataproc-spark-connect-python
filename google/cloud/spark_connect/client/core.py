@@ -104,6 +104,9 @@ class ProxiedChannel(grpc.Channel):
         return ret
 
     def _wrap_method(self, wrapped_method):
+        if self._is_active_callback is None:
+            return wrapped_method
+
         def checked_method(*margs, **mkwargs):
             if (
                 self._is_active_callback is not None

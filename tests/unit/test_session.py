@@ -593,12 +593,14 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_session_controller_client,
         mock_credentials,
     ):
+        session = None
         mock_is_s8s_session_active.return_value = False
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
 
         mock_dataproc_session_id.return_value = "sc-20240702-103952-abcdef"
+
         cred = mock.MagicMock()
         cred.token = "token"
         mock_credentials.return_value = (cred, "")
@@ -613,11 +615,21 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_operation
         )
         with self.assertRaises(RuntimeError) as e:
-            GoogleSparkSession.builder.getOrCreate()
+            session = GoogleSparkSession.builder.getOrCreate()
+            session.createDataFrame([(1, "Sarah"), (2, "Maria")]).toDF(
+                "id", "name"
+            ).show()
             self.assertEqual(
                 e.exception.args[0],
                 "Session not active. Please create a new session ",
             )
+        session_response = Session()
+        session_response.state = Session.State.TERMINATING
+        mock_session_controller_client_instance.get_session.return_value = (
+            session_response
+        )
+        if session is not None:
+            session.stop()
 
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch("google.auth.default")
