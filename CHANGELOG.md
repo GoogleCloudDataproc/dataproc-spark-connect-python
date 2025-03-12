@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.4...v0.5.5) (2025-03-12)
+
+
+### Bug Fixes
+
+* Check if the s8s session is terminated before creating connection ([#55](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/55)) ([9f7e806](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/9f7e806580e0e27a8041247eb19a84aff3019b6c))
+
 ## [0.5.4](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.3...v0.5.4) (2025-03-10)
 
 
