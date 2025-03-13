@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.5...v0.5.6) (2025-03-13)
+
+
+### Bug Fixes
+
+* return error message in _render_traceback_ ([#60](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/60)) ([9bc71d7](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/9bc71d7b2d4c081d0840ec72fdc1093920884584))
+
 ## [0.5.5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.4...v0.5.5) (2025-03-12)
 
 
