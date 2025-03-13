@@ -19,9 +19,9 @@ class GoogleSparkConnectException(Exception):
     doesn't provide any additional information.h
     """
 
-    def __init__(self, error_message):
-        self.error_message = error_message
-        super().__init__()
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
 
     def _render_traceback_(self):
-        print(self.error_message)
+        return self.message
