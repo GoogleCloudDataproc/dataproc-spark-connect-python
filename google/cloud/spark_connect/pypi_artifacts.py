@@ -9,6 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class PyPiArtifacts:
+    """
+    This is a helper class to serialize the PYPI package installation request with a "magic" file name
+    that Spark Connect server understands
+    """
 
     @staticmethod
     def __try_parsing_package(packages: set[str]) -> list[Requirement]:
@@ -21,18 +25,24 @@ class PyPiArtifacts:
         self.requirements = PyPiArtifacts.__try_parsing_package(packages)
 
     def dump_to_file(self, s8s_uuid: str) -> str:
+        """
+        Can't use the same file-name as Spark throws exception that file already exists
+        Keep the filename/format in sync with server
+        """
         dependencies = {
-            "client-version": "0.5.0",
-            "type": "PYPI",
+            "version": "0.5",
+            "packageType": "PYPI",
             "packages": [str(req) for req in self.requirements],
         }
 
-        # Can't use the same file as Spark throws exception that file already exists
         file_path = os.path.join(
             tempfile.gettempdir(),
-            ".deps-" + s8s_uuid + "-" + self.__str__() + ".json",
+            s8s_uuid,
+            "add-artifacts-1729-" + self.__str__() + ".json",
         )
 
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w") as json_file:
             json.dump(dependencies, json_file, indent=4)
+        logger.debug("Dumping dependencies request in file: " + file_path)
         return file_path

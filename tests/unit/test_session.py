@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import os
-import tempfile
 import unittest
 from unittest import mock
 
@@ -173,6 +171,14 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         self.assertTrue(isinstance(session, GoogleSparkSession))
 
         session.addArtifact = mock.MagicMock()
+
+        # Setting two flags together
+        with self.assertRaisesRegex(
+                ValueError,
+                "'pyfile', 'archive', 'file' and/or 'pypi' cannot be True together",
+        ):
+            session.addArtifacts("abc.txt", file=True, pypi=True)
+
         # Happy case
         session.addArtifacts("spacy", pypi=True)
 

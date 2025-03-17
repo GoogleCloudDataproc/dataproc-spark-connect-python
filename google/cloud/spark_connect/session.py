@@ -530,6 +530,7 @@ class GoogleSparkSession(SparkSession):
                 return
             artifacts = PyPiArtifacts(to_install)
 
+            logger.debug("Making addArtifact call to install packages")
             self.addArtifact(
                 artifacts.dump_to_file(self._active_s8s_session_uuid), file=True
             )
