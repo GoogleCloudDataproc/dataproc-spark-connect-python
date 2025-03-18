@@ -174,8 +174,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
 
         # Setting two flags together
         with self.assertRaisesRegex(
-                ValueError,
-                "'pyfile', 'archive', 'file' and/or 'pypi' cannot be True together",
+            ValueError,
+            "'pyfile', 'archive', 'file' and/or 'pypi' cannot be True together",
         ):
             session.addArtifacts("abc.txt", file=True, pypi=True)
 

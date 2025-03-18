@@ -18,7 +18,7 @@ class PyPiArtifactsTest(unittest.TestCase):
                 "spacy>=1.2",
                 "spacy==1.2.*",
                 "spacy==1.*",
-                "abc.whl"
+                "abc.whl",
             }
         ).dump_to_file("uuid")
         os.remove(file)
@@ -42,9 +42,7 @@ class PyPiArtifactsTest(unittest.TestCase):
         )
 
     def test_validate_file_name_pattern(self):
-        file_path = PyPiArtifacts(
-            {"spacy==1.2"}
-        ).dump_to_file("uuid")
+        file_path = PyPiArtifacts({"spacy==1.2"}).dump_to_file("uuid")
         file_name = os.path.basename(file_path)
         self.assertTrue(file_name.startswith("add-artifacts-1729-"))
         self.assertTrue(file_name.endswith(".json"))
