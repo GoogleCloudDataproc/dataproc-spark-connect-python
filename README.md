@@ -30,14 +30,14 @@ If you are running the client outside of Google Cloud, you must set following en
 
 1. Install the latest version of Dataproc Python client and Google Spark Connect modules:
 
-   .. code-block:: console
+      .. code-block:: console
 
             pip install google_cloud_dataproc --force-reinstall
             pip install google_spark_connect --force-reinstall
 
 2. Add the required import into your PySpark application or notebook:
 
-   .. code-block:: python
+      .. code-block:: python
 
             from google.cloud.spark_connect import GoogleSparkSession
 
@@ -70,26 +70,26 @@ This will happen even if you are running the client from a non-GCE instance.
 
 1. Install the requirements in virtual environment.
 
-   .. code-block:: console
+      .. code-block:: console
 
             pip install -r requirements.txt
 
 2. Build the code.
 
-   .. code-block:: console
+      .. code-block:: console
 
             python setup.py sdist bdist_wheel
 
 
 3. Copy the generated `.whl` file to Cloud Storage. Use the version specified in the `setup.py` file.
 
-   .. code-block:: console
+      .. code-block:: console
 
             VERSION=<version> gsutil cp dist/google_spark_connect-${VERSION}-py2.py3-none-any.whl gs://<your_bucket_name>
 
 4. Download the new SDK on Vertex, then uninstall the old version and install the new one.
 
-   .. code-block:: console
+      .. code-block:: console
 
             %%bash
             export VERSION=<version>
