@@ -179,20 +179,30 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         ):
             session.addArtifacts("abc.txt", file=True, pypi=True)
 
-        # Happy case
+        # Propagate error
+        session.addArtifact.side_effect = Exception("Error installing")
+        with self.assertRaisesRegex(
+            Exception,
+            "Error installing",
+        ):
+            session.addArtifacts("spacy", pypi=True)
+        session.addArtifact.side_effect = None
+
+        # Do install if earlier add artifact resulted in failure
         session.addArtifacts("spacy", pypi=True)
+        self.assertEqual(session.addArtifact.call_count, 2)
 
         # Do nothing if package already installed earlier
         session.addArtifacts("spacy", pypi=True)
-        self.assertEqual(session.addArtifact.call_count, 1)
+        self.assertEqual(session.addArtifact.call_count, 2)
 
         # When same package called with different version, trigger installation
         session.addArtifacts("spacy==1.2.3", pypi=True)
-        self.assertEqual(session.addArtifact.call_count, 2)
+        self.assertEqual(session.addArtifact.call_count, 3)
 
         # test multiple packages, when already installed
         session.addArtifacts("spacy==1.2.3", "spacy", pypi=True)
-        self.assertEqual(session.addArtifact.call_count, 2)
+        self.assertEqual(session.addArtifact.call_count, 3)
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
