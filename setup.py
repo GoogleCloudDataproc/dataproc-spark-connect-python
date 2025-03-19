@@ -32,5 +32,6 @@ setup(
         "google-cloud-dataproc>=5.18.0",
         "websockets",
         "pyspark[connect]>=3.5",
+        "packaging>=20.0",
     ],
 )

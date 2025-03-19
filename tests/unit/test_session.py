@@ -148,6 +148,62 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 get_session_request
             )
 
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    def test_pypi_add_artifacts(
+        self,
+        mock_session_controller_client,
+    ):
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+        mock_operation = mock.Mock()
+        session_response = Session()
+        session_response.runtime_info.endpoints = {
+            "Spark Connect Server": "https://spark-connect-server/"
+        }
+        session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+        mock_operation.result.side_effect = [session_response]
+        mock_session_controller_client_instance.create_session.return_value = (
+            mock_operation
+        )
+        session = GoogleSparkSession.builder.getOrCreate()
+
+        self.assertTrue(isinstance(session, GoogleSparkSession))
+
+        session.addArtifact = mock.MagicMock()
+
+        # Setting two flags together
+        with self.assertRaisesRegex(
+            ValueError,
+            "'pyfile', 'archive', 'file' and/or 'pypi' cannot be True together",
+        ):
+            session.addArtifacts("abc.txt", file=True, pypi=True)
+
+        # Propagate error
+        session.addArtifact.side_effect = Exception("Error installing")
+        with self.assertRaisesRegex(
+            Exception,
+            "Error installing",
+        ):
+            session.addArtifacts("spacy", pypi=True)
+        session.addArtifact.side_effect = None
+
+        # Do install if earlier add artifact resulted in failure
+        session.addArtifacts("spacy", pypi=True)
+        self.assertEqual(session.addArtifact.call_count, 2)
+
+        # Do nothing if package already installed earlier
+        session.addArtifacts("spacy", pypi=True)
+        self.assertEqual(session.addArtifact.call_count, 2)
+
+        # When same package called with different version, trigger installation
+        session.addArtifacts("spacy==1.2.3", pypi=True)
+        self.assertEqual(session.addArtifact.call_count, 3)
+
+        # test multiple packages, when already installed
+        session.addArtifacts("spacy==1.2.3", "spacy", pypi=True)
+        self.assertEqual(session.addArtifact.call_count, 3)
+
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
