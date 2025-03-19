@@ -4,3 +4,4 @@ pyink~=24.0
 pyspark[connect]==3.5
 setuptools>=72.0.0
 websockets>=12.0
+packaging>=20.0

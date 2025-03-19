@@ -24,7 +24,7 @@ class PyPiArtifacts:
     def __init__(self, packages: set[str]):
         self.requirements = PyPiArtifacts.__try_parsing_package(packages)
 
-    def dump_to_file(self, s8s_uuid: str) -> str:
+    def write_packages_config(self, s8s_session_uuid: str) -> str:
         """
         Can't use the same file-name as Spark throws exception that file already exists
         Keep the filename/format in sync with server
@@ -37,7 +37,7 @@ class PyPiArtifacts:
 
         file_path = os.path.join(
             tempfile.gettempdir(),
-            s8s_uuid,
+            s8s_session_uuid,
             "add-artifacts-1729-" + self.__str__() + ".json",
         )
 

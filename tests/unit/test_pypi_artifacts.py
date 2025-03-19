@@ -20,7 +20,7 @@ class PyPiArtifactsTest(unittest.TestCase):
                 "spacy==1.*",
                 "abc.whl",
             }
-        ).dump_to_file("uuid")
+        ).write_packages_config("uuid")
         os.remove(file)
 
     def test_bad_format(self):
@@ -33,7 +33,7 @@ class PyPiArtifactsTest(unittest.TestCase):
     def test_validate_file_content(self):
         file_path = PyPiArtifacts(
             {"spacy==1.2", "pkg>=1.2", "abc"}
-        ).dump_to_file("uuid")
+        ).write_packages_config("uuid")
         actual = json.load(open(file_path))
         self.assertEqual("0.5", actual["version"])
         self.assertEqual("PYPI", actual["packageType"])
@@ -42,7 +42,7 @@ class PyPiArtifactsTest(unittest.TestCase):
         )
 
     def test_validate_file_name_pattern(self):
-        file_path = PyPiArtifacts({"spacy==1.2"}).dump_to_file("uuid")
+        file_path = PyPiArtifacts({"spacy==1.2"}).write_packages_config("uuid")
         file_name = os.path.basename(file_path)
         self.assertTrue(file_name.startswith("add-artifacts-1729-"))
         self.assertTrue(file_name.endswith(".json"))

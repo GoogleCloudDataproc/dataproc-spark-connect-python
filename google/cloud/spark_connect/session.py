@@ -532,7 +532,8 @@ class GoogleSparkSession(SparkSession):
 
             logger.debug("Making addArtifact call to install packages")
             self.addArtifact(
-                artifacts.dump_to_file(self._active_s8s_session_uuid), file=True
+                artifacts.write_packages_config(self._active_s8s_session_uuid),
+                file=True,
             )
             self._installed_artifacts.update(to_install)
         else:
