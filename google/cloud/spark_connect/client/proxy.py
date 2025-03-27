@@ -104,7 +104,9 @@ def forward_bytes(name, from_sock, to_sock):
             if not bs:
                 to_sock.close()
                 return
-            while bs:
+            attempt = 0
+            while bs and (attempt < 10):
+                attempt += 1
                 try:
                     to_sock.send(bs)
                     bs = None
@@ -112,6 +114,8 @@ def forward_bytes(name, from_sock, to_sock):
                     # On timeouts during a send, we retry just the send
                     # to make sure we don't lose any bytes.
                     pass
+            if bs:
+                raise Exception(f"Failed to forward bytes for {name}")
         except TimeoutError:
             # On timeouts during a receive, we retry the entire flow.
             pass
