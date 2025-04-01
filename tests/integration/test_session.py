@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import dataclasses
 import datetime
 import os
 import tempfile
@@ -39,20 +38,6 @@ from google.cloud.spark_connect import GoogleSparkSession
 
 
 _SERVICE_ACCOUNT_KEY_FILE_ = "service_account_key.json"
-
-
-class AuthType:
-    pass
-
-
-@dataclasses.dataclass(frozen=True)
-class AuthServiceAccount(AuthType):
-    service_account: str
-
-
-@dataclasses.dataclass(frozen=True)
-class AuthEndUser(AuthType):
-    pass
 
 
 def get_auth_types():
@@ -85,9 +70,7 @@ def test_project():
 
 @pytest.fixture(params=get_auth_types())
 def auth_type(request):
-    # print("getting auth type from", request)
     return request.param
-    # return getattr(request, "param", "SERVICE_ACCOUNT")
 
 
 @pytest.fixture
@@ -135,7 +118,7 @@ def default_config(
         # case AuthServiceAccount(service_account):
         case "SERVICE_ACCOUNT":
             template_file = os.path.join(
-                resources_dir, "session_service_acount.textproto"
+                resources_dir, "session_service_account.textproto"
             )
         # case AuthEndUser():
         case "END_USER_CREDENTIALS":
