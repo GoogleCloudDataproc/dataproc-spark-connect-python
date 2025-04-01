@@ -21,6 +21,8 @@ steps:
       - 'GOOGLE_CLOUD_SUBNET=${_GOOGLE_CLOUD_SUBNET}'
       - 'GOOGLE_CLOUD_PROJECT=${_GOOGLE_CLOUD_PROJECT}'
       - 'GOOGLE_CLOUD_REGION=${_GOOGLE_CLOUD_REGION}'
+      - 'GOOGLE_CLOUD_SERVICE_ACCOUNT=${_GOOGLE_CLOUD_SERVICE_ACCOUNT}'
+      - 'TEST_SUPPRESS_END_USER_CREDENTIALS=1'
   - name: 'gcr.io/${PROJECT_ID}/google-spark-connect/google-spark-connect-presubmit'
     id: 'verify-status'
     waitFor: ['run-unit-tests', 'run-integration-tests']
