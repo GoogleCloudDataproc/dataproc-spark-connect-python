@@ -113,7 +113,7 @@ def test_subnet():
 @pytest.fixture
 def test_service_account():
     # The service account may be empty, in which case we skip SA-based testing.
-    return os.environ.get("GOOGLE_SERVICE_ACCOUNT")
+    return os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT")
 
 
 @pytest.fixture
