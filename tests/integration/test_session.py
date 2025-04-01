@@ -140,6 +140,7 @@ def default_config(
             contents = contents.replace(
                 "service-account-placeholder", test_service_account
             )
+    print("CONFIG CONTENTS:", contents)
     with tempfile.NamedTemporaryFile(delete=False) as t:
         t.write(contents.encode("utf-8"))
         t.close()
