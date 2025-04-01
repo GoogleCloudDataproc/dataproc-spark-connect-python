@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datetime
+import enum
 import os
 import tempfile
 import uuid
@@ -40,17 +41,33 @@ from google.cloud.spark_connect import GoogleSparkSession
 _SERVICE_ACCOUNT_KEY_FILE_ = "service_account_key.json"
 
 
+class AuthType(enum.Enum):
+    SERVICE_ACCOUNT = "SERVICE_ACCOUNT"
+    END_USER_CREDENTIALS = "END_USER_CREDENTIALS"
+
+
 def get_auth_types():
     service_account = os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT")
     suppress_end_user_creds = os.environ.get(
         "TEST_SUPPRESS_END_USER_CREDENTIALS"
     )
     if service_account:
-        # yield AuthServiceAccount(service_account)
-        yield "SERVICE_ACCOUNT"
+        yield AuthType.SERVICE_ACCOUNT
     if not suppress_end_user_creds or suppress_end_user_creds == "0":
-        # yield AuthEndUser()
-        yield "END_USER_CREDENTIALS"
+        yield AuthType.END_USER_CREDENTIALS
+
+
+def get_config_path(auth_type):
+    resources_dir = os.path.join(os.path.dirname(__file__), "resources")
+    match auth_type:
+        case AuthType.SERVICE_ACCOUNT:
+            return os.path.join(
+                resources_dir, "session_service_account.textproto"
+            )
+        case AuthType.END_USER_CREDENTIALS:
+            return os.path.join(resources_dir, "session_user.textproto")
+        case _:
+            raise Exception(f"unknown auth_type: {auth_type}")
 
 
 @pytest.fixture(params=["2.2", "3.0"])
@@ -113,36 +130,21 @@ def default_config(
     test_region,
     test_subnetwork_uri,
 ):
-    resources_dir = os.path.join(os.path.dirname(__file__), "resources")
-    match auth_type:
-        # case AuthServiceAccount(service_account):
-        case "SERVICE_ACCOUNT":
-            template_file = os.path.join(
-                resources_dir, "session_service_account.textproto"
-            )
-        # case AuthEndUser():
-        case "END_USER_CREDENTIALS":
-            template_file = os.path.join(
-                resources_dir, "session_user.textproto"
-            )
-            # Hack: clobber the test service account if not needed.
-            test_service_account = None
-        case _:
-            raise Exception(f"unknown auth_type: {auth_type}")
+    template_file = get_config_path(auth_type)
     with open(template_file) as f:
         template = f.read()
         contents = template.replace("2.2", image_version).replace(
             "subnet-placeholder", test_subnetwork_uri
         )
-        if test_service_account:
+        if auth_type == AuthType.SERVICE_ACCOUNT:
             contents = contents.replace(
                 "service-account-placeholder", test_service_account
             )
-        with tempfile.NamedTemporaryFile(delete=False) as t:
-            t.write(contents.encode("utf-8"))
-            t.close()
-            yield t.name
-            os.remove(t.name)
+    with tempfile.NamedTemporaryFile(delete=False) as t:
+        t.write(contents.encode("utf-8"))
+        t.close()
+        yield t.name
+        os.remove(t.name)
 
 
 @pytest.fixture
