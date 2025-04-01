@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import dataclasses
 import datetime
 import os
 import tempfile
@@ -40,6 +41,33 @@ from google.cloud.spark_connect import GoogleSparkSession
 _SERVICE_ACCOUNT_KEY_FILE_ = "service_account_key.json"
 
 
+class AuthType:
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class AuthServiceAccount(AuthType):
+    service_account: str
+
+
+@dataclasses.dataclass(frozen=True)
+class AuthEndUser(AuthType):
+    pass
+
+
+def get_auth_types():
+    service_account = os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT")
+    suppress_end_user_creds = os.environ.get(
+        "TEST_SUPPRESS_END_USER_CREDENTIALS"
+    )
+    if service_account:
+        # yield AuthServiceAccount(service_account)
+        yield "SERVICE_ACCOUNT"
+    if not suppress_end_user_creds or suppress_end_user_creds == "0":
+        # yield AuthEndUser()
+        yield "END_USER_CREDENTIALS"
+
+
 @pytest.fixture(params=["2.2", "3.0"])
 def image_version(request):
     return request.param
@@ -47,26 +75,46 @@ def image_version(request):
 
 @pytest.fixture
 def test_project():
-    return os.environ.get("GOOGLE_CLOUD_PROJECT")
+    project = os.environ.get("GOOGLE_CLOUD_PROJECT")
+    if project is None:
+        raise Exception(
+            "must set a project through GOOGLE_CLOUD_PROJECT environment variable"
+        )
+    return project
 
 
-@pytest.fixture
+@pytest.fixture(params=get_auth_types())
 def auth_type(request):
-    return getattr(request, "param", "SERVICE_ACCOUNT")
+    # print("getting auth type from", request)
+    return request.param
+    # return getattr(request, "param", "SERVICE_ACCOUNT")
 
 
 @pytest.fixture
 def test_region():
-    return os.environ.get("GOOGLE_CLOUD_REGION")
+    region = os.environ.get("GOOGLE_CLOUD_REGION")
+    if region is None:
+        raise Exception(
+            "must set region through GOOGLE_CLOUD_REGION environment variable"
+        )
+    return region
 
 
 @pytest.fixture
 def test_subnet():
-    return os.environ.get("GOOGLE_CLOUD_SUBNET")
+    subnet = os.environ.get("GOOGLE_CLOUD_SUBNET")
+    if subnet is None:
+        raise Exception(
+            "must set subnet through GOOGLE_CLOUD_SUBNET environment variable"
+        )
+    return subnet
+
 
 @pytest.fixture
 def test_service_account():
+    # The service account may be empty, in which case we skip SA-based testing.
     return os.environ.get("GOOGLE_SERVICE_ACCOUNT")
+
 
 @pytest.fixture
 def test_subnetwork_uri(test_project, test_region, test_subnet):
@@ -75,18 +123,38 @@ def test_subnetwork_uri(test_project, test_region, test_subnet):
 
 @pytest.fixture
 def default_config(
-    auth_type, image_version, test_project, test_region, test_service_account, test_subnetwork_uri
+    auth_type,
+    test_service_account,
+    image_version,
+    test_project,
+    test_region,
+    test_subnetwork_uri,
 ):
     resources_dir = os.path.join(os.path.dirname(__file__), "resources")
-    template_file = os.path.join(resources_dir, "session.textproto")
+    match auth_type:
+        # case AuthServiceAccount(service_account):
+        case "SERVICE_ACCOUNT":
+            template_file = os.path.join(
+                resources_dir, "session_service_acount.textproto"
+            )
+        # case AuthEndUser():
+        case "END_USER_CREDENTIALS":
+            template_file = os.path.join(
+                resources_dir, "session_user.textproto"
+            )
+            # Hack: clobber the test service account if not needed.
+            test_service_account = None
+        case _:
+            raise Exception(f"unknown auth_type: {auth_type}")
     with open(template_file) as f:
         template = f.read()
-        contents = (
-            template.replace("2.2", image_version)
-            .replace("subnet-placeholder", test_subnetwork_uri)
-            .replace("service-account-placeholder", test_service_account)
-            .replace("SERVICE_ACCOUNT", auth_type)
+        contents = template.replace("2.2", image_version).replace(
+            "subnet-placeholder", test_subnetwork_uri
         )
+        if test_service_account:
+            contents = contents.replace(
+                "service-account-placeholder", test_service_account
+            )
         with tempfile.NamedTemporaryFile(delete=False) as t:
             t.write(contents.encode("utf-8"))
             t.close()
@@ -140,10 +208,13 @@ def session_name(test_project, test_region, connect_session):
     return f"projects/{test_project}/locations/{test_region}/sessions/{GoogleSparkSession._active_s8s_session_id}"
 
 
-@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+# @pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
 def test_create_spark_session_with_default_notebook_behavior(
-    auth_type, connect_session, session_name, session_controller_client
+    connect_session,
+    session_name,
+    session_controller_client,
 ):
+    # print("auth type parameter:", auth_type)
     get_session_request = GetSessionRequest()
     get_session_request.name = session_name
     session = session_controller_client.get_session(get_session_request)

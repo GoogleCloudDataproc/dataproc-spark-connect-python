@@ -46,7 +46,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         )
         self.original_environment = dict(os.environ)
         os.environ["DATAPROC_SPARK_CONNECT_SESSION_DEFAULT_CONFIG"] = (
-            self._resources_dir + "/session.textproto"
+            self._resources_dir + "/session_user.textproto"
         )
         os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
         os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
