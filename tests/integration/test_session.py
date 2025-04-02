@@ -186,6 +186,7 @@ def session_template_controller_client(test_client_options):
 
 @pytest.fixture
 def connect_session(test_project, test_region, os_environment):
+    print("CREATING SESSION (TEST)", flush=True)
     return GoogleSparkSession.builder.getOrCreate()
 
 
@@ -203,6 +204,7 @@ def test_create_spark_session_with_default_notebook_behavior(
     # print("auth type parameter:", auth_type)
     get_session_request = GetSessionRequest()
     get_session_request.name = session_name
+    print("GET SESSION REQUEST (TEST):", get_session_request, flush=True)
     session = session_controller_client.get_session(get_session_request)
     assert session.state == Session.State.ACTIVE
 

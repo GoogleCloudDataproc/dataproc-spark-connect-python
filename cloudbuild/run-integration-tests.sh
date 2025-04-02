@@ -5,7 +5,7 @@ function main() {
 }
 
 function run_tests() {
-    pytest -n 10 tests/integration
+    pytest -n 10 --log-cli-level=DEBUG tests/integration
 }
 
 main "$@"

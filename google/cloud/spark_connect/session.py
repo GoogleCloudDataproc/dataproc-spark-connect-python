@@ -172,6 +172,7 @@ class GoogleSparkSession(SparkSession):
             return session
 
         def __create(self) -> "SparkSession":
+            print("CREATING SPARK SESSION", flush=True)
             with self._lock:
 
                 if self._options.get("spark.remote", False):
