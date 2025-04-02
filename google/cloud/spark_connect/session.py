@@ -208,6 +208,8 @@ class GoogleSparkSession(SparkSession):
                     f"projects/{self._project_id}/locations/{self._region}"
                 )
 
+                print("FULL SESSION REQUEST:", session_request, flush=True)
+
                 logger.debug("Creating serverless session")
                 GoogleSparkSession._active_s8s_session_id = session_id
                 s8s_creation_start_time = time.time()
