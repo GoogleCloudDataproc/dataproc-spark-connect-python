@@ -370,6 +370,8 @@ def session_template_name(
 
 
 def test_create_spark_session_with_session_template_and_user_provided_dataproc_config(
+    auth_type,
+    test_service_account,
     image_version,
     test_project,
     test_region,
@@ -377,6 +379,19 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
     session_controller_client,
 ):
     dataproc_config = Session()
+    match auth_type:
+        case AuthType.END_USER_CREDENTIALS:
+            # This is the default
+            pass
+        case AuthType.SERVICE_ACCOUNT:
+            dataproc_config.environment_config.execution_config.service_account = (
+                test_service_account
+            )
+            dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                "SERVICE_ACCOUNT"
+            )
+        case _:
+            raise Exception(f"unknown auth_type: {auth_type}")
     dataproc_config.environment_config.execution_config.ttl = {"seconds": 64800}
     dataproc_config.session_template = session_template_name
     connect_session = (
