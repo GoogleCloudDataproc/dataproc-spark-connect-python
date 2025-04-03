@@ -31,3 +31,5 @@ steps:
       - 'BUILD_ID=${BUILD_ID}'
       - 'GOOGLE_CLOUD_PROJECT=${PROJECT_ID}'
 timeout: 1800s
+options:
+    defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
