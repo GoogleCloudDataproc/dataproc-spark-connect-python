@@ -172,6 +172,7 @@ class GoogleSparkSession(SparkSession):
             return session
 
         def __create(self) -> "SparkSession":
+            print("CREATING SPARK SESSION", flush=True)
             with self._lock:
 
                 if self._options.get("spark.remote", False):
@@ -207,6 +208,8 @@ class GoogleSparkSession(SparkSession):
                 session_request.parent = (
                     f"projects/{self._project_id}/locations/{self._region}"
                 )
+
+                print("FULL SESSION REQUEST:", session_request, flush=True)
 
                 logger.debug("Creating serverless session")
                 GoogleSparkSession._active_s8s_session_id = session_id

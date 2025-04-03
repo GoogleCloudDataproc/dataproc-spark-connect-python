@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datetime
+import enum
 import os
 import tempfile
 import uuid
@@ -40,6 +41,35 @@ from google.cloud.spark_connect import GoogleSparkSession
 _SERVICE_ACCOUNT_KEY_FILE_ = "service_account_key.json"
 
 
+class AuthType(enum.Enum):
+    SERVICE_ACCOUNT = "SERVICE_ACCOUNT"
+    END_USER_CREDENTIALS = "END_USER_CREDENTIALS"
+
+
+def get_auth_types():
+    service_account = os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT")
+    suppress_end_user_creds = os.environ.get(
+        "TEST_SUPPRESS_END_USER_CREDENTIALS"
+    )
+    if service_account:
+        yield AuthType.SERVICE_ACCOUNT
+    if not suppress_end_user_creds or suppress_end_user_creds == "0":
+        yield AuthType.END_USER_CREDENTIALS
+
+
+def get_config_path(auth_type):
+    resources_dir = os.path.join(os.path.dirname(__file__), "resources")
+    match auth_type:
+        case AuthType.SERVICE_ACCOUNT:
+            return os.path.join(
+                resources_dir, "session_service_account.textproto"
+            )
+        case AuthType.END_USER_CREDENTIALS:
+            return os.path.join(resources_dir, "session_user.textproto")
+        case _:
+            raise Exception(f"unknown auth_type: {auth_type}")
+
+
 @pytest.fixture(params=["2.2", "3.0"])
 def image_version(request):
     return request.param
@@ -47,22 +77,43 @@ def image_version(request):
 
 @pytest.fixture
 def test_project():
-    return os.environ.get("GOOGLE_CLOUD_PROJECT")
+    project = os.environ.get("GOOGLE_CLOUD_PROJECT")
+    if project is None:
+        raise Exception(
+            "must set a project through GOOGLE_CLOUD_PROJECT environment variable"
+        )
+    return project
 
 
-@pytest.fixture
+@pytest.fixture(params=get_auth_types())
 def auth_type(request):
-    return getattr(request, "param", "SYSTEM_SERVICE_ACCOUNT")
+    return request.param
 
 
 @pytest.fixture
 def test_region():
-    return os.environ.get("GOOGLE_CLOUD_REGION")
+    region = os.environ.get("GOOGLE_CLOUD_REGION")
+    if region is None:
+        raise Exception(
+            "must set region through GOOGLE_CLOUD_REGION environment variable"
+        )
+    return region
 
 
 @pytest.fixture
 def test_subnet():
-    return os.environ.get("GOOGLE_CLOUD_SUBNET")
+    subnet = os.environ.get("GOOGLE_CLOUD_SUBNET")
+    if subnet is None:
+        raise Exception(
+            "must set subnet through GOOGLE_CLOUD_SUBNET environment variable"
+        )
+    return subnet
+
+
+@pytest.fixture
+def test_service_account():
+    # The service account may be empty, in which case we skip SA-based testing.
+    return os.environ.get("GOOGLE_CLOUD_SERVICE_ACCOUNT")
 
 
 @pytest.fixture
@@ -72,22 +123,29 @@ def test_subnetwork_uri(test_project, test_region, test_subnet):
 
 @pytest.fixture
 def default_config(
-    auth_type, image_version, test_project, test_region, test_subnetwork_uri
+    auth_type,
+    test_service_account,
+    image_version,
+    test_project,
+    test_region,
+    test_subnetwork_uri,
 ):
-    resources_dir = os.path.join(os.path.dirname(__file__), "resources")
-    template_file = os.path.join(resources_dir, "session.textproto")
+    template_file = get_config_path(auth_type)
     with open(template_file) as f:
         template = f.read()
-        contents = (
-            template.replace("2.2", image_version)
-            .replace("subnet-placeholder", test_subnetwork_uri)
-            .replace("SYSTEM_SERVICE_ACCOUNT", auth_type)
+        contents = template.replace("2.2", image_version).replace(
+            "subnet-placeholder", test_subnetwork_uri
         )
-        with tempfile.NamedTemporaryFile(delete=False) as t:
-            t.write(contents.encode("utf-8"))
-            t.close()
-            yield t.name
-            os.remove(t.name)
+        if auth_type == AuthType.SERVICE_ACCOUNT:
+            contents = contents.replace(
+                "service-account-placeholder", test_service_account
+            )
+    print("CONFIG CONTENTS:", contents)
+    with tempfile.NamedTemporaryFile(delete=False) as t:
+        t.write(contents.encode("utf-8"))
+        t.close()
+        yield t.name
+        os.remove(t.name)
 
 
 @pytest.fixture
@@ -128,6 +186,7 @@ def session_template_controller_client(test_client_options):
 
 @pytest.fixture
 def connect_session(test_project, test_region, os_environment):
+    print("CREATING SESSION (TEST)", flush=True)
     return GoogleSparkSession.builder.getOrCreate()
 
 
@@ -136,12 +195,16 @@ def session_name(test_project, test_region, connect_session):
     return f"projects/{test_project}/locations/{test_region}/sessions/{GoogleSparkSession._active_s8s_session_id}"
 
 
-@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+# @pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
 def test_create_spark_session_with_default_notebook_behavior(
-    auth_type, connect_session, session_name, session_controller_client
+    connect_session,
+    session_name,
+    session_controller_client,
 ):
+    # print("auth type parameter:", auth_type)
     get_session_request = GetSessionRequest()
     get_session_request.name = session_name
+    print("GET SESSION REQUEST (TEST):", get_session_request, flush=True)
     session = session_controller_client.get_session(get_session_request)
     assert session.state == Session.State.ACTIVE
 
@@ -307,6 +370,8 @@ def session_template_name(
 
 
 def test_create_spark_session_with_session_template_and_user_provided_dataproc_config(
+    auth_type,
+    test_service_account,
     image_version,
     test_project,
     test_region,
@@ -314,6 +379,19 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
     session_controller_client,
 ):
     dataproc_config = Session()
+    match auth_type:
+        case AuthType.END_USER_CREDENTIALS:
+            # This is the default
+            pass
+        case AuthType.SERVICE_ACCOUNT:
+            dataproc_config.environment_config.execution_config.service_account = (
+                test_service_account
+            )
+            dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                "SERVICE_ACCOUNT"
+            )
+        case _:
+            raise Exception(f"unknown auth_type: {auth_type}")
     dataproc_config.environment_config.execution_config.ttl = {"seconds": 64800}
     dataproc_config.session_template = session_template_name
     connect_session = (

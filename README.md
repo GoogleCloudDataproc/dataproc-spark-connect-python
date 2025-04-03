@@ -24,7 +24,7 @@ If you are running the client outside of Google Cloud, you must set following en
 * GOOGLE_CLOUD_PROJECT - The Google Cloud project you use to run Spark workloads
 * GOOGLE_CLOUD_REGION - The Compute Engine [region](https://cloud.google.com/compute/docs/regions-zones#available) where you run the Spark workload.
 * GOOGLE_APPLICATION_CREDENTIALS - Your [Application Credentials](https://cloud.google.com/docs/authentication/provide-credentials-adc)
-* DATAPROC_SPARK_CONNECT_SESSION_DEFAULT_CONFIG (Optional) - The config location, such as `tests/integration/resources/session.textproto`
+* DATAPROC_SPARK_CONNECT_SESSION_DEFAULT_CONFIG (Optional) - The config location, such as `tests/integration/resources/session_user.textproto`
 
 ## Usage
 
