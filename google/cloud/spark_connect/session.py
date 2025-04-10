@@ -219,7 +219,7 @@ class GoogleSparkSession(SparkSession):
                         multiplier=1.0,
                         timeout=600,  # seconds
                     )
-                    print("Creating Spark session. It may take few minutes.")
+                    print("Creating Spark session. It may take a few minutes.")
                     if (
                         "GOOGLE_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT"
                         in os.environ
