@@ -74,7 +74,6 @@ class GoogleSparkSession(SparkSession):
     _region = None
     _client_options = None
     _active_s8s_session_id: ClassVar[Optional[str]] = None
-    _installed_artifacts: set[str] = set()
 
     class Builder(SparkSession.Builder):
 
@@ -520,22 +519,12 @@ class GoogleSparkSession(SparkSession):
                 "'pyfile', 'archive', 'file' and/or 'pypi' cannot be True together."
             )
         if pypi:
-            to_install = set([p for p in artifact]).difference(
-                self._installed_artifacts
-            )
-            if len(to_install) == 0:
-                logger.info(
-                    "Ignoring as all artifacts have already been added earlier"
-                )
-                return
-            artifacts = PyPiArtifacts(to_install)
-
+            artifacts = PyPiArtifacts(set(artifact))
             logger.debug("Making addArtifact call to install packages")
             self.addArtifact(
                 artifacts.write_packages_config(self._active_s8s_session_uuid),
                 file=True,
             )
-            self._installed_artifacts.update(to_install)
         else:
             super().addArtifacts(
                 *artifact, pyfile=pyfile, archive=archive, file=file
@@ -557,7 +546,6 @@ class GoogleSparkSession(SparkSession):
                 GoogleSparkSession._project_id = None
                 GoogleSparkSession._region = None
                 GoogleSparkSession._client_options = None
-                GoogleSparkSession._installed_artifacts = set()
 
             self.client.close()
             if self is GoogleSparkSession._default_session:

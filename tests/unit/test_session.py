@@ -192,14 +192,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         session.addArtifacts("spacy", pypi=True)
         self.assertEqual(session.addArtifact.call_count, 2)
 
-        # Do nothing if package already installed earlier
-        session.addArtifacts("spacy", pypi=True)
-        self.assertEqual(session.addArtifact.call_count, 2)
-
-        # When same package called with different version, trigger installation
-        session.addArtifacts("spacy==1.2.3", pypi=True)
-        self.assertEqual(session.addArtifact.call_count, 3)
-
         # test multiple packages, when already installed
         session.addArtifacts("spacy==1.2.3", "spacy", pypi=True)
         self.assertEqual(session.addArtifact.call_count, 3)
