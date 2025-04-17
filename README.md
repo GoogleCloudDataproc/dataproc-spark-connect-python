@@ -72,7 +72,7 @@ This will happen even if you are running the client from a non-GCE instance.
 
       .. code-block:: console
 
-            pip install -r requirements.txt
+            pip install -r requirements-dev.txt
 
 2. Build the code.
 
