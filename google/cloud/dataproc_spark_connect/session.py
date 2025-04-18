@@ -146,7 +146,9 @@ class DataprocSparkSession(SparkSession):
         def __create_spark_connect_session_from_s8s(
             self, session_response, session_name
         ) -> "DataprocSparkSession":
-            DataprocSparkSession._active_s8s_session_uuid = session_response.uuid
+            DataprocSparkSession._active_s8s_session_uuid = (
+                session_response.uuid
+            )
             DataprocSparkSession._project_id = self._project_id
             DataprocSparkSession._region = self._region
             DataprocSparkSession._client_options = self._client_options
@@ -285,7 +287,9 @@ class DataprocSparkSession(SparkSession):
                     session_response, dataproc_config.name
                 )
 
-        def _get_exiting_active_session(self) -> Optional["DataprocSparkSession"]:
+        def _get_exiting_active_session(
+            self,
+        ) -> Optional["DataprocSparkSession"]:
             s8s_session_id = DataprocSparkSession._active_s8s_session_id
             session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{s8s_session_id}"
             session_response = get_active_s8s_session_response(
