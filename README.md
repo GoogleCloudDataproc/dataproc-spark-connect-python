@@ -39,7 +39,7 @@ If you are running the client outside of Google Cloud, you must set following en
 
       .. code-block:: python
 
-            from google.cloud.spark_connect import DataprocSparkSession
+            from google.cloud.dataproc_spark_connect import DataprocSparkSession
 
 3. There are two ways to create a spark session,
 

@@ -76,7 +76,7 @@
 ### ⚠ BREAKING CHANGES
 
 * rename python package to google-spark-connect ([#25](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/25))
-* Rename package to google.cloud.spark_connect.GoogleSparkSession
+* Rename package to google.cloud.dataproc_spark_connect.GoogleSparkSession
 
 ### Bug Fixes
 
@@ -86,7 +86,7 @@
 
 ### Code Refactoring
 
-* rename package and class to google.cloud.spark_connect.GoogleSparkSession ([#21](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/21)) ([313dba4](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/313dba423f80c5b15535a40e239db1ab6e886ace))
+* rename package and class to google.cloud.dataproc_spark_connect.GoogleSparkSession ([#21](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/21)) ([313dba4](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/313dba423f80c5b15535a40e239db1ab6e886ace))
 * rename python package to google-spark-connect ([#25](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/25)) ([357d1fe](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/357d1fe8383040e506a251aa7b3af99a07752058))
 
 ## [0.2.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.1.0...v0.2.0) (2024-12-05)
