@@ -33,8 +33,8 @@ from google.protobuf.text_format import ParseError
 from pyspark.sql.connect.client.core import ConfigResult
 from pyspark.sql.connect.proto import ConfigResponse
 
-from google.cloud.spark_connect import GoogleSparkSession
-from google.cloud.spark_connect.exceptions import GoogleSparkConnectException
+from google.cloud.dataproc_spark_connect import DataprocSparkSession
+from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 
 
 class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
@@ -59,7 +59,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch(
-        "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
+        "google.cloud.spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
     @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_create_spark_session_with_default_notebook_behavior(
@@ -122,7 +122,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
         )
         try:
-            session = GoogleSparkSession.builder.getOrCreate()
+            session = DataprocSparkSession.builder.getOrCreate()
             mock_session_controller_client_instance.create_session.assert_called_once_with(
                 create_session_request
             )
@@ -166,9 +166,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_session_controller_client_instance.create_session.return_value = (
             mock_operation
         )
-        session = GoogleSparkSession.builder.getOrCreate()
+        session = DataprocSparkSession.builder.getOrCreate()
 
-        self.assertTrue(isinstance(session, GoogleSparkSession))
+        self.assertTrue(isinstance(session, DataprocSparkSession))
 
         session.addArtifact = mock.MagicMock()
 
@@ -200,7 +200,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch(
-        "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
+        "google.cloud.spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
     @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_create_session_with_user_provided_dataproc_config(
@@ -277,8 +277,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 "spark.executor.cores": "8"
             }
             session = (
-                GoogleSparkSession.builder.config("spark.executor.cores", "6")
-                .googleSessionConfig(dataproc_config)
+                DataprocSparkSession.builder.config("spark.executor.cores", "6")
+                .dataprocSessionConfig(dataproc_config)
                 .config("spark.executor.cores", "16")
                 .getOrCreate()
             )
@@ -312,7 +312,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch(
-        "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
+        "google.cloud.spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
     @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_create_session_with_session_template(
@@ -381,7 +381,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         try:
             dataproc_config = Session()
             dataproc_config.session_template = "projects/test-project/locations/test-region/sessionTemplates/test_template"
-            session = GoogleSparkSession.builder.googleSessionConfig(
+            session = DataprocSparkSession.builder.dataprocSessionConfig(
                 dataproc_config
             ).getOrCreate()
             mock_session_controller_client_instance.create_session.assert_called_once_with(
@@ -414,7 +414,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch(
-        "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
+        "google.cloud.spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
     @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_create_session_with_user_provided_dataproc_config_and_session_template(
@@ -493,7 +493,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 "seconds": 10
             }
             dataproc_config.session_template = "projects/test-project/locations/test-region/sessionTemplates/test_template"
-            session = GoogleSparkSession.builder.googleSessionConfig(
+            session = DataprocSparkSession.builder.dataprocSessionConfig(
                 dataproc_config
             ).getOrCreate()
             mock_session_controller_client_instance.create_session.assert_called_once_with(
@@ -532,7 +532,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                     + "/session1.textproto",
                 },
             ):
-                GoogleSparkSession.builder.getOrCreate()
+                DataprocSparkSession.builder.getOrCreate()
         self.assertEqual(
             e.exception.args[0],
             f"File '{self._resources_dir}/session1.textproto' not found",
@@ -547,7 +547,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                     + "/parse_error.textproto",
                 },
             ):
-                GoogleSparkSession.builder.getOrCreate()
+                DataprocSparkSession.builder.getOrCreate()
 
     def test_create_spark_session_unsupported_dataproc_config_version(self):
         with self.assertRaises(ValueError) as e:
@@ -558,7 +558,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                     + "/unsupported_version.textproto",
                 },
             ):
-                GoogleSparkSession.builder.getOrCreate()
+                DataprocSparkSession.builder.getOrCreate()
         self.assertTrue(
             e.exception.args[0].startswith(
                 "runtime_config.version 2.1 is not supported"
@@ -568,7 +568,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch(
-        "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
+        "google.cloud.spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
     def test_create_spark_session_with_create_session_failed(
         self,
@@ -591,7 +591,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         cred.token = "token"
         mock_credentials.return_value = (cred, "")
         with self.assertRaises(RuntimeError) as e:
-            GoogleSparkSession.builder.googleSessionConfig(
+            DataprocSparkSession.builder.dataprocSessionConfig(
                 Session()
             ).getOrCreate()
         self.assertEqual(
@@ -618,8 +618,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         cred = mock.MagicMock()
         cred.token = "token"
         mock_credentials.return_value = (cred, "")
-        with self.assertRaises(GoogleSparkConnectException) as e:
-            GoogleSparkSession.builder.googleSessionConfig(
+        with self.assertRaises(DataprocSparkConnectException) as e:
+            DataprocSparkSession.builder.dataprocSessionConfig(
                 Session()
             ).getOrCreate()
             self.assertEqual(
@@ -631,7 +631,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch(
-        "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
+        "google.cloud.spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
     @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_spark_session_with_inactive_s8s_session(
@@ -663,7 +663,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_operation
         )
         with self.assertRaises(RuntimeError) as e:
-            session = GoogleSparkSession.builder.getOrCreate()
+            session = DataprocSparkSession.builder.getOrCreate()
             session.createDataFrame([(1, "Sarah"), (2, "Maria")]).toDF(
                 "id", "name"
             ).show()
@@ -712,7 +712,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_client_config.return_value = ConfigResult.fromProto(
                 ConfigResponse()
             )
-            session = GoogleSparkSession.builder.getOrCreate()
+            session = DataprocSparkSession.builder.getOrCreate()
 
         finally:
             mock_session_controller_client_instance.terminate_session.side_effect = FailedPrecondition(
@@ -720,7 +720,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
             if session is not None:
                 session.stop()
-            self.assertIsNone(GoogleSparkSession._active_s8s_session_uuid)
+            self.assertIsNone(DataprocSparkSession._active_s8s_session_uuid)
 
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch("google.auth.default")
@@ -755,7 +755,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_client_config.return_value = ConfigResult.fromProto(
                 ConfigResponse()
             )
-            session = GoogleSparkSession.builder.getOrCreate()
+            session = DataprocSparkSession.builder.getOrCreate()
 
         finally:
             mock_session_controller_client_instance.terminate_session.side_effect = Aborted(
@@ -763,7 +763,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
             if session is not None:
                 session.stop()
-            self.assertIsNone(GoogleSparkSession._active_s8s_session_uuid)
+            self.assertIsNone(DataprocSparkSession._active_s8s_session_uuid)
 
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch("google.auth.default")
@@ -798,7 +798,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_client_config.return_value = ConfigResult.fromProto(
                 ConfigResponse()
             )
-            session = GoogleSparkSession.builder.getOrCreate()
+            session = DataprocSparkSession.builder.getOrCreate()
 
         finally:
             mock_session_controller_client_instance.terminate_session.side_effect = NotFound(
@@ -806,13 +806,13 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
             if session is not None:
                 session.stop()
-            self.assertIsNone(GoogleSparkSession._active_s8s_session_uuid)
+            self.assertIsNone(DataprocSparkSession._active_s8s_session_uuid)
 
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch(
-        "google.cloud.spark_connect.GoogleSparkSession.Builder.generate_dataproc_session_id"
+        "google.cloud.spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
     @mock.patch("google.cloud.spark_connect.session.is_s8s_session_active")
     def test_stop_spark_session_wait_for_terminating_state(
@@ -846,7 +846,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_client_config.return_value = ConfigResult.fromProto(
                 ConfigResponse()
             )
-            session = GoogleSparkSession.builder.getOrCreate()
+            session = DataprocSparkSession.builder.getOrCreate()
 
         finally:
             mock_session_controller_client_instance.terminate_session.return_value = (

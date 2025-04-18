@@ -28,8 +28,8 @@ from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound, PermissionDenied
 from google.cloud.dataproc_v1.types import sessions
 
-from google.cloud.spark_connect.pypi_artifacts import PyPiArtifacts
-from google.cloud.spark_connect.client import DataprocChannelBuilder
+from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
+from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
 from google.cloud.dataproc_v1 import (
     CreateSessionRequest,
     GetSessionRequest,
@@ -43,14 +43,14 @@ from google.protobuf.text_format import ParseError
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
 
-from google.cloud.spark_connect.exceptions import GoogleSparkConnectException
+from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class GoogleSparkSession(SparkSession):
+class DataprocSparkSession(SparkSession):
     """The entry point to programming Spark with the Dataset and DataFrame API.
 
     A DataprocRemoteSparkSession can be used to create :class:`DataFrame`, register :class:`DataFrame` as
@@ -59,12 +59,12 @@ class GoogleSparkSession(SparkSession):
     Examples
     --------
 
-    Create a Spark session with Google Spark Connect.
+    Create a Spark session with Dataproc Spark Connect.
 
     >>> spark = (
-    ...     GoogleSparkSession.builder
+    ...     DataprocSparkSession.builder
     ...         .appName("Word Count")
-    ...         .googleSessionConfig(Session())
+    ...         .dataprocSessionConfig(Session())
     ...         .getOrCreate()
     ... ) # doctest: +SKIP
     """
@@ -123,7 +123,7 @@ class GoogleSparkSession(SparkSession):
             )
             return self
 
-        def googleSessionConfig(self, dataproc_config: Session):
+        def dataprocSessionConfig(self, dataproc_config: Session):
             with self._lock:
                 self._dataproc_config = dataproc_config
                 for k, v in dataproc_config.runtime_config.properties.items():
@@ -133,23 +133,23 @@ class GoogleSparkSession(SparkSession):
         def remote(self, url: Optional[str] = None) -> "SparkSession.Builder":
             if url:
                 raise NotImplemented(
-                    "GoogleSparkSession does not support connecting to an existing remote server"
+                    "DataprocSparkSession does not support connecting to an existing remote server"
                 )
             else:
                 return self
 
-        def create(self) -> "GoogleSparkSession":
+        def create(self) -> "DataprocSparkSession":
             raise NotImplemented(
-                "GoogleSparkSession allows session creation only through getOrCreate"
+                "DataprocSparkSession allows session creation only through getOrCreate"
             )
 
         def __create_spark_connect_session_from_s8s(
             self, session_response, session_name
-        ) -> "GoogleSparkSession":
-            GoogleSparkSession._active_s8s_session_uuid = session_response.uuid
-            GoogleSparkSession._project_id = self._project_id
-            GoogleSparkSession._region = self._region
-            GoogleSparkSession._client_options = self._client_options
+        ) -> "DataprocSparkSession":
+            DataprocSparkSession._active_s8s_session_uuid = session_response.uuid
+            DataprocSparkSession._project_id = self._project_id
+            DataprocSparkSession._region = self._region
+            DataprocSparkSession._client_options = self._client_options
             spark_connect_url = session_response.runtime_info.endpoints.get(
                 "Spark Connect Server"
             )
@@ -166,18 +166,18 @@ class GoogleSparkSession(SparkSession):
             )
 
             assert self._channel_builder is not None
-            session = GoogleSparkSession(connection=self._channel_builder)
+            session = DataprocSparkSession(connection=self._channel_builder)
 
-            GoogleSparkSession._set_default_and_active_session(session)
+            DataprocSparkSession._set_default_and_active_session(session)
             self.__apply_options(session)
             return session
 
-        def __create(self) -> "GoogleSparkSession":
+        def __create(self) -> "DataprocSparkSession":
             with self._lock:
 
                 if self._options.get("spark.remote", False):
                     raise NotImplemented(
-                        "GoogleSparkSession does not support connecting to an existing remote server"
+                        "DataprocSparkSession does not support connecting to an existing remote server"
                     )
 
                 from google.cloud.dataproc_v1 import SessionControllerClient
@@ -210,7 +210,7 @@ class GoogleSparkSession(SparkSession):
                 )
 
                 logger.debug("Creating serverless session")
-                GoogleSparkSession._active_s8s_session_id = session_id
+                DataprocSparkSession._active_s8s_session_id = session_id
                 s8s_creation_start_time = time.time()
                 try:
                     session_polling = retry.Retry(
@@ -222,10 +222,10 @@ class GoogleSparkSession(SparkSession):
                     )
                     print("Creating Spark session. It may take a few minutes.")
                     if (
-                        "GOOGLE_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT"
+                        "dataproc_spark_connect_SESSION_TERMINATE_AT_EXIT"
                         in os.environ
                         and os.getenv(
-                            "GOOGLE_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT"
+                            "dataproc_spark_connect_SESSION_TERMINATE_AT_EXIT"
                         ).lower()
                         == "true"
                     ):
@@ -268,12 +268,12 @@ class GoogleSparkSession(SparkSession):
                                 f"Exception while writing active session to file {file_path} , {e}"
                             )
                 except (InvalidArgument, PermissionDenied) as e:
-                    GoogleSparkSession._active_s8s_session_id = None
-                    raise GoogleSparkConnectException(
+                    DataprocSparkSession._active_s8s_session_id = None
+                    raise DataprocSparkConnectException(
                         f"Error while creating serverless session: {e.message}"
                     )
                 except Exception as e:
-                    GoogleSparkSession._active_s8s_session_id = None
+                    DataprocSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
                         f"Error while creating serverless session"
                     ) from e
@@ -285,16 +285,16 @@ class GoogleSparkSession(SparkSession):
                     session_response, dataproc_config.name
                 )
 
-        def _get_exiting_active_session(self) -> Optional["GoogleSparkSession"]:
-            s8s_session_id = GoogleSparkSession._active_s8s_session_id
+        def _get_exiting_active_session(self) -> Optional["DataprocSparkSession"]:
+            s8s_session_id = DataprocSparkSession._active_s8s_session_id
             session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{s8s_session_id}"
             session_response = get_active_s8s_session_response(
                 session_name, self._client_options
             )
 
-            session = GoogleSparkSession.getActiveSession()
+            session = DataprocSparkSession.getActiveSession()
             if session is None:
-                session = GoogleSparkSession._default_session
+                session = DataprocSparkSession._default_session
 
             if session_response is not None:
                 print(
@@ -314,8 +314,8 @@ class GoogleSparkSession(SparkSession):
 
                 return None
 
-        def getOrCreate(self) -> "GoogleSparkSession":
-            with GoogleSparkSession._lock:
+        def getOrCreate(self) -> "DataprocSparkSession":
+            with DataprocSparkSession._lock:
                 session = self._get_exiting_active_session()
                 if session is None:
                     session = self.__create()
@@ -413,7 +413,7 @@ class GoogleSparkSession(SparkSession):
             import importlib.metadata
 
             google_connect_version = importlib.metadata.version(
-                "google-spark-connect"
+                "dataproc-spark-connect"
             )
             client_version = importlib.metadata.version("pyspark")
             version_message = f"Spark Connect: {google_connect_version} (PySpark: {client_version}) Session Runtime: {version} (Spark: {server_version})"
@@ -503,7 +503,7 @@ class GoogleSparkSession(SparkSession):
             Add a file to be downloaded with this Spark job on every node.
             The ``path`` passed can only be a local file for now.
         pypi : bool
-            This option is only available with GoogleSparkSession. eg. `spark.addArtifacts("spacy==3.8.4", "torch",  pypi=True)`
+            This option is only available with DataprocSparkSession. eg. `spark.addArtifacts("spacy==3.8.4", "torch",  pypi=True)`
             Installs PyPi package (with its dependencies) in the active Spark session on the driver and executors.
 
         Notes
@@ -531,29 +531,29 @@ class GoogleSparkSession(SparkSession):
             )
 
     def stop(self) -> None:
-        with GoogleSparkSession._lock:
-            if GoogleSparkSession._active_s8s_session_id is not None:
+        with DataprocSparkSession._lock:
+            if DataprocSparkSession._active_s8s_session_id is not None:
                 terminate_s8s_session(
-                    GoogleSparkSession._project_id,
-                    GoogleSparkSession._region,
-                    GoogleSparkSession._active_s8s_session_id,
+                    DataprocSparkSession._project_id,
+                    DataprocSparkSession._region,
+                    DataprocSparkSession._active_s8s_session_id,
                     self._client_options,
                 )
 
                 self._remove_stoped_session_from_file()
-                GoogleSparkSession._active_s8s_session_uuid = None
-                GoogleSparkSession._active_s8s_session_id = None
-                GoogleSparkSession._project_id = None
-                GoogleSparkSession._region = None
-                GoogleSparkSession._client_options = None
+                DataprocSparkSession._active_s8s_session_uuid = None
+                DataprocSparkSession._active_s8s_session_id = None
+                DataprocSparkSession._project_id = None
+                DataprocSparkSession._region = None
+                DataprocSparkSession._client_options = None
 
             self.client.close()
-            if self is GoogleSparkSession._default_session:
-                GoogleSparkSession._default_session = None
+            if self is DataprocSparkSession._default_session:
+                DataprocSparkSession._default_session = None
             if self is getattr(
-                GoogleSparkSession._active_session, "session", None
+                DataprocSparkSession._active_session, "session", None
             ):
-                GoogleSparkSession._active_session.session = None
+                DataprocSparkSession._active_session.session = None
 
 
 def terminate_s8s_session(
