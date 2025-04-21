@@ -17,7 +17,7 @@ import time
 
 import pytest
 
-from google.cloud.spark_connect.client.proxy import connect_sockets
+from google.cloud.dataproc_spark_connect.client.proxy import connect_sockets
 
 
 @pytest.fixture

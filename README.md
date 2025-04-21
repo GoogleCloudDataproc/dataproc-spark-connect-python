@@ -1,4 +1,4 @@
-# Google Spark Connect Client
+# Dataproc Spark Connect Client
 
 A wrapper of the Apache [Spark Connect](https://spark.apache.org/spark-connect/) client with
 additional functionalities that allow applications to communicate with a remote Dataproc
@@ -7,13 +7,13 @@ Spark cluster using the Spark Connect protocol without requiring additional step
 ## Install
 
 ```console
-pip install google_spark_connect
+pip install dataproc_spark_connect
 ```
 
 ## Uninstall
 
 ```console
-pip uninstall google_spark_connect
+pip uninstall dataproc_spark_connect
 ```
 
 ## Setup
@@ -27,17 +27,17 @@ If you are running the client outside of Google Cloud, you must set following en
 
 ## Usage
 
-1. Install the latest version of Dataproc Python client and Google Spark Connect modules:
+1. Install the latest version of Dataproc Python client and Dataproc Spark Connect modules:
 
    ```console
    pip install google_cloud_dataproc --force-reinstall
-   pip install google_spark_connect --force-reinstall
+   pip install dataproc_spark_connect --force-reinstall
    ```
 
 2. Add the required import into your PySpark application or notebook:
 
    ```python
-   from google.cloud.spark_connect import GoogleSparkSession
+   from google.cloud.dataproc_spark_connect import DataprocSparkSession
    ```
 
 3. There are two ways to create a spark session,
@@ -45,7 +45,7 @@ If you are running the client outside of Google Cloud, you must set following en
    1. Start a Spark session using properties defined in `DATAPROC_SPARK_CONNECT_SESSION_DEFAULT_CONFIG`:
 
       ```python
-      spark = GoogleSparkSession.builder.getOrCreate()
+      spark = DataprocSparkSession.builder.getOrCreate()
       ```
 
    2. Start a Spark session with the following code instead of using a config file:
@@ -53,11 +53,11 @@ If you are running the client outside of Google Cloud, you must set following en
       ```python
       from google.cloud.dataproc_v1 import SparkConnectConfig
       from google.cloud.dataproc_v1 import Session
-      google_session_config = Session()
-      google_session_config.spark_connect_session = SparkConnectConfig()
-      google_session_config.environment_config.execution_config.subnetwork_uri = "<subnet>"
-      google_session_config.runtime_config.version = '3.0'
-      spark = GoogleSparkSession.builder.googleSessionConfig(google_session_config).getOrCreate()
+      dataproc_session_config = Session()
+      dataproc_session_config.spark_connect_session = SparkConnectConfig()
+      dataproc_session_config.environment_config.execution_config.subnetwork_uri = "<subnet>"
+      dataproc_session_config.runtime_config.version = '3.0'
+      spark = DataprocSparkSession.builder.dataprocSessionConfig(dataproc_session_config).getOrCreate()
       ```
 
 ## Billing
@@ -83,7 +83,7 @@ This will happen even if you are running the client from a non-GCE instance.
 
       ```sh
       VERSION=<version>
-      gsutil cp dist/google_spark_connect-${VERSION}-py2.py3-none-any.whl gs://<your_bucket_name>
+      gsutil cp dist/dataproc_spark_connect-${VERSION}-py2.py3-none-any.whl gs://<your_bucket_name>
       ```
 
 4. Download the new SDK on Vertex, then uninstall the old version and install the new one.
@@ -91,7 +91,7 @@ This will happen even if you are running the client from a non-GCE instance.
       ```sh
       %%bash
       export VERSION=<version>
-      gsutil cp gs://<your_bucket_name>/google_spark_connect-${VERSION}-py2.py3-none-any.whl .
-      yes | pip uninstall google_spark_connect
-      pip install google_spark_connect-${VERSION}-py2.py3-none-any.whl
+      gsutil cp gs://<your_bucket_name>/dataproc_spark_connect-${VERSION}-py2.py3-none-any.whl .
+      yes | pip uninstall dataproc_spark_connect
+      pip install dataproc_spark_connect-${VERSION}-py2.py3-none-any.whl
       ```

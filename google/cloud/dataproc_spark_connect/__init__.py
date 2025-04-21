@@ -14,10 +14,10 @@
 import importlib.metadata
 import warnings
 
-from .session import GoogleSparkSession
+from .session import DataprocSparkSession
 
-old_package_name = "dataproc-spark-connect"
-current_package_name = "google-spark-connect"
+old_package_name = "google-spark-connect"
+current_package_name = "dataproc-spark-connect"
 try:
     importlib.metadata.distribution(old_package_name)
     warnings.warn(
