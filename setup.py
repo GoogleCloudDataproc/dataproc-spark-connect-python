@@ -28,10 +28,11 @@ setup(
     license="Apache 2.0",
     packages=find_namespace_packages(include=["google.*"]),
     install_requires=[
-        "google-api-core>=2.19.1",
-        "google-cloud-dataproc>=5.18.0",
-        "websockets",
-        "pyspark[connect]>=3.5",
+        "google-api-core>=2.19",
+        "google-cloud-dataproc>=5.18",
         "packaging>=20.0",
+        "pyspark[connect]>=3.5",
+        "tqdm>=4.67",
+        "websockets>=15.0",
     ],
 )

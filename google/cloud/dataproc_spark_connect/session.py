@@ -19,6 +19,7 @@ import logging
 import os
 import random
 import string
+import threading
 import time
 
 from google.api_core import retry
@@ -26,7 +27,6 @@ from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound, PermissionDenied
 from google.api_core.future.polling import POLLING_PREDICATE
 from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
-from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
@@ -36,6 +36,7 @@ from google.cloud.dataproc_v1 import (
     SessionControllerClient,
     TerminateSessionRequest,
 )
+from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 from google.cloud.dataproc_v1.types import sessions
 from google.protobuf.duration_pb2 import Duration
 from pyspark.sql.connect.session import SparkSession
@@ -205,11 +206,38 @@ class DataprocSparkSession(SparkSession):
                 logger.debug("Creating Dataproc Session")
                 DataprocSparkSession._active_s8s_session_id = session_id
                 s8s_creation_start_time = time.time()
-                os.environ["SPARK_CONNECT_MODE_ENABLED"] = "1"
-                try:
-                    print(
-                        "Creating Dataproc Session. It may take a few minutes."
+
+                stop_create_session_pbar = False
+
+                def create_session_pbar():
+                    iterations = 50
+                    pbar = trange(
+                        iterations,
+                        bar_format="{desc}: {bar}",
+                        desc="Creating Dataproc Session",
+                        total=50,
+                        ncols=60,
                     )
+                    for i in pbar:
+                        if stop_create_session_pbar:
+                            break
+                        # Last iteration
+                        if i >= iterations - 1:
+                            # Sleep until session created
+                            while not stop_create_session_pbar:
+                                time.sleep(1)
+                        else:
+                            time.sleep(2)
+
+                    pbar.close()
+                    # Print new line after the progress bar
+                    print()
+
+                create_session_pbar_thread = threading.Thread(
+                    target=create_session_pbar
+                )
+
+                try:
                     if (
                         os.getenv(
                             "DATAPROC_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT",
@@ -231,6 +259,7 @@ class DataprocSparkSession(SparkSession):
                     print(
                         f"Dataproc Session Detail View: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
+                    create_session_pbar_thread.start()
                     session_response: Session = operation.result(
                         polling=retry.Retry(
                             predicate=POLLING_PREDICATE,
@@ -240,6 +269,9 @@ class DataprocSparkSession(SparkSession):
                             timeout=600,  # seconds
                         )
                     )
+                    stop_create_session_pbar = True
+                    create_session_pbar_thread.join()
+                    print("Dataproc Session successfully created")
                     file_path = (
                         DataprocSparkSession._get_active_session_file_path()
                     )
@@ -259,11 +291,17 @@ class DataprocSparkSession(SparkSession):
                                 f"Exception while writing active session to file {file_path}, {e}"
                             )
                 except (InvalidArgument, PermissionDenied) as e:
+                    stop_create_session_pbar = True
+                    if create_session_pbar_thread.is_alive():
+                        create_session_pbar_thread.join()
                     DataprocSparkSession._active_s8s_session_id = None
                     raise DataprocSparkConnectException(
                         f"Error while creating Dataproc Session: {e.message}"
                     )
                 except Exception as e:
+                    stop_create_session_pbar = True
+                    if create_session_pbar_thread.is_alive():
+                        create_session_pbar_thread.join()
                     DataprocSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
                         f"Error while creating Dataproc Session"
