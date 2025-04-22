@@ -47,7 +47,7 @@ def image_version(request):
 
 @pytest.fixture
 def test_project():
-    return os.environ.get("GOOGLE_CLOUD_PROJECT")
+    return os.getenv("GOOGLE_CLOUD_PROJECT")
 
 
 @pytest.fixture
@@ -57,12 +57,12 @@ def auth_type(request):
 
 @pytest.fixture
 def test_region():
-    return os.environ.get("GOOGLE_CLOUD_REGION")
+    return os.getenv("GOOGLE_CLOUD_REGION")
 
 
 @pytest.fixture
 def test_subnet():
-    return os.environ.get("GOOGLE_CLOUD_SUBNET")
+    return os.getenv("GOOGLE_CLOUD_SUBNET")
 
 
 @pytest.fixture
@@ -105,7 +105,7 @@ def os_environment(default_config, test_project, test_region):
 
 @pytest.fixture
 def api_endpoint(test_region):
-    return os.environ.get(
+    return os.getenv(
         "GOOGLE_CLOUD_DATAPROC_API_ENDPOINT",
         f"{test_region}-dataproc.googleapis.com",
     )

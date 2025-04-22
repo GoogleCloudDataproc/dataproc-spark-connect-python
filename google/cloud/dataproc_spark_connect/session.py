@@ -19,7 +19,6 @@ import random
 import string
 import time
 import datetime
-from time import sleep
 from typing import Any, cast, ClassVar, Dict, Optional
 
 from google.api_core import retry
@@ -77,7 +76,10 @@ class DataprocSparkSession(SparkSession):
 
     class Builder(SparkSession.Builder):
 
-        _dataproc_runtime_spark_version = {"3.0": "3.5.1", "2.2": "3.5.0"}
+        _dataproc_runtime_to_spark_version = {
+            "2.2": "3.5",
+            "3.0": "3.5",
+        }
 
         _session_static_configs = [
             "spark.executor.cores",
@@ -93,10 +95,10 @@ class DataprocSparkSession(SparkSession):
             self._options: Dict[str, Any] = {}
             self._channel_builder: Optional[DataprocChannelBuilder] = None
             self._dataproc_config: Optional[Session] = None
-            self._project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-            self._region = os.environ.get("GOOGLE_CLOUD_REGION")
+            self._project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+            self._region = os.getenv("GOOGLE_CLOUD_REGION")
             self._client_options = ClientOptions(
-                api_endpoint=os.environ.get(
+                api_endpoint=os.getenv(
                     "GOOGLE_CLOUD_DATAPROC_API_ENDPOINT",
                     f"{self._region}-dataproc.googleapis.com",
                 )
@@ -117,7 +119,7 @@ class DataprocSparkSession(SparkSession):
 
         def location(self, location):
             self._region = location
-            self._client_options.api_endpoint = os.environ.get(
+            self._client_options.api_endpoint = os.getenv(
                 "GOOGLE_CLOUD_DATAPROC_API_ENDPOINT",
                 f"{self._region}-dataproc.googleapis.com",
             )
@@ -179,7 +181,7 @@ class DataprocSparkSession(SparkSession):
 
                 if self._options.get("spark.remote", False):
                     raise NotImplemented(
-                        "DataprocSparkSession does not support connecting to an existing remote server"
+                        "DataprocSparkSession does not support connecting to an existing Spark Connect remote server"
                     )
 
                 from google.cloud.dataproc_v1 import SessionControllerClient
@@ -196,7 +198,9 @@ class DataprocSparkSession(SparkSession):
                 )
 
                 if not spark_connect_session:
-                    dataproc_config.spark_connect_session = {}
+                    dataproc_config.spark_connect_session = (
+                        sessions.SparkConnectConfig()
+                    )
                 os.environ["SPARK_CONNECT_MODE_ENABLED"] = "1"
                 session_request = CreateSessionRequest()
                 session_id = self.generate_dataproc_session_id()
@@ -215,19 +219,11 @@ class DataprocSparkSession(SparkSession):
                 DataprocSparkSession._active_s8s_session_id = session_id
                 s8s_creation_start_time = time.time()
                 try:
-                    session_polling = retry.Retry(
-                        predicate=POLLING_PREDICATE,
-                        initial=5.0,  # seconds
-                        maximum=5.0,  # seconds
-                        multiplier=1.0,
-                        timeout=600,  # seconds
-                    )
                     print("Creating Spark session. It may take a few minutes.")
                     if (
-                        "dataproc_spark_connect_SESSION_TERMINATE_AT_EXIT"
-                        in os.environ
-                        and os.getenv(
-                            "dataproc_spark_connect_SESSION_TERMINATE_AT_EXIT"
+                        os.getenv(
+                            "GOOGLE_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT",
+                            "false",
                         ).lower()
                         == "true"
                     ):
@@ -243,18 +239,21 @@ class DataprocSparkSession(SparkSession):
                         client_options=self._client_options
                     ).create_session(session_request)
                     print(
-                        f"Interactive Session Detail View:  https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
+                        f"Dataproc Session Detail View: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
                     session_response: Session = operation.result(
-                        polling=session_polling
+                        polling=retry.Retry(
+                            predicate=POLLING_PREDICATE,
+                            initial=5.0,  # seconds
+                            maximum=5.0,  # seconds
+                            multiplier=1.0,
+                            timeout=600,  # seconds
+                        )
                     )
-                    if (
+                    file_path = os.getenv(
                         "DATAPROC_SPARK_CONNECT_ACTIVE_SESSION_FILE_PATH"
-                        in os.environ
-                    ):
-                        file_path = os.environ[
-                            "DATAPROC_SPARK_CONNECT_ACTIVE_SESSION_FILE_PATH"
-                        ]
+                    )
+                    if file_path is not None:
                         try:
                             session_data = {
                                 "session_name": session_response.name,
@@ -292,17 +291,20 @@ class DataprocSparkSession(SparkSession):
         ) -> Optional["DataprocSparkSession"]:
             s8s_session_id = DataprocSparkSession._active_s8s_session_id
             session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{s8s_session_id}"
-            session_response = get_active_s8s_session_response(
-                session_name, self._client_options
-            )
+            session_response = None
+            session = None
+            if s8s_session_id is not None:
+                session_response = get_active_s8s_session_response(
+                    session_name, self._client_options
+                )
+                session = DataprocSparkSession.getActiveSession()
 
-            session = DataprocSparkSession.getActiveSession()
             if session is None:
                 session = DataprocSparkSession._default_session
 
             if session_response is not None:
                 print(
-                    f"Using existing session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}, configuration changes may not be applied."
+                    f"Using existing Dataproc Spark Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}, configuration changes may not be applied."
                 )
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
@@ -310,10 +312,10 @@ class DataprocSparkSession(SparkSession):
                     )
                 return session
             else:
-                logger.info(
-                    f"Session: {s8s_session_id} not active, stopping previous spark session and creating new"
-                )
                 if session is not None:
+                    print(
+                        f"{s8s_session_id} Dataproc Session is not active, stopping and creating new"
+                    )
                     session.stop()
 
                 return None
@@ -404,14 +406,14 @@ class DataprocSparkSession(SparkSession):
                 dataproc_config.runtime_config.version = version
             elif (
                 trimmed_version(version)
-                not in self._dataproc_runtime_spark_version
+                not in self._dataproc_runtime_to_spark_version
             ):
                 raise ValueError(
                     f"runtime_config.version {version} is not supported. "
-                    f"Supported versions: {self._dataproc_runtime_spark_version.keys()}"
+                    f"Supported versions: {self._dataproc_runtime_to_spark_version.keys()}"
                 )
 
-            server_version = self._dataproc_runtime_spark_version[
+            server_version = self._dataproc_runtime_to_spark_version[
                 trimmed_version(version)
             ]
             import importlib.metadata
@@ -421,16 +423,16 @@ class DataprocSparkSession(SparkSession):
             )
             client_version = importlib.metadata.version("pyspark")
             version_message = f"Spark Connect: {google_connect_version} (PySpark: {client_version}) Session Runtime: {version} (Spark: {server_version})"
-            logger.info(version_message)
             if trimmed_version(client_version) != trimmed_version(
                 server_version
             ):
                 logger.warning(
-                    f"client and server on different versions: {version_message}"
+                    f"Client and server use different versions: {version_message}"
                 )
             return version
 
-        def _get_spark_connect_session(self, dataproc_config, session_template):
+        @staticmethod
+        def _get_spark_connect_session(dataproc_config, session_template):
             spark_connect_session = None
             if dataproc_config and dataproc_config.spark_connect_session:
                 spark_connect_session = dataproc_config.spark_connect_session
@@ -438,7 +440,8 @@ class DataprocSparkSession(SparkSession):
                 spark_connect_session = session_template.spark_connect_session
             return spark_connect_session
 
-        def generate_dataproc_session_id(self):
+        @staticmethod
+        def generate_dataproc_session_id():
             timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
             suffix_length = 6
             random_suffix = "".join(
@@ -456,7 +459,6 @@ class DataprocSparkSession(SparkSession):
 
         s8s_session = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._active_s8s_session_id}"
         ui = f"{s8s_session}/sparkApplications/applications"
-        version = ""
         return f"""
         <div>
             <p><b>Spark Connect</b></p>
@@ -466,11 +468,10 @@ class DataprocSparkSession(SparkSession):
         </div>
         """
 
-    def _remove_stoped_session_from_file(self):
-        if "DATAPROC_SPARK_CONNECT_ACTIVE_SESSION_FILE_PATH" in os.environ:
-            file_path = os.environ[
-                "DATAPROC_SPARK_CONNECT_ACTIVE_SESSION_FILE_PATH"
-            ]
+    @staticmethod
+    def _remove_stopped_session_from_file():
+        file_path = os.getenv("DATAPROC_SPARK_CONNECT_ACTIVE_SESSION_FILE_PATH")
+        if file_path is not None:
             try:
                 with open(file_path, "w"):
                     pass
@@ -494,7 +495,7 @@ class DataprocSparkSession(SparkSession):
 
         Parameters
         ----------
-        *path : tuple of str
+        *artifact : tuple of str
             Artifact's URIs to add.
         pyfile : bool
             Whether to add them as Python dependencies such as .py, .egg, .zip or .jar files.
@@ -507,7 +508,7 @@ class DataprocSparkSession(SparkSession):
             Add a file to be downloaded with this Spark job on every node.
             The ``path`` passed can only be a local file for now.
         pypi : bool
-            This option is only available with DataprocSparkSession. eg. `spark.addArtifacts("spacy==3.8.4", "torch",  pypi=True)`
+            This option is only available with DataprocSparkSession. e.g. `spark.addArtifacts("spacy==3.8.4", "torch",  pypi=True)`
             Installs PyPi package (with its dependencies) in the active Spark session on the driver and executors.
 
         Notes
@@ -544,7 +545,7 @@ class DataprocSparkSession(SparkSession):
                     self._client_options,
                 )
 
-                self._remove_stoped_session_from_file()
+                self._remove_stopped_session_from_file()
                 DataprocSparkSession._active_s8s_session_uuid = None
                 DataprocSparkSession._active_s8s_session_id = None
                 DataprocSparkSession._project_id = None
@@ -583,12 +584,12 @@ def terminate_s8s_session(
         ):
             session = session_client.get_session(get_session_request)
             state = session.state
-            sleep(1)
+            time.sleep(1)
     except NotFound:
         logger.debug(f"Session {active_s8s_session_id} already deleted")
     # Client will get 'Aborted' error if session creation is still in progress and
     # 'FailedPrecondition' if another termination is still in progress.
-    # Both are retryable but we catch it and let TTL take care of cleanups.
+    # Both are retryable, but we catch it and let TTL take care of cleanups.
     except (FailedPrecondition, Aborted):
         logger.debug(
             f"Session {active_s8s_session_id} already terminated manually or terminated automatically through session ttl limits"
@@ -608,7 +609,7 @@ def get_active_s8s_session_response(
         ).get_session(get_session_request)
         state = get_session_response.state
     except Exception as e:
-        logger.info(f"{session_name} deleted: {e}")
+        print(f"{session_name} Dataproc Session deleted: {e}")
         return None
     if state is not None and (
         state == Session.State.ACTIVE or state == Session.State.CREATING
