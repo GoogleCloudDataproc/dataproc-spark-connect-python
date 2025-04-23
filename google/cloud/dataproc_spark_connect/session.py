@@ -25,23 +25,21 @@ from google.api_core import retry
 from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound, PermissionDenied
 from google.api_core.future.polling import POLLING_PREDICATE
-from google.cloud.dataproc_v1 import AuthenticationConfig
-from google.cloud.dataproc_v1.types import sessions
-
+from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
+from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
+from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
+    AuthenticationConfig,
     CreateSessionRequest,
     GetSessionRequest,
     Session,
     SessionControllerClient,
     TerminateSessionRequest,
 )
-from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
-from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
+from google.cloud.dataproc_v1.types import sessions
 from google.protobuf.duration_pb2 import Duration
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
-
-from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 from typing import Any, cast, ClassVar, Dict, Optional
 
 # Set up logging
@@ -335,44 +333,46 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._DEFAULT_RUNTIME_VERSION
                 )
             if (
-                not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+                not dataproc_config.environment_config
+                and not dataproc_config.environment_config.execution_config
+                and not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+                and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
             ):
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
-                    os.getenv(
-                        "DATAPROC_SPARK_CONNECT_AUTH_TYPE",
-                        "AUTHENTICATION_TYPE_UNSPECIFIED",
-                    )
+                    os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
                 ]
             if (
                 not dataproc_config.environment_config.execution_config.service_account
+                and not "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT" in os.environ
             ):
                 dataproc_config.environment_config.execution_config.service_account = os.getenv(
-                    "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT", ""
+                    "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT"
                 )
             if (
                 not dataproc_config.environment_config.execution_config.subnetwork_uri
+                and "DATAPROC_SPARK_CONNECT_SUBNET" in os.environ
             ):
                 dataproc_config.environment_config.execution_config.subnetwork_uri = os.getenv(
-                    "DATAPROC_SPARK_CONNECT_SUBNET", ""
+                    "DATAPROC_SPARK_CONNECT_SUBNET"
                 )
-            ttl_str = os.getenv("DATAPROC_SPARK_CONNECT_TTL_SECONDS")
             if (
                 not dataproc_config.environment_config.execution_config.ttl
-                and ttl_str is not None
+                and "DATAPROC_SPARK_CONNECT_TTL_SECONDS" in os.environ
             ):
-                ttl = Duration()
-                ttl.FromSeconds(int(ttl_str))
-                dataproc_config.environment_config.execution_config.ttl = ttl
-            idle_ttl_str = os.getenv("DATAPROC_SPARK_CONNECT_IDLE_TTL_SECONDS")
+                dataproc_config.environment_config.execution_config.ttl = {
+                    "seconds": int(
+                        os.getenv("DATAPROC_SPARK_CONNECT_TTL_SECONDS")
+                    )
+                }
             if (
                 not dataproc_config.environment_config.execution_config.idle_ttl
-                and idle_ttl_str is not None
+                and "DATAPROC_SPARK_CONNECT_IDLE_TTL_SECONDS" in os.environ
             ):
-                idle_ttl = Duration()
-                idle_ttl.FromSeconds(int(idle_ttl_str))
-                dataproc_config.environment_config.execution_config.idle_ttl = (
-                    idle_ttl
-                )
+                dataproc_config.environment_config.execution_config.idle_ttl = {
+                    "seconds": int(
+                        os.getenv("DATAPROC_SPARK_CONNECT_IDLE_TTL_SECONDS")
+                    )
+                }
             if "COLAB_NOTEBOOK_RUNTIME_ID" in os.environ:
                 dataproc_config.labels["colab-notebook-runtime-id"] = (
                     os.environ["COLAB_NOTEBOOK_RUNTIME_ID"]

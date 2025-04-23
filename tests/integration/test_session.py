@@ -17,6 +17,7 @@ import pytest
 import uuid
 
 from google.api_core import client_options
+from google.cloud.dataproc_spark_connect import DataprocSparkSession
 from google.cloud.dataproc_v1 import (
     CreateSessionTemplateRequest,
     DeleteSessionRequest,
@@ -30,7 +31,6 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from pyspark.errors.exceptions import connect as connect_exceptions
-from google.cloud.dataproc_spark_connect import DataprocSparkSession
 
 
 _SERVICE_ACCOUNT_KEY_FILE_ = "service_account_key.json"
@@ -67,7 +67,7 @@ def test_subnetwork_uri(test_project, test_region, test_subnet):
 
 
 @pytest.fixture
-def os_environment(auth_type, test_project, test_region):
+def os_environment(auth_type, image_version, test_project, test_region):
     original_environment = dict(os.environ)
     if os.path.isfile(_SERVICE_ACCOUNT_KEY_FILE_):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
@@ -146,7 +146,9 @@ def test_create_spark_session_with_default_notebook_behavior(
     assert DataprocSparkSession._active_s8s_session_uuid is None
 
 
-def test_reuse_s8s_spark_session(connect_session):
+def test_reuse_s8s_spark_session(
+    connect_session, session_name, session_controller_client
+):
     assert DataprocSparkSession._active_s8s_session_uuid is not None
 
     first_session_id = DataprocSparkSession._active_s8s_session_id
@@ -199,6 +201,7 @@ def test_stop_spark_session_with_terminated_serverless_session(
 def test_get_or_create_spark_session_with_terminated_serverless_session(
     test_project,
     test_region,
+    connect_session,
     session_name,
     session_controller_client,
 ):
@@ -277,6 +280,7 @@ def session_template_name(
 
 
 def test_create_spark_session_with_session_template_and_user_provided_dataproc_config(
+    image_version,
     test_project,
     test_region,
     session_template_name,

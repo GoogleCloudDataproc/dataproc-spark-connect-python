@@ -35,7 +35,7 @@ configuration details on the command line. For example:
 env \
   GOOGLE_CLOUD_PROJECT='project-id' \
   GOOGLE_CLOUD_REGION='us-central1' \
-  GOOGLE_CLOUD_SUBNET='subnet-id' \
+  DATAPROC_SPARK_CONNECT_SUBNET='subnet-id' \
   pytest --tb=auto -v
 ```
 
@@ -48,6 +48,6 @@ use. This will be set automatically if you set it to `auto`. For example:
 env \
   GOOGLE_CLOUD_PROJECT='project-id' \
   GOOGLE_CLOUD_REGION='us-central1' \
-  GOOGLE_CLOUD_SUBNET='subnet-id' \
+  DATAPROC_SPARK_CONNECT_SUBNET='subnet-id' \
   pytest -n auto --tb=auto -v
 ```
