@@ -1,8 +1,0 @@
-environment_config: {
-  execution_config: {
-    subnetwork_uri: "subnet-placeholder"
-  }
-}
-runtime_config: {
-  version: "2.2"
-}

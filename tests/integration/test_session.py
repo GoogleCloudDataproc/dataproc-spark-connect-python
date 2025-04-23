@@ -13,11 +13,10 @@
 # limitations under the License.
 import datetime
 import os
-import tempfile
+import pytest
 import uuid
 
 from google.api_core import client_options
-
 from google.cloud.dataproc_v1 import (
     CreateSessionTemplateRequest,
     DeleteSessionRequest,
@@ -31,9 +30,6 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from pyspark.errors.exceptions import connect as connect_exceptions
-
-import pytest
-
 from google.cloud.dataproc_spark_connect import DataprocSparkSession
 
 
@@ -52,7 +48,7 @@ def test_project():
 
 @pytest.fixture
 def auth_type(request):
-    return getattr(request, "param", "SYSTEM_SERVICE_ACCOUNT")
+    return getattr(request, "param", "SERVICE_ACCOUNT")
 
 
 @pytest.fixture
@@ -62,7 +58,7 @@ def test_region():
 
 @pytest.fixture
 def test_subnet():
-    return os.getenv("GOOGLE_CLOUD_SUBNET")
+    return os.getenv("DATAPROC_SPARK_CONNECT_SUBNET")
 
 
 @pytest.fixture
@@ -71,33 +67,13 @@ def test_subnetwork_uri(test_project, test_region, test_subnet):
 
 
 @pytest.fixture
-def default_config(
-    auth_type, image_version, test_project, test_region, test_subnetwork_uri
-):
-    resources_dir = os.path.join(os.path.dirname(__file__), "resources")
-    template_file = os.path.join(resources_dir, "session.textproto")
-    with open(template_file) as f:
-        template = f.read()
-        contents = (
-            template.replace("2.2", image_version)
-            .replace("subnet-placeholder", test_subnetwork_uri)
-            .replace("SYSTEM_SERVICE_ACCOUNT", auth_type)
-        )
-        with tempfile.NamedTemporaryFile(delete=False) as t:
-            t.write(contents.encode("utf-8"))
-            t.close()
-            yield t.name
-            os.remove(t.name)
-
-
-@pytest.fixture
-def os_environment(default_config, test_project, test_region):
+def os_environment(auth_type, test_project, test_region):
     original_environment = dict(os.environ)
-    os.environ["DATAPROC_SPARK_CONNECT_SESSION_DEFAULT_CONFIG"] = default_config
     if os.path.isfile(_SERVICE_ACCOUNT_KEY_FILE_):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
             _SERVICE_ACCOUNT_KEY_FILE_
         )
+    os.environ["DATAPROC_SPARK_CONNECT_AUTH_TYPE"] = auth_type
     yield os.environ
     os.environ.clear()
     os.environ.update(original_environment)
@@ -150,12 +126,10 @@ def test_create_spark_session_with_default_notebook_behavior(
     )
     assert str(df) == "DataFrame[id: bigint, name: string]"
     connect_session.sql("DROP TABLE IF EXISTS FOO")
-    connect_session.sql(
-        """CREATE TABLE FOO (bar long, baz long) USING PARQUET"""
-    )
+    connect_session.sql("CREATE TABLE FOO (bar long, baz long) USING PARQUET")
     with pytest.raises(connect_exceptions.AnalysisException) as ex:
         connect_session.sql(
-            """CREATE TABLE FOO (bar long, baz long) USING PARQUET"""
+            "CREATE TABLE FOO (bar long, baz long) USING PARQUET"
         )
 
         assert "[TABLE_OR_VIEW_ALREADY_EXISTS]" in str(ex)
@@ -172,9 +146,7 @@ def test_create_spark_session_with_default_notebook_behavior(
     assert DataprocSparkSession._active_s8s_session_uuid is None
 
 
-def test_reuse_s8s_spark_session(
-    connect_session, session_name, session_controller_client
-):
+def test_reuse_s8s_spark_session(connect_session):
     assert DataprocSparkSession._active_s8s_session_uuid is not None
 
     first_session_id = DataprocSparkSession._active_s8s_session_id
@@ -199,8 +171,8 @@ def test_stop_spark_session_with_deleted_serverless_session(
 
     delete_session_request = DeleteSessionRequest()
     delete_session_request.name = session_name
-    opeation = session_controller_client.delete_session(delete_session_request)
-    opeation.result()
+    operation = session_controller_client.delete_session(delete_session_request)
+    operation.result()
     connect_session.stop()
 
     assert DataprocSparkSession._active_s8s_session_uuid is None
@@ -214,10 +186,10 @@ def test_stop_spark_session_with_terminated_serverless_session(
 
     terminate_session_request = TerminateSessionRequest()
     terminate_session_request.name = session_name
-    opeation = session_controller_client.terminate_session(
+    operation = session_controller_client.terminate_session(
         terminate_session_request
     )
-    opeation.result()
+    operation.result()
     connect_session.stop()
 
     assert DataprocSparkSession._active_s8s_session_uuid is None
@@ -227,22 +199,20 @@ def test_stop_spark_session_with_terminated_serverless_session(
 def test_get_or_create_spark_session_with_terminated_serverless_session(
     test_project,
     test_region,
-    connect_session,
     session_name,
     session_controller_client,
 ):
     first_session_name = session_name
-    second_session_name = None
 
     assert DataprocSparkSession._active_s8s_session_uuid is not None
 
     first_session = DataprocSparkSession._active_s8s_session_uuid
     terminate_session_request = TerminateSessionRequest()
     terminate_session_request.name = first_session_name
-    opeation = session_controller_client.terminate_session(
+    operation = session_controller_client.terminate_session(
         terminate_session_request
     )
-    opeation.result()
+    operation.result()
     connect_session = DataprocSparkSession.builder.getOrCreate()
     second_session = DataprocSparkSession._active_s8s_session_uuid
     second_session_name = f"projects/{test_project}/locations/{test_region}/sessions/{DataprocSparkSession._active_s8s_session_id}"
@@ -307,7 +277,6 @@ def session_template_name(
 
 
 def test_create_spark_session_with_session_template_and_user_provided_dataproc_config(
-    image_version,
     test_project,
     test_region,
     session_template_name,

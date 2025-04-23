@@ -1,7 +1,0 @@
-environment_config: {
-  execution_config: {
-    network_uri: "test_network_uri"
-    idle_ttl {
-      seconds: 5
-  }
-}
