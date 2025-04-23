@@ -98,7 +98,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_operation = mock.Mock()
         session_response = Session()
         session_response.runtime_info.endpoints = {
-            "Spark Connect Server": "https://spark-connect-server/"
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
         }
         session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
         mock_operation.result.side_effect = [session_response]
@@ -167,7 +167,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_operation = mock.Mock()
             session_response = Session()
             session_response.runtime_info.endpoints = {
-                "Spark Connect Server": "https://spark-connect-server/"
+                "Spark Connect Server": "sc://spark-connect-server.example.com:443"
             }
             session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
             mock_operation.result.side_effect = [session_response]
@@ -236,7 +236,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_operation = mock.Mock()
         session_response = Session()
         session_response.runtime_info.endpoints = {
-            "Spark Connect Server": "https://spark-connect-server/"
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
         }
         session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
         mock_operation.result.side_effect = [session_response]
@@ -345,7 +345,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_operation = mock.Mock()
         session_response = Session()
         session_response.runtime_info.endpoints = {
-            "Spark Connect Server": "https://spark-connect-server/"
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
         }
         session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
         mock_operation.result.side_effect = [session_response]
@@ -443,7 +443,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_operation = mock.Mock()
         session_response = Session()
         session_response.runtime_info.endpoints = {
-            "Spark Connect Server": "https://spark-connect-server/"
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
         }
         session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
         mock_operation.result.side_effect = [session_response]
@@ -653,7 +653,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_operation = mock.Mock()
         session_response = Session()
         session_response.runtime_info.endpoints = {
-            "Spark Connect Server": "https://spark-connect-server/"
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
         }
         session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
         mock_operation.result.side_effect = [session_response]
@@ -693,7 +693,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_operation = mock.Mock()
             session_response = Session()
             session_response.runtime_info.endpoints = {
-                "Spark Connect Server": "https://spark-connect-server/"
+                "Spark Connect Server": "sc://spark-connect-server.example.com:443"
             }
             session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
             mock_operation.result.side_effect = [session_response]
@@ -738,7 +738,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_operation = mock.Mock()
             session_response = Session()
             session_response.runtime_info.endpoints = {
-                "Spark Connect Server": "https://spark-connect-server/"
+                "Spark Connect Server": "sc://spark-connect-server.example.com:443"
             }
             session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
             mock_operation.result.side_effect = [session_response]
@@ -783,7 +783,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_operation = mock.Mock()
             session_response = Session()
             session_response.runtime_info.endpoints = {
-                "Spark Connect Server": "https://spark-connect-server/"
+                "Spark Connect Server": "sc://spark-connect-server.example.com:443"
             }
             session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
             mock_operation.result.side_effect = [session_response]
@@ -833,7 +833,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_operation = mock.Mock()
             session_response = Session()
             session_response.runtime_info.endpoints = {
-                "Spark Connect Server": "https://spark-connect-server/"
+                "Spark Connect Server": "sc://spark-connect-server.example.com:443"
             }
             session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
             mock_operation.result.side_effect = [session_response]
