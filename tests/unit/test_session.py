@@ -55,6 +55,16 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         os.environ.clear()
         os.environ.update(self.original_environment)
 
+    @staticmethod
+    def stopSession(mock_session_controller_client_instance, session):
+        session_response = Session()
+        session_response.state = Session.State.TERMINATING
+        mock_session_controller_client_instance.get_session.return_value = (
+            session_response
+        )
+        if session is not None:
+            session.stop()
+
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
@@ -132,13 +142,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.terminate_session.return_value = (
                 mock.Mock()
             )
-            session_response = Session()
-            session_response.state = Session.State.TERMINATING
-            mock_session_controller_client_instance.get_session.return_value = (
-                session_response
-            )
-            if session is not None:
-                session.stop()
+            self.stopSession(mock_session_controller_client_instance, session)
             terminate_session_request = TerminateSessionRequest()
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
@@ -155,48 +159,50 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         self,
         mock_session_controller_client,
     ):
+        session = None
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
-        mock_operation = mock.Mock()
-        session_response = Session()
-        session_response.runtime_info.endpoints = {
-            "Spark Connect Server": "https://spark-connect-server/"
-        }
-        session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
-        mock_operation.result.side_effect = [session_response]
-        mock_session_controller_client_instance.create_session.return_value = (
-            mock_operation
-        )
-        session = DataprocSparkSession.builder.getOrCreate()
+        try:
+            mock_operation = mock.Mock()
+            session_response = Session()
+            session_response.runtime_info.endpoints = {
+                "Spark Connect Server": "https://spark-connect-server/"
+            }
+            session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+            mock_operation.result.side_effect = [session_response]
+            mock_session_controller_client_instance.create_session.return_value = (
+                mock_operation
+            )
+            session = DataprocSparkSession.builder.getOrCreate()
+            self.assertTrue(isinstance(session, DataprocSparkSession))
+            session.addArtifact = mock.MagicMock()
 
-        self.assertTrue(isinstance(session, DataprocSparkSession))
+            # Setting two flags together
+            with self.assertRaisesRegex(
+                ValueError,
+                "'pyfile', 'archive', 'file' and/or 'pypi' cannot be True together",
+            ):
+                session.addArtifacts("abc.txt", file=True, pypi=True)
 
-        session.addArtifact = mock.MagicMock()
+            # Propagate error
+            session.addArtifact.side_effect = Exception("Error installing")
+            with self.assertRaisesRegex(
+                Exception,
+                "Error installing",
+            ):
+                session.addArtifacts("spacy", pypi=True)
+            session.addArtifact.side_effect = None
 
-        # Setting two flags together
-        with self.assertRaisesRegex(
-            ValueError,
-            "'pyfile', 'archive', 'file' and/or 'pypi' cannot be True together",
-        ):
-            session.addArtifacts("abc.txt", file=True, pypi=True)
-
-        # Propagate error
-        session.addArtifact.side_effect = Exception("Error installing")
-        with self.assertRaisesRegex(
-            Exception,
-            "Error installing",
-        ):
+            # Do install if earlier add artifact resulted in failure
             session.addArtifacts("spacy", pypi=True)
-        session.addArtifact.side_effect = None
+            self.assertEqual(session.addArtifact.call_count, 2)
 
-        # Do install if earlier add artifact resulted in failure
-        session.addArtifacts("spacy", pypi=True)
-        self.assertEqual(session.addArtifact.call_count, 2)
-
-        # test multiple packages, when already installed
-        session.addArtifacts("spacy==1.2.3", "spacy", pypi=True)
-        self.assertEqual(session.addArtifact.call_count, 3)
+            # test multiple packages, when already installed
+            session.addArtifacts("spacy==1.2.3", "spacy", pypi=True)
+            self.assertEqual(session.addArtifact.call_count, 3)
+        finally:
+            self.stopSession(mock_session_controller_client_instance, session)
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -293,13 +299,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.terminate_session.return_value = (
                 mock.Mock()
             )
-            session_response = Session()
-            session_response.state = Session.State.TERMINATING
-            mock_session_controller_client_instance.get_session.return_value = (
-                session_response
-            )
-            if session is not None:
-                session.stop()
+            self.stopSession(mock_session_controller_client_instance, session)
             terminate_session_request = TerminateSessionRequest()
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
@@ -397,13 +397,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.terminate_session.return_value = (
                 mock.Mock()
             )
-            session_response = Session()
-            session_response.state = Session.State.TERMINATING
-            mock_session_controller_client_instance.get_session.return_value = (
-                session_response
-            )
-            if session is not None:
-                session.stop()
+            self.stopSession(mock_session_controller_client_instance, session)
             terminate_session_request = TerminateSessionRequest()
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
@@ -511,13 +505,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.terminate_session.return_value = (
                 mock.Mock()
             )
-            session_response = Session()
-            session_response.state = Session.State.TERMINATING
-            mock_session_controller_client_instance.get_session.return_value = (
-                session_response
-            )
-            if session is not None:
-                session.stop()
+            self.stopSession(mock_session_controller_client_instance, session)
             terminate_session_request = TerminateSessionRequest()
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
@@ -681,13 +669,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 e.exception.args[0],
                 "Session not active. Please create a new session ",
             )
-        session_response = Session()
-        session_response.state = Session.State.TERMINATING
-        mock_session_controller_client_instance.get_session.return_value = (
-            session_response
-        )
-        if session is not None:
-            session.stop()
+        self.stopSession(mock_session_controller_client_instance, session)
 
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
     @mock.patch("google.auth.default")
