@@ -270,7 +270,7 @@ class DataprocSparkSession(SparkSession):
                     )
                     stop_create_session_pbar = True
                     create_session_pbar_thread.join()
-                    print("Dataproc Session successfully created")
+                    print("Dataproc Session was successfully created")
                     file_path = (
                         DataprocSparkSession._get_active_session_file_path()
                     )
