@@ -47,14 +47,11 @@ environment variables:
 
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
-   from google.cloud.dataproc_v1 import Session ,SparkConnectConfig
-       
+   from google.cloud.dataproc_v1 import Session
    session_config = Session()
-   session_config.spark_connect_session = SparkConnectConfig()
-   session_config.environment_config.execution_config.subnetwork_uri = "<subnet>"
+   session_config.environment_config.execution_config.subnetwork_uri = '<subnet>'
    session_config.runtime_config.version = '2.2'
-
-   spark = DataprocSparkSession.builder.dataprocSessionConfig(dataproc_session_config).getOrCreate()
+   spark = DataprocSparkSession.builder.dataprocSessionConfig(session_config).getOrCreate()
    ```
 
 ## Developing
