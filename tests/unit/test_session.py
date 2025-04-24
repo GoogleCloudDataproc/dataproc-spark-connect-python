@@ -13,7 +13,6 @@
 # limitations under the License.
 import os
 import unittest
-from unittest.mock import patch
 
 from google.api_core.exceptions import (
     Aborted,
@@ -317,7 +316,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_operation
         )
 
-        patch.dict(
+        mock.patch.dict(
             os.environ,
             {
                 "DATAPROC_SPARK_CONNECT_AUTH_TYPE": "SERVICE_ACCOUNT",
