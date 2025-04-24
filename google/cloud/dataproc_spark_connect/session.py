@@ -28,6 +28,7 @@ from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound, PermissionDenied
 from google.api_core.future.polling import POLLING_PREDICATE
 from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
+from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
@@ -37,9 +38,7 @@ from google.cloud.dataproc_v1 import (
     SessionControllerClient,
     TerminateSessionRequest,
 )
-from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 from google.cloud.dataproc_v1.types import sessions
-from google.protobuf.duration_pb2 import Duration
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
 from typing import Any, cast, ClassVar, Dict, Optional
