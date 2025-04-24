@@ -225,8 +225,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         )
 
         create_session_request = CreateSessionRequest()
-        create_session_request.session.environment_config.execution_config.network_uri = (
-            "user_passed_network_uri"
+        create_session_request.session.environment_config.execution_config.subnetwork_uri = (
+            "user_passed_subnetwork_uri"
         )
         create_session_request.session.environment_config.execution_config.ttl = {
             "seconds": 10
@@ -248,8 +248,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
 
         try:
             dataproc_config = Session()
-            dataproc_config.environment_config.execution_config.network_uri = (
-                "user_passed_network_uri"
+            dataproc_config.environment_config.execution_config.subnetwork_uri = (
+                "user_passed_subnetwork_uri"
             )
             dataproc_config.environment_config.execution_config.ttl = {
                 "seconds": 10
