@@ -591,7 +591,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 Session()
             ).getOrCreate()
         self.assertEqual(
-            e.exception.args[0], "Error while creating serverless session"
+            e.exception.args[0], "Error while creating Dataproc Session"
         )
 
     @mock.patch("google.auth.default")
@@ -620,7 +620,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             ).getOrCreate()
             self.assertEqual(
                 e.exception.error_message,
-                "Error while creating serverless session: "
+                "Error while creating Dataproc Session: "
                 "400 Network does not have permissions",
             )
 

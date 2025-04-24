@@ -205,14 +205,14 @@ class DataprocSparkSession(SparkSession):
                 session_request.session_id = session_id
                 dataproc_config.name = f"projects/{self._project_id}/locations/{self._region}/sessions/{session_id}"
                 logger.debug(
-                    f"Configurations used to create serverless session:\n {dataproc_config}"
+                    f"Configurations used to create Dataproc Session:\n {dataproc_config}"
                 )
                 session_request.session = dataproc_config
                 session_request.parent = (
                     f"projects/{self._project_id}/locations/{self._region}"
                 )
 
-                logger.debug("Creating serverless session")
+                logger.debug("Creating Dataproc Session")
                 DataprocSparkSession._active_s8s_session_id = session_id
                 s8s_creation_start_time = time.time()
                 try:
@@ -268,16 +268,16 @@ class DataprocSparkSession(SparkSession):
                 except (InvalidArgument, PermissionDenied) as e:
                     DataprocSparkSession._active_s8s_session_id = None
                     raise DataprocSparkConnectException(
-                        f"Error while creating serverless session: {e.message}"
+                        f"Error while creating Dataproc Session: {e.message}"
                     )
                 except Exception as e:
                     DataprocSparkSession._active_s8s_session_id = None
                     raise RuntimeError(
-                        f"Error while creating serverless session"
+                        f"Error while creating Dataproc Session"
                     ) from e
 
                 logger.debug(
-                    f"Serverless session created: {session_id}, creation time taken: {int(time.time() - s8s_creation_start_time)} seconds"
+                    f"Dataproc Session created: {session_id}, creation time taken: {int(time.time() - s8s_creation_start_time)} seconds"
                 )
                 return self.__create_spark_connect_session_from_s8s(
                     session_response, dataproc_config.name
@@ -301,7 +301,7 @@ class DataprocSparkSession(SparkSession):
 
             if session_response is not None:
                 print(
-                    f"Using existing Dataproc Spark Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}, configuration changes may not be applied."
+                    f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}"
                 )
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
@@ -451,7 +451,7 @@ class DataprocSparkSession(SparkSession):
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:
             return """
-            <div>No Active Dataproc Spark Session</div>
+            <div>No Active Dataproc Session</div>
             """
 
         s8s_session = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._active_s8s_session_id}"
@@ -460,7 +460,7 @@ class DataprocSparkSession(SparkSession):
         <div>
             <p><b>Spark Connect</b></p>
 
-            <p><a href="{s8s_session}?project={self._project_id}">Serverless Session</a></p>
+            <p><a href="{s8s_session}?project={self._project_id}">Dataproc Session</a></p>
             <p><a href="{ui}?project={self._project_id}">Spark UI</a></p>
         </div>
         """
@@ -563,7 +563,7 @@ def terminate_s8s_session(
 ):
     from google.cloud.dataproc_v1 import SessionControllerClient
 
-    logger.debug(f"Terminating serverless session: {active_s8s_session_id}")
+    logger.debug(f"Terminating Dataproc Session: {active_s8s_session_id}")
     terminate_session_request = TerminateSessionRequest()
     session_name = f"projects/{project_id}/locations/{region}/sessions/{active_s8s_session_id}"
     terminate_session_request.name = session_name
@@ -592,7 +592,7 @@ def terminate_s8s_session(
             f"Session {active_s8s_session_id} already terminated manually or terminated automatically through session ttl limits"
         )
     if state is not None and state == Session.State.FAILED:
-        raise RuntimeError("Serverless session termination failed")
+        raise RuntimeError("Dataproc Session termination failed")
 
 
 def get_active_s8s_session_response(
