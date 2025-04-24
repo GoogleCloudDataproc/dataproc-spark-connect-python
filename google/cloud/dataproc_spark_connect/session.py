@@ -210,7 +210,7 @@ class DataprocSparkSession(SparkSession):
 
                 stop_create_session_pbar = False
 
-                def create_session_pbar(desc):
+                def create_session_pbar():
                     iterations = 150
                     pbar = tqdm.trange(
                         iterations,
