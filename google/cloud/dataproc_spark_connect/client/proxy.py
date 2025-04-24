@@ -18,7 +18,6 @@ import contextlib
 import logging
 import socket
 import threading
-import time
 
 import websockets.sync.client as websocketclient
 
@@ -95,6 +94,7 @@ def forward_bytes(name, from_sock, to_sock):
     This method is intended to be run in a separate thread of execution.
 
     Args:
+        name: forwarding thread name
         from_sock: A socket-like object to stream bytes from.
         to_sock: A socket-like object to stream bytes to.
     """
@@ -131,7 +131,7 @@ def connect_sockets(conn_number, from_sock, to_sock):
     This method continuously streams bytes in both directions between the
     given `from_sock` and `to_sock` socket-like objects.
 
-    The caller is responsible for creating and closing the supplied socekts.
+    The caller is responsible for creating and closing the supplied sockets.
     """
     forward_name = f"{conn_number}-forward"
     t1 = threading.Thread(
@@ -163,7 +163,7 @@ def forward_connection(conn_number, conn, addr, target_host):
     Both the supplied incoming connection (`conn`) and the created outgoing
     connection are automatically closed when this method terminates.
 
-    This method should be run inside of a daemon thread so that it will not
+    This method should be run inside a daemon thread so that it will not
     block program termination.
     """
     with conn:

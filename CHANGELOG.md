@@ -32,7 +32,7 @@
 
 * catch PermissionDenied errors while creating session ([#53](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/53)) ([b0905cf](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/b0905cfd0916af2d92b892f206f6bc7275e78976))
 * integration test table cleanup ([#58](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/58)) ([755de6d](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/755de6dc6f9da83702928b31356059f8c4d37104))
-* only use error message to throw RuntimError ([#51](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/51)) ([1f9136e](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/1f9136eda682cade422bc1fae68cc2b23273888c))
+* only use error message to throw RuntimeError ([#51](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/51)) ([1f9136e](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/1f9136eda682cade422bc1fae68cc2b23273888c))
 * suppress stack trace for InvalidArgument and PermissionDenied ([#56](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/56)) ([87e5eb0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/87e5eb0be1874d9909e55f8ffa0893677c67a6ac))
 * unit test expected error message ([#54](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/54)) ([e43c8bd](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/e43c8bddb28ca0c95c68dc19e0c8abfb24c34460))
 

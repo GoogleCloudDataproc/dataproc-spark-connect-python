@@ -40,7 +40,7 @@ If you are running the client outside of Google Cloud, you must set following en
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
    ```
 
-3. There are two ways to create a spark session,
+3. There are two ways to create a Spark session,
 
    1. Start a Spark session using properties defined in `DATAPROC_SPARK_CONNECT_SESSION_DEFAULT_CONFIG`:
 

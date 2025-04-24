@@ -216,7 +216,9 @@ class DataprocSparkSession(SparkSession):
                 DataprocSparkSession._active_s8s_session_id = session_id
                 s8s_creation_start_time = time.time()
                 try:
-                    print("Creating Spark session. It may take a few minutes.")
+                    print(
+                        "Creating Dataproc Session. It may take a few minutes."
+                    )
                     if (
                         os.getenv(
                             "GOOGLE_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT",
