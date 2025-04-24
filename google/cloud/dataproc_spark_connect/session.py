@@ -333,9 +333,7 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._DEFAULT_RUNTIME_VERSION
                 )
             if (
-                not dataproc_config.environment_config
-                and not dataproc_config.environment_config.execution_config
-                and not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+                not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
                 and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
             ):
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
@@ -343,7 +341,7 @@ class DataprocSparkSession(SparkSession):
                 ]
             if (
                 not dataproc_config.environment_config.execution_config.service_account
-                and not "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT" in os.environ
+                and "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT" in os.environ
             ):
                 dataproc_config.environment_config.execution_config.service_account = os.getenv(
                     "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT"
