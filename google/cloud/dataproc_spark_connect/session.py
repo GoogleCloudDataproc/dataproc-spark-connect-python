@@ -21,6 +21,7 @@ import random
 import string
 import threading
 import time
+import tqdm
 
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
@@ -209,14 +210,12 @@ class DataprocSparkSession(SparkSession):
 
                 stop_create_session_pbar = False
 
-                def create_session_pbar():
-                    iterations = 50
-                    pbar = trange(
+                def create_session_pbar(desc):
+                    iterations = 150
+                    pbar = tqdm.trange(
                         iterations,
-                        bar_format="{desc}: {bar}",
-                        desc="Creating Dataproc Session",
-                        total=50,
-                        ncols=60,
+                        bar_format="{bar}",
+                        ncols=80,
                     )
                     for i in pbar:
                         if stop_create_session_pbar:
@@ -227,7 +226,7 @@ class DataprocSparkSession(SparkSession):
                             while not stop_create_session_pbar:
                                 time.sleep(1)
                         else:
-                            time.sleep(2)
+                            time.sleep(1)
 
                     pbar.close()
                     # Print new line after the progress bar
@@ -257,7 +256,7 @@ class DataprocSparkSession(SparkSession):
                         client_options=self._client_options
                     ).create_session(session_request)
                     print(
-                        f"Dataproc Session Detail View: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
+                        f"Creating Dataproc Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
                     create_session_pbar_thread.start()
                     session_response: Session = operation.result(
