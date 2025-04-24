@@ -229,8 +229,6 @@ class DataprocSparkSession(SparkSession):
                             time.sleep(1)
 
                     pbar.close()
-                    # Print new line after the progress bar
-                    print()
 
                 create_session_pbar_thread = threading.Thread(
                     target=create_session_pbar
