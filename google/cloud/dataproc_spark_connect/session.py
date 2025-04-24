@@ -442,7 +442,7 @@ class DataprocSparkSession(SparkSession):
             client_version = importlib.metadata.version("pyspark")
             if trim_version(client_version) != trim_version(server_version):
                 print(
-                    f"Client and server use different versions:\n"
+                    f"Spark Connect client and server use different versions:\n"
                     f"- Dataproc Spark Connect client {dataproc_connect_version} (PySpark {client_version})\n"
                     f"- Dataproc Spark runtime {version} (Spark {server_version})"
                 )
