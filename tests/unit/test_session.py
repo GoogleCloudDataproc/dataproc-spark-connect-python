@@ -20,15 +20,14 @@ from google.api_core.exceptions import (
     InvalidArgument,
     NotFound,
 )
-from google.cloud.dataproc_v1 import AuthenticationConfig
-from google.cloud.dataproc_v1 import ExecutionConfig
-from google.cloud.dataproc_v1 import SparkConnectConfig
 from google.cloud.dataproc_spark_connect import DataprocSparkSession
 from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 from google.cloud.dataproc_v1 import (
+    AuthenticationConfig,
     CreateSessionRequest,
     GetSessionRequest,
     Session,
+    SparkConnectConfig,
     TerminateSessionRequest,
 )
 from pyspark.sql.connect.client.core import ConfigResult
@@ -41,6 +40,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     def setUp(self):
         self._default_runtime_version = "2.2"
         self.original_environment = dict(os.environ)
+        os.environ.clear()
         os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
         os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
 
