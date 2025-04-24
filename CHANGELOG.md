@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.6.0...v0.7.0) (2025-04-24)
+
+
+### Features
+
+* display progress bar during session creation ([#70](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/70)) ([bd74d93](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/bd74d937702c1f2897023e4f3980996d7696fc9c))
+* Migrate to env vars from the config file for defaults configuration ([#73](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/73)) ([5be4355](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/5be4355c0d27387fc22f9147269af98362a28622))
+
+
+### Bug Fixes
+
+* fix unit test run from hanging indefinitely ([#71](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/71)) ([eb78141](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/eb781413ff8728fffe88b2f9e31eae0e221a30cf))
+* improve log and output messages consistency ([#74](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/74)) ([6558119](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/655811908b20695d86dc3bab9569cf058ef616d2))
+* minor code cleanup and output fixes ([#68](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/68)) ([474e15c](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/474e15c57093fc958965f9cc365bbc34fc2e0302))
+
 ## [0.6.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.5.6...v0.6.0) (2025-04-22)
 
 
