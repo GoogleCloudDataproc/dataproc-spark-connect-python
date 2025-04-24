@@ -426,23 +426,25 @@ class DataprocSparkSession(SparkSession):
                 not in self._dataproc_runtime_to_spark_version
             ):
                 raise ValueError(
-                    f"Specified {version} runtime version is not supported. "
-                    f"Supported versions: {self._dataproc_runtime_to_spark_version.keys()}"
+                    f"Specified {version} Dataproc Spark runtime version is not supported. "
+                    f"Supported runtime versions: {self._dataproc_runtime_to_spark_version.keys()}"
                 )
 
             server_version = self._dataproc_runtime_to_spark_version[
                 trim_version(version)
             ]
+
             import importlib.metadata
 
-            google_connect_version = importlib.metadata.version(
+            dataproc_connect_version = importlib.metadata.version(
                 "dataproc-spark-connect"
             )
             client_version = importlib.metadata.version("pyspark")
-            version_message = f"Spark Connect: {google_connect_version} (PySpark: {client_version}) Session Runtime: {version} (Spark: {server_version})"
             if trim_version(client_version) != trim_version(server_version):
-                logger.warning(
-                    f"Client and server use different versions: {version_message}"
+                print(
+                    f"Client and server use different versions:\n"
+                    f"- Dataproc Spark Connect client {dataproc_connect_version} (PySpark {client_version})\n"
+                    f"- Dataproc Spark runtime {version} (Spark {server_version})"
                 )
 
         @staticmethod
