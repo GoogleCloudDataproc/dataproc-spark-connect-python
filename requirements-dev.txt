@@ -5,4 +5,4 @@ pyink~=24.0
 pyspark[connect]>=3.5
 setuptools>=72.0
 tqdm>=4.67
-websockets>=15.0
+websockets>=14.0

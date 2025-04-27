@@ -33,6 +33,6 @@ setup(
         "packaging>=20.0",
         "pyspark[connect]>=3.5",
         "tqdm>=4.67",
-        "websockets>=15.0",
+        "websockets>=14.0",
     ],
 )
