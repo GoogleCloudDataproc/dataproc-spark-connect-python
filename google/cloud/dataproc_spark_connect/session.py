@@ -77,13 +77,6 @@ class DataprocSparkSession(SparkSession):
 
     class Builder(SparkSession.Builder):
 
-        _dataproc_runtime_to_spark_version = {
-            "1.2": "3.5",
-            "2.2": "3.5",
-            "2.3": "3.5",
-            "3.0": "4.0",
-        }
-
         _session_static_configs = [
             "spark.executor.cores",
             "spark.executor.memoryOverhead",
@@ -187,8 +180,6 @@ class DataprocSparkSession(SparkSession):
                 from google.cloud.dataproc_v1 import SessionControllerClient
 
                 dataproc_config: Session = self._get_dataproc_config()
-
-                self._validate_version(dataproc_config)
 
                 session_id = self.generate_dataproc_session_id()
                 dataproc_config.name = f"projects/{self._project_id}/locations/{self._region}/sessions/{session_id}"
@@ -416,36 +407,6 @@ class DataprocSparkSession(SparkSession):
                     "COLAB_NOTEBOOK_KERNEL_ID"
                 ]
             return dataproc_config
-
-        def _validate_version(self, dataproc_config):
-            trim_version = lambda v: ".".join(v.split(".")[:2])
-
-            version = dataproc_config.runtime_config.version
-            if (
-                trim_version(version)
-                not in self._dataproc_runtime_to_spark_version
-            ):
-                raise ValueError(
-                    f"Specified {version} Dataproc Spark runtime version is not supported. "
-                    f"Supported runtime versions: {self._dataproc_runtime_to_spark_version.keys()}"
-                )
-
-            server_version = self._dataproc_runtime_to_spark_version[
-                trim_version(version)
-            ]
-
-            import importlib.metadata
-
-            dataproc_connect_version = importlib.metadata.version(
-                "dataproc-spark-connect"
-            )
-            client_version = importlib.metadata.version("pyspark")
-            if trim_version(client_version) != trim_version(server_version):
-                print(
-                    f"Spark Connect client and server use different versions:\n"
-                    f"- Dataproc Spark Connect client {dataproc_connect_version} (PySpark {client_version})\n"
-                    f"- Dataproc Spark runtime {version} (Spark {server_version})"
-                )
 
         @staticmethod
         def generate_dataproc_session_id():
