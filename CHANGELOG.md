@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.0...v0.7.1) (2025-04-28)
+
+
+### Bug Fixes
+
+* remove version validation for SC client/server ([#76](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/76)) ([7c9a4e6](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/7c9a4e6f30360c64f3aa3cddd29edc50ed49e37d))
+
 ## [0.7.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.6.0...v0.7.0) (2025-04-24)
 
 
