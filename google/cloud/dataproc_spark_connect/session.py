@@ -295,6 +295,8 @@ class DataprocSparkSession(SparkSession):
                     raise RuntimeError(
                         f"Error while creating Dataproc Session"
                     ) from e
+                finally:
+                    stop_create_session_pbar = True
 
                 logger.debug(
                     f"Dataproc Session created: {session_id} in {int(time.time() - s8s_creation_start_time)} seconds"
