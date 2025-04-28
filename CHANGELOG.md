@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.1...v0.7.2) (2025-04-28)
+
+
+### Bug Fixes
+
+* stop session creation progress bar on cell termination ([#78](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/78)) ([ebf71c8](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/ebf71c8163c5f3367f090dfab2a0dc0dbe0d941a))
+
 ## [0.7.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.0...v0.7.1) (2025-04-28)
 
 
