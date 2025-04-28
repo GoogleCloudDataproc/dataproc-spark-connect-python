@@ -198,7 +198,7 @@ class DataprocSparkSession(SparkSession):
                 DataprocSparkSession._active_s8s_session_id = session_id
                 s8s_creation_start_time = time.time()
 
-                stop_create_session_pbar = False
+                stop_create_session_pbar_event = threading.Event()
 
                 def create_session_pbar():
                     iterations = 150
@@ -208,12 +208,12 @@ class DataprocSparkSession(SparkSession):
                         ncols=80,
                     )
                     for i in pbar:
-                        if stop_create_session_pbar:
+                        if stop_create_session_pbar_event.is_set():
                             break
                         # Last iteration
                         if i >= iterations - 1:
                             # Sleep until session created
-                            while not stop_create_session_pbar:
+                            while not stop_create_session_pbar_event.is_set():
                                 time.sleep(1)
                         else:
                             time.sleep(1)
@@ -258,7 +258,7 @@ class DataprocSparkSession(SparkSession):
                             timeout=600,  # seconds
                         )
                     )
-                    stop_create_session_pbar = True
+                    stop_create_session_pbar_event.set()
                     create_session_pbar_thread.join()
                     print("Dataproc Session was successfully created")
                     file_path = (
@@ -280,7 +280,7 @@ class DataprocSparkSession(SparkSession):
                                 f"Exception while writing active session to file {file_path}, {e}"
                             )
                 except (InvalidArgument, PermissionDenied) as e:
-                    stop_create_session_pbar = True
+                    stop_create_session_pbar_event.set()
                     if create_session_pbar_thread.is_alive():
                         create_session_pbar_thread.join()
                     DataprocSparkSession._active_s8s_session_id = None
@@ -288,7 +288,7 @@ class DataprocSparkSession(SparkSession):
                         f"Error while creating Dataproc Session: {e.message}"
                     )
                 except Exception as e:
-                    stop_create_session_pbar = True
+                    stop_create_session_pbar_event.set()
                     if create_session_pbar_thread.is_alive():
                         create_session_pbar_thread.join()
                     DataprocSparkSession._active_s8s_session_id = None
@@ -296,7 +296,7 @@ class DataprocSparkSession(SparkSession):
                         f"Error while creating Dataproc Session"
                     ) from e
                 finally:
-                    stop_create_session_pbar = True
+                    stop_create_session_pbar_event.set()
 
                 logger.debug(
                     f"Dataproc Session created: {session_id} in {int(time.time() - s8s_creation_start_time)} seconds"
