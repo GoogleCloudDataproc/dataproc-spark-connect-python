@@ -203,19 +203,21 @@ class DataprocSparkSession(SparkSession):
                 def create_session_pbar():
                     iterations = 10
                     pbar = tqdm.trange(
-                        iterations - 1,
+                        iterations,
                         bar_format="|{bar}|",
                         ncols=80,
                     )
-                    for _ in pbar:
-                        if stop_create_session_pbar_event.is_set():
-                            break
-                        time.sleep(1)
-                    # Last iteration
-                    while not stop_create_session_pbar_event.is_set():
-                        time.sleep(1)
-
-                    pbar.close()
+                    try:
+                        for _ in pbar[:-1]:
+                            if stop_create_session_pbar_event.is_set():
+                                break
+                            time.sleep(1)
+                        # Last iteration
+                        while not stop_create_session_pbar_event.is_set():
+                            time.sleep(1)
+                        last = pbar[-1]
+                    finally:
+                        pbar.close()
 
                 create_session_pbar_thread = threading.Thread(
                     target=create_session_pbar
