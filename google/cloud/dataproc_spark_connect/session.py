@@ -67,7 +67,7 @@ class DataprocSparkSession(SparkSession):
     ... ) # doctest: +SKIP
     """
 
-    _DEFAULT_RUNTIME_VERSION = "2.2"
+    _DEFAULT_RUNTIME_VERSION = "2.3"
 
     _active_s8s_session_uuid: ClassVar[Optional[str]] = None
     _project_id = None
