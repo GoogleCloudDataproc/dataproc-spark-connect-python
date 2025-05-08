@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.2...v0.7.3) (2025-05-08)
+
+
+### Bug Fixes
+
+* change default runtime version to 2.3 ([#82](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/82)) ([7796cfe](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/7796cfee4fa0d0b3c4ea0398d09e516b0df3b4c6))
+* use event to stop pbar thread ([#80](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/80)) ([14c9e01](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/14c9e013577c215a29c2f3851a7b6e853dc0eba1))
+
 ## [0.7.2](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.1...v0.7.2) (2025-04-28)
 
 
