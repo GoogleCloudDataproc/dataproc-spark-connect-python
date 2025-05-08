@@ -124,6 +124,9 @@ class DataprocSparkSession(SparkSession):
         def dataprocSessionConfig(self, dataproc_config: Session):
             with self._lock:
                 self._dataproc_config = dataproc_config
+                # switch to Legacy assignment policy by default
+                # https://spark.apache.org/docs/latest/sql-migration-guide.html#ddl-statements
+                dataproc_config.runtime_config.properties["spark.sql.legacy.setCommandRejectsSparkCoreConfs"] = "false"
                 for k, v in dataproc_config.runtime_config.properties.items():
                     self._options[cast(str, k)] = to_str(v)
                 return self
