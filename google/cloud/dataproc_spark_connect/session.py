@@ -354,6 +354,11 @@ class DataprocSparkSession(SparkSession):
                 dataproc_config = self._dataproc_config
                 for k, v in self._options.items():
                     dataproc_config.runtime_config.properties[k] = v
+            # Ensure the legacy setCommandRejectsSparkCoreConfs is always false
+            # for the Dataproc session configuration, consistent with the setting
+            # in dataprocSessionConfig. This disables an incorrect warning check.
+            # See: https://spark.apache.org/docs/latest/sql-migration-guide.html#ddl-statements
+            dataproc_config.runtime_config.properties["spark.sql.legacy.setCommandRejectsSparkCoreConfs"] = "false"
             dataproc_config.spark_connect_session = (
                 sessions.SparkConnectConfig()
             )
