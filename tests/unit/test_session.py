@@ -109,6 +109,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         create_session_request.session.runtime_config.version = (
             self._default_runtime_version
         )
+        create_session_request.session.runtime_config.properties = {
+            "spark.sql.legacy.setCommandRejectsSparkCoreConfs": "false"
+        }
         create_session_request.session.spark_connect_session = (
             SparkConnectConfig()
         )
@@ -237,7 +240,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         )
         create_session_request.session.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
         create_session_request.session.runtime_config.properties = {
-            "spark.executor.cores": "16"
+            "spark.executor.cores": "16",
+            "spark.sql.legacy.setCommandRejectsSparkCoreConfs": "false",
         }
         create_session_request.session.runtime_config.version = (
             self._default_runtime_version
@@ -352,6 +356,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         create_session_request.session.runtime_config.version = (
             self._default_runtime_version
         )
+        create_session_request.session.runtime_config.properties = {
+            "spark.sql.legacy.setCommandRejectsSparkCoreConfs": "false"
+        }
         create_session_request.session.spark_connect_session = (
             SparkConnectConfig()
         )
@@ -426,6 +433,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         create_session_request.session.runtime_config.version = (
             self._default_runtime_version
         )
+        create_session_request.session.runtime_config.properties = {
+            "spark.sql.legacy.setCommandRejectsSparkCoreConfs": "false"
+        }
         create_session_request.session.spark_connect_session = (
             SparkConnectConfig()
         )
@@ -508,6 +518,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         create_session_request.session.runtime_config.version = (
             self._default_runtime_version
         )
+        create_session_request.session.runtime_config.properties = {
+            "spark.sql.legacy.setCommandRejectsSparkCoreConfs": "false"
+        }
         create_session_request.session.spark_connect_session = (
             SparkConnectConfig()
         )
