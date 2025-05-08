@@ -38,7 +38,9 @@ from unittest import mock
 class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
 
     def setUp(self):
-        self._default_runtime_version = "2.2"
+        self._default_runtime_version = (
+            DataprocSparkSession._DEFAULT_RUNTIME_VERSION
+        )
         self.original_environment = dict(os.environ)
         os.environ.clear()
         os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"

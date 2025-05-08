@@ -36,7 +36,7 @@ from pyspark.errors.exceptions import connect as connect_exceptions
 _SERVICE_ACCOUNT_KEY_FILE_ = "service_account_key.json"
 
 
-@pytest.fixture(params=["2.2", "3.0"])
+@pytest.fixture(params=[None, "2.2", "3.0"])
 def image_version(request):
     return request.param
 
@@ -257,7 +257,8 @@ def session_template_name(
     session_template.environment_config.execution_config.subnetwork_uri = (
         test_subnetwork_uri
     )
-    session_template.runtime_config.version = image_version
+    if image_version:
+        session_template.runtime_config.version = image_version
     session_template_name = f"projects/{test_project}/locations/{test_region}/sessionTemplates/spark-connect-test-template-{uuid.uuid4().hex[0:12]}"
     session_template.name = session_template_name
     create_session_template_request.session_template = session_template
@@ -269,7 +270,11 @@ def session_template_name(
     session_template = session_template_controller_client.get_session_template(
         get_session_template_request
     )
-    assert session_template.runtime_config.version == image_version
+    assert (
+        session_template.runtime_config.version == image_version
+        if image_version
+        else DataprocSparkSession._DEFAULT_RUNTIME_VERSION
+    )
 
     yield session_template.name
     delete_session_template_request = DeleteSessionTemplateRequest()
