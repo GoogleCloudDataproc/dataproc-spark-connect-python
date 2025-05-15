@@ -68,6 +68,7 @@ class DataprocSparkSession(SparkSession):
     """
 
     _DEFAULT_RUNTIME_VERSION = "2.3"
+    _BIGQUERY_DATASOURCE_VALUE: ClassVar[str] = "bigquery"
 
     _active_s8s_session_uuid: ClassVar[Optional[str]] = None
     _project_id = None
@@ -410,7 +411,7 @@ class DataprocSparkSession(SparkSession):
                 ]
             default_datasource = os.getenv("DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE")
             if default_datasource:
-                if default_datasource.lower() == "bigquery":
+                if default_datasource.lower() == DataprocSparkSession._BIGQUERY_DATASOURCE_VALUE:
                     default_bigquery_configs = {
                         "spark.datasource.bigquery.writeMethod": "direct",
                         "spark.datasource.bigquery.viewsEnabled": "true",
