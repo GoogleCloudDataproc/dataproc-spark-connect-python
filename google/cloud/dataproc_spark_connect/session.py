@@ -410,7 +410,7 @@ class DataprocSparkSession(SparkSession):
                     "COLAB_NOTEBOOK_KERNEL_ID"
                 ]
             default_datasource = os.getenv("DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE")
-            if default_datasource:
+            if default_datasource and dataproc_config.runtime_config.version >= "2.3":
                 if default_datasource.lower() == DataprocSparkSession._BIGQUERY_DATASOURCE_VALUE:
                     default_bigquery_configs = {
                         "spark.datasource.bigquery.writeMethod": "direct",
