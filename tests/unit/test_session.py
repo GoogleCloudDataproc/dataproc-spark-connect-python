@@ -966,7 +966,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 create_session_request.session.runtime_config.properties.get(
                     "spark.sql.catalog.spark_catalog"
                 ),
-                "com.google.cloud.spark.bigquery.BigLakeMetastoreSparkCatalog",
+                "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
             )
             mock_logger.warning.assert_not_called()
             self.stopSession(mock_session_controller_client_instance, session)
@@ -1066,7 +1066,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 create_session_request.session.runtime_config.properties.get(
                     "spark.sql.catalog.spark_catalog"
                 ),
-                "com.google.cloud.spark.bigquery.BigLakeMetastoreSparkCatalog",
+                "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
             )
             mock_logger.warning.assert_not_called()
             self.stopSession(mock_session_controller_client_instance, session)
@@ -1150,7 +1150,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 create_session_request.session.runtime_config.properties.get(
                     "spark.sql.catalog.spark_catalog"
                 ),
-                "com.google.cloud.spark.bigquery.BigLakeMetastoreSparkCatalog",
+                "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
             )  # Default should still be set
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
