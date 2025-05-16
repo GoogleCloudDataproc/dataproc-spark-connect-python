@@ -416,15 +416,15 @@ class DataprocSparkSession(SparkSession):
                 and dataproc_config.runtime_config.version == "2.3"
             ):
                 if default_datasource == "bigquery":
-                    default_bigquery_configs = {
-                        "spark.datasource.bigquery.writeMethod": "direct",
+                    bq_datasource_properties = {
                         "spark.datasource.bigquery.viewsEnabled": "true",
+                        "spark.datasource.bigquery.writeMethod": "direct",
+                        "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
                         "spark.sql.legacy.createHiveTableByDefault": "false",
                         "spark.sql.sources.default": "bigquery",
-                        "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
                     }
                     # Merge default configs with existing properties, user configs take precedence
-                    for k, v in default_bigquery_configs.items():
+                    for k, v in bq_datasource_properties.items():
                         if k not in dataproc_config.runtime_config.properties:
                             dataproc_config.runtime_config.properties[k] = v
                 else:
