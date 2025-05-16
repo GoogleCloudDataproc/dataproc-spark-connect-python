@@ -421,7 +421,7 @@ class DataprocSparkSession(SparkSession):
                         "spark.datasource.bigquery.viewsEnabled": "true",
                         "spark.sql.legacy.createHiveTableByDefault": "false",
                         "spark.sql.sources.default": "bigquery",
-                        "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigLakeMetastoreSparkCatalog",
+                        "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
                     }
                     # Merge default configs with existing properties, user configs take precedence
                     for k, v in default_bigquery_configs.items():
