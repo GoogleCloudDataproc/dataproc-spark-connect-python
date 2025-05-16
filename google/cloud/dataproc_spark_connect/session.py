@@ -409,22 +409,32 @@ class DataprocSparkSession(SparkSession):
                 dataproc_config.labels["colab-notebook-kernel-id"] = os.environ[
                     "COLAB_NOTEBOOK_KERNEL_ID"
                 ]
-            default_datasource = os.getenv("DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE")
-            if default_datasource and dataproc_config.runtime_config.version >= "2.3":
-                if default_datasource.lower() == DataprocSparkSession._BIGQUERY_DATASOURCE_VALUE:
+            default_datasource = os.getenv(
+                "DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE"
+            )
+            if (
+                default_datasource
+                and dataproc_config.runtime_config.version >= "2.3"
+            ):
+                if (
+                    default_datasource.lower()
+                    == DataprocSparkSession._BIGQUERY_DATASOURCE_VALUE
+                ):
                     default_bigquery_configs = {
                         "spark.datasource.bigquery.writeMethod": "direct",
                         "spark.datasource.bigquery.viewsEnabled": "true",
                         "spark.sql.legacy.createHiveTableByDefault": "false",
                         "spark.sql.sources.default": "bigquery",
-                        "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigLakeMetastoreSparkCatalog"
+                        "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigLakeMetastoreSparkCatalog",
                     }
                     # Merge default configs with existing properties, user configs take precedence
                     for k, v in default_bigquery_configs.items():
                         if k not in dataproc_config.runtime_config.properties:
                             dataproc_config.runtime_config.properties[k] = v
                 else:
-                    logger.warning(f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value: {default_datasource}. Supported value is 'bigquery'.")
+                    logger.warning(
+                        f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value: {default_datasource}. Supported value is 'bigquery'."
+                    )
             return dataproc_config
 
         @staticmethod
