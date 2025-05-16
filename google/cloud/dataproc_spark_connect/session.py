@@ -42,6 +42,7 @@ from google.cloud.dataproc_v1.types import sessions
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
 from typing import Any, cast, ClassVar, Dict, Optional
+from google.cloud.aiplatform.utils import _ipython_utils
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -248,6 +249,10 @@ class DataprocSparkSession(SparkSession):
                     print(
                         f"Creating Dataproc Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
+                    session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
+                    _ipython_utils.display_link(
+                        "View Session Details", f"{session_url}", "dashboard"
+                    )
                     create_session_pbar_thread.start()
                     session_response: Session = operation.result(
                         polling=retry.Retry(
@@ -324,6 +329,10 @@ class DataprocSparkSession(SparkSession):
             if session_response is not None:
                 print(
                     f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}"
+                )
+                session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{s8s_session_id}/locations/{self._region}?project={self._project_id}"
+                _ipython_utils.display_link(
+                    "View Session Details", f"{session_url}", "dashboard"
                 )
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
