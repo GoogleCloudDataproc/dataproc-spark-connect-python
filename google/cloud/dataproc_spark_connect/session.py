@@ -68,7 +68,6 @@ class DataprocSparkSession(SparkSession):
     """
 
     _DEFAULT_RUNTIME_VERSION = "2.3"
-    _BIGQUERY_DATASOURCE_VALUE: ClassVar[str] = "bigquery"
 
     _active_s8s_session_uuid: ClassVar[Optional[str]] = None
     _project_id = None
@@ -414,12 +413,9 @@ class DataprocSparkSession(SparkSession):
             )
             if (
                 default_datasource
-                and dataproc_config.runtime_config.version >= "2.3"
+                and dataproc_config.runtime_config.version == "2.3"
             ):
-                if (
-                    default_datasource.lower()
-                    == DataprocSparkSession._BIGQUERY_DATASOURCE_VALUE
-                ):
+                if default_datasource == "bigquery":
                     default_bigquery_configs = {
                         "spark.datasource.bigquery.writeMethod": "direct",
                         "spark.datasource.bigquery.viewsEnabled": "true",
@@ -433,7 +429,8 @@ class DataprocSparkSession(SparkSession):
                             dataproc_config.runtime_config.properties[k] = v
                 else:
                     logger.warning(
-                        f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value: {default_datasource}. Supported value is 'bigquery'."
+                        f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value:"
+                        f" {default_datasource}. Supported value is 'bigquery'."
                     )
             return dataproc_config
 

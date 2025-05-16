@@ -937,7 +937,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             ][
                 0
             ]
-            # With runtime version >= 2.3, the BigQuery properties should be set
+            # With runtime version 2.3, the BigQuery properties should be set
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
                     "spark.datasource.bigquery.writeMethod"
@@ -1019,7 +1019,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.create_session.reset_mock()
             mock_logger.warning.reset_mock()
 
-        # Scenario 4: DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to "bigquery" and runtime version is > "2.3"
+        # Scenario 4: DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to "bigquery" and runtime version is "2.3"
         with mock.patch.dict(
             os.environ,
             {"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE": "bigquery"},
@@ -1028,9 +1028,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
             os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
             dataproc_config = Session()
-            dataproc_config.runtime_config.version = (
-                "2.4"  # Set runtime version > "2.3"
-            )
+            dataproc_config.runtime_config.version = "2.3"
             session = DataprocSparkSession.builder.dataprocSessionConfig(
                 dataproc_config
             ).getOrCreate()
@@ -1109,9 +1107,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
             os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
             dataproc_config = Session()
-            dataproc_config.runtime_config.version = (
-                "2.4"  # Set runtime version > "2.3"
-            )
+            dataproc_config.runtime_config.version = "2.3"
             dataproc_config.runtime_config.properties = {
                 "spark.datasource.bigquery.writeMethod": "override_method",
                 "spark.some.other.property": "some_value",
@@ -1124,7 +1120,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             ][
                 0
             ]
-            # With runtime version > 2.3, the BigQuery default properties should be set,
+            # With runtime version 2.3, the BigQuery default properties should be set,
             # but pre-existing properties should override defaults.
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
