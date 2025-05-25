@@ -11,10 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-__all__ = [
-    "DataprocChannelBuilder",
-    "DataprocSparkConnectClient"
-]
+__all__ = ["DataprocChannelBuilder", "DataprocSparkConnectClient"]
 
 import logging
 import uuid
@@ -176,7 +173,9 @@ class DataprocSparkConnectClient(SparkConnectClient):
         req = super()._execute_plan_request_with_metadata()
         if not req.operation_id:
             dataproc_operation_id = self.generate_dataproc_operation_id()
-            logger.debug(f"No operation_id found. Setting operation_id: {dataproc_operation_id}")
+            logger.debug(
+                f"No operation_id found. Setting operation_id: {dataproc_operation_id}"
+            )
             req.operation_id = dataproc_operation_id
         self._operation_id = req.operation_id
         return req
