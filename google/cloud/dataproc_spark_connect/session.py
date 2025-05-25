@@ -27,7 +27,10 @@ from google.api_core import retry
 from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound, PermissionDenied
 from google.api_core.future.polling import POLLING_PREDICATE
-from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
+from google.cloud.dataproc_spark_connect.client import (
+    DataprocChannelBuilder,
+    DataprocSparkConnectClient,
+)
 from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
@@ -444,6 +447,24 @@ class DataprocSparkSession(SparkSession):
                 )
             )
             return f"sc-{timestamp}-{random_suffix}"
+
+    def __init__(self, connection, user_id=None):
+        """
+        Creates a new DataprocSparkSession for the Spark Connect interface.
+
+        Parameters
+        ----------
+        connection : str or :class:`ChannelBuilder` / `DataprocChannelBuilder`
+            Connection string that is used to extract the connection parameters
+            and configure the GRPC connection. Or instance of ChannelBuilder /
+            DataprocChannelBuilder that creates GRPC connection.
+        user_id : str, optional
+            If not set, will default to the $USER environment. Defining the user
+            ID as part of the connection string takes precedence.
+        """
+        super().__init__(connection, user_id)
+        self._client = DataprocSparkConnectClient(connection, user_id)
+        self._session_id = self._client.session_id
 
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:

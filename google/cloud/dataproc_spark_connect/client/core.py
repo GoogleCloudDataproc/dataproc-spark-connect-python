@@ -11,11 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+__all__ = [
+    "DataprocChannelBuilder",
+    "DataprocSparkConnectClient"
+]
+
 import logging
+import uuid
 
 import google
 import grpc
-from pyspark.sql.connect.client import ChannelBuilder
+from pyspark.sql.connect.client import ChannelBuilder, SparkConnectClient
 
 from . import proxy
 
@@ -137,3 +143,65 @@ class ProxiedChannel(grpc.Channel):
 
     def unsubscribe(self, *args, **kwargs):
         return self._wrap_method(self._wrapped.unsubscribe(*args, **kwargs))
+
+
+class DataprocSparkConnectClient(SparkConnectClient):
+
+    _operation_id = None
+
+    def __init__(self, *args, **kwargs):
+        """
+        Creates a new SparkSession for the Spark Connect interface.
+
+        Parameters
+        ----------
+        connection : str or :class:`ChannelBuilder` / `DataprocChannelBuilder`
+            Connection string that is used to extract the connection parameters
+            and configure the GRPC connection. Or instance of ChannelBuilder /
+            DataprocChannelBuilder that creates GRPC connection.
+        user_id : str, optional
+            If not set, will default to the $USER environment. Defining the user
+            ID as part of the connection string takes precedence.
+        channel_options: list of tuple, optional
+            Additional options for the GRPC channel construction.
+        retry_policy: dict of str and any, optional
+            Additional configuration for retrying.
+        use_reattachable_execute: bool, optional
+            Enable reattachable execution. Defaults to True.
+        """
+        logger.debug("Initiating DataprocSparkConnectClient")
+        super().__init__(*args, **kwargs)
+
+    def _execute_plan_request_with_metadata(self):
+        req = super()._execute_plan_request_with_metadata()
+        if not req.operation_id:
+            dataproc_operation_id = self.generate_dataproc_operation_id()
+            logger.debug(f"No operation_id found. Setting operation_id: {dataproc_operation_id}")
+            req.operation_id = dataproc_operation_id
+        self._operation_id = req.operation_id
+        return req
+
+    @staticmethod
+    def generate_dataproc_operation_id():
+        """
+        If an operation_id is not supplied in the ExecutePlanRequest, one is
+        generated ad supplied by the dataproc client.
+
+        :return: UUID string of format '00112233-4455-6677-8899-aabbccddeeff'
+        """
+        my_uuid = uuid.uuid4()
+        return str(my_uuid)
+
+    @property
+    def session_id(self):
+        return self._session_id
+
+    @property
+    def operation_id(self):
+        """
+        Operation ID is not an inherent property of the client itself, rather it
+        is the operation_id of the last request handled by the client.
+
+        :return: operation_id of the current / most recent ExecutePlanRequest
+        """
+        return self._operation_id
