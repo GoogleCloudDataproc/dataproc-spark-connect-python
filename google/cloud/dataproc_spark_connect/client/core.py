@@ -177,7 +177,7 @@ class DataprocSparkConnectClient(SparkConnectClient):
     def _execute_plan_request_with_metadata(self):
         req = super()._execute_plan_request_with_metadata()
         if not req.operation_id:
-            dataproc_operation_id = self.generate_dataproc_operation_id()
+            dataproc_operation_id = self._generate_dataproc_operation_id()
             logger.debug(
                 f"No operation_id found. Setting operation_id: {dataproc_operation_id}"
             )
@@ -186,7 +186,7 @@ class DataprocSparkConnectClient(SparkConnectClient):
         return req
 
     @staticmethod
-    def generate_dataproc_operation_id():
+    def _generate_dataproc_operation_id():
         """
         If an operation_id is not supplied in the ExecutePlanRequest, one is
         generated and supplied by the dataproc client.
