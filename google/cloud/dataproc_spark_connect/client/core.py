@@ -198,10 +198,6 @@ class DataprocSparkConnectClient(SparkConnectClient):
         return req
 
     @property
-    def session_id(self):
-        return self._session_id
-
-    @property
     def operation_id(self):
         """
         Operation ID is not an inherent property of the client itself, rather it
