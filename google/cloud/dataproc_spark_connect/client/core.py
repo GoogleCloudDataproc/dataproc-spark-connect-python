@@ -143,6 +143,11 @@ class ProxiedChannel(grpc.Channel):
 
 
 class DataprocSparkConnectClient(SparkConnectClient):
+    """
+    The remote spark session in Dataproc that communicates with the server.
+    Replaces the default :py:class:`SparkConnectClient` as the client for
+    :py:class:`DataprocSparkSession`.
+    """
 
     _operation_id = None
 
@@ -184,16 +189,12 @@ class DataprocSparkConnectClient(SparkConnectClient):
     def generate_dataproc_operation_id():
         """
         If an operation_id is not supplied in the ExecutePlanRequest, one is
-        generated ad supplied by the dataproc client.
+        generated and supplied by the dataproc client.
 
         :return: UUID string of format '00112233-4455-6677-8899-aabbccddeeff'
         """
         my_uuid = uuid.uuid4()
         return str(my_uuid)
-
-    @property
-    def session_id(self):
-        return self._session_id
 
     @property
     def operation_id(self):
