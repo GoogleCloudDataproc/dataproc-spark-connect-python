@@ -31,7 +31,7 @@ setup(
         "google-api-core>=2.19",
         "google-cloud-dataproc>=5.18",
         "packaging>=20.0",
-        "pyspark[connect]>=3.5",
+        "pyspark[connect]~=3.5.1",
         "tqdm>=4.67",
         "websockets>=14.0",
     ],
