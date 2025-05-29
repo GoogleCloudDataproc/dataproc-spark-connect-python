@@ -14,9 +14,11 @@
 
 import logging
 import uuid
+from typing import Optional
 
 import google
 import grpc
+import pyspark.sql.connect.proto as pb2
 from pyspark.sql.connect.client import ChannelBuilder, SparkConnectClient
 
 from . import proxy
@@ -141,7 +143,7 @@ class ProxiedChannel(grpc.Channel):
         return self._wrap_method(self._wrapped.unsubscribe(*args, **kwargs))
 
 
-def _generate_dataproc_operation_id():
+def _generate_dataproc_operation_id() -> str:
     """
     If an operation_id is not supplied in the ExecutePlanRequest, one is
     generated and supplied by the dataproc client.
@@ -160,9 +162,9 @@ class DataprocSparkConnectClient(SparkConnectClient):
     """
 
     # keep track of the active / most recent ExecutePlanRequest's operation_id
-    _last_operation_id = None
+    _last_operation_id: Optional[str] = None
 
-    def _execute_plan_request_with_metadata(self):
+    def _execute_plan_request_with_metadata(self) -> pb2.ExecutePlanRequest:
         req = super()._execute_plan_request_with_metadata()
         if not req.operation_id:
             req.operation_id = _generate_dataproc_operation_id()
@@ -173,7 +175,7 @@ class DataprocSparkConnectClient(SparkConnectClient):
         return req
 
     @property
-    def latest_operation_id(self):
+    def latest_operation_id(self) -> Optional[str]:
         """
         Operation ID is not an inherent property of the client itself, rather it
         is the operation_id of the last request handled by the client.

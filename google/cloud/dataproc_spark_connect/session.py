@@ -44,7 +44,7 @@ from google.cloud.dataproc_v1 import (
 from google.cloud.dataproc_v1.types import sessions
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
-from typing import Any, cast, ClassVar, Dict, Optional
+from typing import Any, cast, ClassVar, Dict, Optional, Union
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -448,13 +448,17 @@ class DataprocSparkSession(SparkSession):
             )
             return f"sc-{timestamp}-{random_suffix}"
 
-    def __init__(self, connection, user_id=None):
+    def __init__(
+        self,
+        connection: Union[str, DataprocChannelBuilder],
+        user_id: Optional[str] = None,
+    ):
         """
         Creates a new DataprocSparkSession for the Spark Connect interface.
 
         Parameters
         ----------
-        connection : str or :class:`ChannelBuilder` / `DataprocChannelBuilder`
+        connection : str or :class:`DataprocChannelBuilder`
             Connection string that is used to extract the connection parameters
             and configure the GRPC connection. Or instance of ChannelBuilder /
             DataprocChannelBuilder that creates GRPC connection.
