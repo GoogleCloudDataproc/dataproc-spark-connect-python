@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-__all__ = ["DataprocChannelBuilder", "DataprocSparkConnectClient"]
 
 import logging
 import uuid
@@ -161,7 +160,7 @@ class DataprocSparkConnectClient(SparkConnectClient):
     """
 
     # keep track of the active / most recent ExecutePlanRequest's operation_id
-    _operation_id = None
+    _last_operation_id = None
 
     def __init__(self, *args, **kwargs):
         """
@@ -189,20 +188,19 @@ class DataprocSparkConnectClient(SparkConnectClient):
     def _execute_plan_request_with_metadata(self):
         req = super()._execute_plan_request_with_metadata()
         if not req.operation_id:
-            dataproc_operation_id = _generate_dataproc_operation_id()
+            req.operation_id = _generate_dataproc_operation_id()
             logger.debug(
-                f"No operation_id found. Setting operation_id: {dataproc_operation_id}"
+                f"No operation_id found. Setting operation_id: {req.operation_id}"
             )
-            req.operation_id = dataproc_operation_id
-        self._operation_id = req.operation_id
+        self._last_operation_id = req.operation_id
         return req
 
     @property
-    def operation_id(self):
+    def latest_operation_id(self):
         """
         Operation ID is not an inherent property of the client itself, rather it
         is the operation_id of the last request handled by the client.
 
         :return: operation_id of the current / most recent ExecutePlanRequest
         """
-        return self._operation_id
+        return self._last_operation_id
