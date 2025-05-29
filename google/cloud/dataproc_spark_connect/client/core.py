@@ -162,29 +162,6 @@ class DataprocSparkConnectClient(SparkConnectClient):
     # keep track of the active / most recent ExecutePlanRequest's operation_id
     _last_operation_id = None
 
-    def __init__(self, *args, **kwargs):
-        """
-        Creates a new SparkSession for the Spark Connect interface.
-
-        Parameters
-        ----------
-        connection : str or :class:`ChannelBuilder` / `DataprocChannelBuilder`
-            Connection string that is used to extract the connection parameters
-            and configure the GRPC connection. Or instance of ChannelBuilder /
-            DataprocChannelBuilder that creates GRPC connection.
-        user_id : str, optional
-            If not set, will default to the $USER environment. Defining the user
-            ID as part of the connection string takes precedence.
-        channel_options: list of tuple, optional
-            Additional options for the GRPC channel construction.
-        retry_policy: dict of str and any, optional
-            Additional configuration for retrying.
-        use_reattachable_execute: bool, optional
-            Enable reattachable execution. Defaults to True.
-        """
-        logger.debug("Initiating DataprocSparkConnectClient")
-        super().__init__(*args, **kwargs)
-
     def _execute_plan_request_with_metadata(self):
         req = super()._execute_plan_request_with_metadata()
         if not req.operation_id:
