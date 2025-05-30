@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.5...v0.8.0) (2025-05-30)
+
+
+### Features
+
+* Add colab-notebook-id label to Dataproc Spark Connect session ([#94](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/94)) ([66883f7](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/66883f7a1c8c3ef98a450fc99780467d67961e04))
+
 ## [0.7.5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.4...v0.7.5) (2025-05-27)
 
 
