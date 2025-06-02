@@ -150,8 +150,7 @@ def _generate_dataproc_operation_id() -> str:
 
     :return: UUID string of format '00112233-4455-6677-8899-aabbccddeeff'
     """
-    my_uuid = uuid.uuid4()
-    return str(my_uuid)
+    return str(uuid.uuid4())
 
 
 class DataprocSparkConnectClient(SparkConnectClient):

@@ -468,8 +468,6 @@ class DataprocSparkSession(SparkSession):
         """
         self._client = DataprocSparkConnectClient(connection, user_id)
         self._session_id = self._client._session_id
-        # (testing:) set as false to prevent client.release_session on close()
-        self.release_session_on_close = True
 
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:

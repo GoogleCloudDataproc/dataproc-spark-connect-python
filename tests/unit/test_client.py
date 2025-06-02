@@ -13,9 +13,9 @@
 # limitations under the License.
 import os
 import unittest
+from unittest.mock import MagicMock, patch
+
 from google.cloud.dataproc_spark_connect.client import DataprocSparkConnectClient
-import pyspark.sql.connect.proto as pb2
-from unittest.mock import patch, MagicMock
 
 
 class DataprocSparkConnectClientTest(unittest.TestCase):
