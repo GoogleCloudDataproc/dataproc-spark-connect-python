@@ -16,7 +16,7 @@
 class DataprocSparkConnectException(Exception):
     """A custom exception class to only print the error messages.
     This would be used for exceptions where the stack trace
-    doesn't provide any additional information.h
+    doesn't provide any additional information.
     """
 
     def __init__(self, message):
