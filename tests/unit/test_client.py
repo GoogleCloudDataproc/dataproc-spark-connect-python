@@ -74,9 +74,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         )
 
     @patch(
-        "google.cloud.dataproc_spark_connect.client.core.DataprocSparkConnectClient._generate_dataproc_operation_id"
-    )
-    @patch(
         "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
     )
     @patch(
@@ -87,7 +84,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         self,
         mock_super_init,
         mock_super_execute_plan_request,
-        mock_generate_dataproc_operation_id,
     ):
         test_uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
         test_execute_plan_request: ExecutePlanRequest = ExecutePlanRequest(
@@ -100,7 +96,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         mock_super_execute_plan_request.return_value = deepcopy(
             test_execute_plan_request
         )
-        mock_generate_dataproc_operation_id.return_value = test_uuid
 
         client = DataprocSparkConnectClient()
 
@@ -112,7 +107,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         )
 
         mock_super_execute_plan_request.assert_called_once()
-        mock_generate_dataproc_operation_id.assert_not_called()
         self.assertEqual(
             result_request.operation_id, test_execute_plan_request.operation_id
         )
