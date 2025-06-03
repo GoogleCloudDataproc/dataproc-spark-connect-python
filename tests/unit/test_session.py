@@ -69,7 +69,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.aiplatform.utils._ipython_utils.display_link")
+    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_spark_session_with_default_notebook_behavior(
         self,
         mock_display_link,
@@ -200,7 +200,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.aiplatform.utils._ipython_utils.display_link")
+    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_session_with_user_provided_dataproc_config(
         self,
         mock_display_link,
@@ -303,7 +303,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.aiplatform.utils._ipython_utils.display_link")
+    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_session_with_env_vars_config(
         self,
         mock_display_link,
@@ -409,7 +409,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.aiplatform.utils._ipython_utils.display_link")
+    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_session_with_session_template(
         self,
         mock_display_link,
@@ -494,7 +494,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.aiplatform.utils._ipython_utils.display_link")
+    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_session_with_user_provided_dataproc_config_and_session_template(
         self,
         mock_display_link,
