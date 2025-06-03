@@ -73,7 +73,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             test_execute_plan_request.user_context.user_id,
         )
 
-
     @patch(
         "google.cloud.dataproc_spark_connect.client.core.DataprocSparkConnectClient._generate_dataproc_operation_id"
     )
