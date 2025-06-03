@@ -85,7 +85,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         mock_super_init,
         mock_super_execute_plan_request,
     ):
-        test_uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
         test_execute_plan_request: ExecutePlanRequest = ExecutePlanRequest(
             session_id="mock-session_id-from-super",
             client_type="mock-client_type-from-super",
