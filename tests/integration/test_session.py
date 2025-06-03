@@ -332,16 +332,22 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
 def test_add_artifacts_pypi_package():
     os.environ["DATAPROC_SPARK_CONNECT_AUTH_TYPE"] = "END_USER_CREDENTIALS"
     connect_session = DataprocSparkSession.builder.getOrCreate()
-    from pyspark.sql.connect.functions import udf
+    from pyspark.sql.connect.functions import udf, sum
 
-    def generate_random2(row):
+    def generate_random2(row) -> int:
         import random2 as random
 
-        return row + random.Random().random()
+        return row + random.Random().randint(1, 5)
 
     connect_session.addArtifacts("random2", pypi=True)
+
     # Force evaluation of udf using random2 on workers
-    connect_session.range(1, 10).withColumn(
-        "anotherCol", udf(generate_random2)("id")
-    ).collect()
+    sum_random = (
+        connect_session.range(1, 10)
+        .withColumn("anotherCol", udf(generate_random2)("id"))
+        .select(sum("anotherCol"))
+        .collect()[0][0]
+    )
+
+    assert isinstance(sum_random, float)
     connect_session.stop()
