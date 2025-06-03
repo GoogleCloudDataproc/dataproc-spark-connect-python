@@ -327,3 +327,21 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
         Session.State.TERMINATED,
     ]
     assert DataprocSparkSession._active_s8s_session_uuid is None
+
+
+def test_add_artifacts_pypi_package():
+    os.environ["DATAPROC_SPARK_CONNECT_AUTH_TYPE"] = "END_USER_CREDENTIALS"
+    connect_session = DataprocSparkSession.builder.getOrCreate()
+    from pyspark.sql.connect.functions import udf
+
+    def generate_random2(row):
+        import random2 as random
+
+        return row + random.Random().random()
+
+    connect_session.addArtifacts("random2", pypi=True)
+    # Force evaluation of udf using random2 on workers
+    connect_session.range(1, 10).withColumn(
+        "anotherCol", udf(generate_random2)("id")
+    ).collect()
+    connect_session.stop()
