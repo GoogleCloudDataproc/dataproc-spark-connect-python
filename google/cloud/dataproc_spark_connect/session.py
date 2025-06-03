@@ -633,6 +633,7 @@ def is_s8s_session_active(session_name, client_options) -> bool:
         return False
     return True
 
+
 def _get_styles() -> None:
     """Returns the HTML style markup to support custom buttons."""
     return """
@@ -685,6 +686,7 @@ def _get_styles() -> None:
               }
             </style>
           """
+
 
 def display_link(
     text: str, url: str, icon: Optional[str] = "open_in_new"
