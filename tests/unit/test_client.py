@@ -47,13 +47,14 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         mock_generate_dataproc_operation_id,
     ):
         test_uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
-        mock_super_execute_plan_request.return_value = MagicMock(
+        test_execute_plan_request = MagicMock(
             session_id="mock-session_id-from-super",
             client_type="mock-client_type-from-super",
             tags=["mock-tag-from-super"],
             user_context=MagicMock(user_id="mock-user-from-super"),
             operation_id=None,
         )
+        mock_super_execute_plan_request.return_value = test_execute_plan_request
         mock_generate_dataproc_operation_id.return_value = test_uuid
 
         client = DataprocSparkConnectClient()
@@ -63,21 +64,19 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         result_request = client._execute_plan_request_with_metadata()
         self.assertEqual(client.latest_operation_id, test_uuid)
         self.assertEqual(result_request.operation_id, test_uuid)
-        self.assertEqual(
-            client.latest_operation_id, result_request.operation_id
-        )
 
         mock_super_execute_plan_request.assert_called_once()
         mock_generate_dataproc_operation_id.assert_called_once()
         self.assertEqual(
-            result_request.session_id, "mock-session_id-from-super"
+            result_request.session_id, test_execute_plan_request.session_id
         )
         self.assertEqual(
-            result_request.client_type, "mock-client_type-from-super"
+            result_request.client_type, test_execute_plan_request.client_type
         )
-        self.assertEqual(result_request.tags, ["mock-tag-from-super"])
+        self.assertEqual(result_request.tags, test_execute_plan_request.tags)
         self.assertEqual(
-            result_request.user_context.user_id, "mock-user-from-super"
+            result_request.user_context.user_id,
+            test_execute_plan_request.user_context.user_id,
         )
 
 
