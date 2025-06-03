@@ -72,3 +72,59 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             result_request.user_context.user_id,
             test_execute_plan_request.user_context.user_id,
         )
+
+
+    @patch(
+        "google.cloud.dataproc_spark_connect.client.core.DataprocSparkConnectClient._generate_dataproc_operation_id"
+    )
+    @patch(
+        "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
+    )
+    @patch(
+        "pyspark.sql.connect.client.SparkConnectClient.__init__",
+        return_value=None,
+    )
+    def test_execute_plan_request_with_operation_id_provided(
+        self,
+        mock_super_init,
+        mock_super_execute_plan_request,
+        mock_generate_dataproc_operation_id,
+    ):
+        test_uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+        test_execute_plan_request: ExecutePlanRequest = ExecutePlanRequest(
+            session_id="mock-session_id-from-super",
+            client_type="mock-client_type-from-super",
+            tags=["mock-tag-from-super"],
+            user_context=UserContext(user_id="mock-user-from-super"),
+            operation_id="d27f4fc9-f627-4b72-b20a-aebb2481df74",
+        )
+        mock_super_execute_plan_request.return_value = deepcopy(
+            test_execute_plan_request
+        )
+        mock_generate_dataproc_operation_id.return_value = test_uuid
+
+        client = DataprocSparkConnectClient()
+
+        self.assertIsNone(client.latest_operation_id)
+
+        result_request = client._execute_plan_request_with_metadata()
+        self.assertEqual(
+            client.latest_operation_id, test_execute_plan_request.operation_id
+        )
+
+        mock_super_execute_plan_request.assert_called_once()
+        mock_generate_dataproc_operation_id.assert_not_called()
+        self.assertEqual(
+            result_request.operation_id, test_execute_plan_request.operation_id
+        )
+        self.assertEqual(
+            result_request.session_id, test_execute_plan_request.session_id
+        )
+        self.assertEqual(
+            result_request.client_type, test_execute_plan_request.client_type
+        )
+        self.assertEqual(result_request.tags, test_execute_plan_request.tags)
+        self.assertEqual(
+            result_request.user_context.user_id,
+            test_execute_plan_request.user_context.user_id,
+        )
