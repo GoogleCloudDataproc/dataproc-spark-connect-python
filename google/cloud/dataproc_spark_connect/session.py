@@ -25,7 +25,13 @@ import tqdm
 
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
-from google.api_core.exceptions import Aborted, FailedPrecondition, InvalidArgument, NotFound, PermissionDenied
+from google.api_core.exceptions import (
+    Aborted,
+    FailedPrecondition,
+    InvalidArgument,
+    NotFound,
+    PermissionDenied,
+)
 from google.api_core.future.polling import POLLING_PREDICATE
 from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
 from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
@@ -409,14 +415,34 @@ class DataprocSparkSession(SparkSession):
                         os.getenv("DATAPROC_SPARK_CONNECT_IDLE_TTL_SECONDS")
                     )
                 }
-            if "COLAB_NOTEBOOK_RUNTIME_ID" in os.environ:
-                dataproc_config.labels["colab-notebook-runtime-id"] = (
-                    os.environ["COLAB_NOTEBOOK_RUNTIME_ID"]
-                )
-            if "COLAB_NOTEBOOK_KERNEL_ID" in os.environ:
-                dataproc_config.labels["colab-notebook-kernel-id"] = os.environ[
-                    "COLAB_NOTEBOOK_KERNEL_ID"
+            if "COLAB_NOTEBOOK_ID" in os.environ:
+                dataproc_config.labels["colab-notebook-id"] = os.environ[
+                    "COLAB_NOTEBOOK_ID"
                 ]
+            default_datasource = os.getenv(
+                "DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE"
+            )
+            if (
+                default_datasource
+                and dataproc_config.runtime_config.version == "2.3"
+            ):
+                if default_datasource == "bigquery":
+                    bq_datasource_properties = {
+                        "spark.datasource.bigquery.viewsEnabled": "true",
+                        "spark.datasource.bigquery.writeMethod": "direct",
+                        "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
+                        "spark.sql.legacy.createHiveTableByDefault": "false",
+                        "spark.sql.sources.default": "bigquery",
+                    }
+                    # Merge default configs with existing properties, user configs take precedence
+                    for k, v in bq_datasource_properties.items():
+                        if k not in dataproc_config.runtime_config.properties:
+                            dataproc_config.runtime_config.properties[k] = v
+                else:
+                    logger.warning(
+                        f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value:"
+                        f" {default_datasource}. Supported value is 'bigquery'."
+                    )
             return dataproc_config
 
         @staticmethod

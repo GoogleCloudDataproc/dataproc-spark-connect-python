@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.4...v0.7.5) (2025-05-27)
+
+
+### Bug Fixes
+
+* Pin PySpark dependency until new version is supported ([#92](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/92)) ([0d238f3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/0d238f3568d4efeff332227e7ef048a7e898346b))
+
+## [0.7.4](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.3...v0.7.4) (2025-05-16)
+
+
+### Features
+
+* Add default datasource config via env var ([#87](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/87)) ([71c3c1a](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/71c3c1ae42566b7b55d303c0e98cf12092aa3369))
+
 ## [0.7.3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.2...v0.7.3) (2025-05-08)
 
 
