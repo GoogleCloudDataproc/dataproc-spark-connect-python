@@ -333,6 +333,7 @@ def test_add_artifacts_pypi_package():
     os.environ["DATAPROC_SPARK_CONNECT_AUTH_TYPE"] = "END_USER_CREDENTIALS"
     connect_session = DataprocSparkSession.builder.getOrCreate()
     from pyspark.sql.connect.functions import udf, sum
+    from pyspark.sql.types import IntegerType
 
     def generate_random2(row) -> int:
         import random2 as random
@@ -344,10 +345,12 @@ def test_add_artifacts_pypi_package():
     # Force evaluation of udf using random2 on workers
     sum_random = (
         connect_session.range(1, 10)
-        .withColumn("anotherCol", udf(generate_random2)("id"))
+        .withColumn(
+            "anotherCol", udf(generate_random2)("id").cast(IntegerType())
+        )
         .select(sum("anotherCol"))
         .collect()[0][0]
     )
 
-    assert isinstance(sum_random, float), "Result is not of type float"
+    assert isinstance(sum_random, int), "Result is not of type int"
     connect_session.stop()
