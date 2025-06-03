@@ -349,5 +349,5 @@ def test_add_artifacts_pypi_package():
         .collect()[0][0]
     )
 
-    assert isinstance(sum_random, float)
+    assert isinstance(sum_random, float), "Result is not of type float"
     connect_session.stop()
