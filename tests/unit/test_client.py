@@ -14,24 +14,16 @@
 import os
 import unittest
 from unittest.mock import MagicMock, patch
+from pyspark.sql.connect.proto import ExecutePlanRequest, UserContext
+from copy import deepcopy
 
 from google.cloud.dataproc_spark_connect.client import DataprocSparkConnectClient
 
 
 class DataprocSparkConnectClientTest(unittest.TestCase):
 
-    def setUp(self):
-        self.original_environment = dict(os.environ)
-        os.environ.clear()
-        os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
-        os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self.original_environment)
-
     @patch(
-        "google.cloud.dataproc_spark_connect.client.core._generate_dataproc_operation_id"
+        "google.cloud.dataproc_spark_connect.client.core.DataprocSparkConnectClient._generate_dataproc_operation_id"
     )
     @patch(
         "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
@@ -47,14 +39,16 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         mock_generate_dataproc_operation_id,
     ):
         test_uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
-        test_execute_plan_request = MagicMock(
+        test_execute_plan_request: ExecutePlanRequest = ExecutePlanRequest(
             session_id="mock-session_id-from-super",
             client_type="mock-client_type-from-super",
             tags=["mock-tag-from-super"],
-            user_context=MagicMock(user_id="mock-user-from-super"),
+            user_context=UserContext(user_id="mock-user-from-super"),
             operation_id=None,
         )
-        mock_super_execute_plan_request.return_value = test_execute_plan_request
+        mock_super_execute_plan_request.return_value = deepcopy(
+            test_execute_plan_request
+        )
         mock_generate_dataproc_operation_id.return_value = test_uuid
 
         client = DataprocSparkConnectClient()
@@ -78,7 +72,3 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             result_request.user_context.user_id,
             test_execute_plan_request.user_context.user_id,
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

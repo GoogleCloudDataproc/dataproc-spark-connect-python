@@ -143,16 +143,6 @@ class ProxiedChannel(grpc.Channel):
         return self._wrap_method(self._wrapped.unsubscribe(*args, **kwargs))
 
 
-def _generate_dataproc_operation_id() -> str:
-    """
-    If an operation_id is not supplied in the ExecutePlanRequest, one is
-    generated and supplied by the dataproc client.
-
-    :return: UUID string of format '00112233-4455-6677-8899-aabbccddeeff'
-    """
-    return str(uuid.uuid4())
-
-
 class DataprocSparkConnectClient(SparkConnectClient):
     """
     The remote spark session in Dataproc that communicates with the server.
@@ -166,12 +156,22 @@ class DataprocSparkConnectClient(SparkConnectClient):
     def _execute_plan_request_with_metadata(self) -> pb2.ExecutePlanRequest:
         req = super()._execute_plan_request_with_metadata()
         if not req.operation_id:
-            req.operation_id = _generate_dataproc_operation_id()
+            req.operation_id = self._generate_dataproc_operation_id()
             logger.debug(
                 f"No operation_id found. Setting operation_id: {req.operation_id}"
             )
         self._last_operation_id = req.operation_id
         return req
+
+    @staticmethod
+    def _generate_dataproc_operation_id() -> str:
+        """
+        If an operation_id is not supplied in the ExecutePlanRequest, one is
+        generated and supplied by the dataproc client.
+
+        :return: UUID string of format '00112233-4455-6677-8899-aabbccddeeff'
+        """
+        return str(uuid.uuid4())
 
     @property
     def latest_operation_id(self) -> Optional[str]:
