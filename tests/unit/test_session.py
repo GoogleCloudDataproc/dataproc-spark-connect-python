@@ -69,10 +69,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_spark_session_with_default_notebook_behavior(
         self,
-        mock_display_link,
         mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
@@ -136,10 +134,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.get_session.assert_called_once_with(
                 get_session_request
             )
-            expected_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{mock_dataproc_session_id.return_value}/locations/test-region?project=test-project"
-            mock_display_link.assert_called_once_with(
-                "View Session Details", expected_url, "dashboard"
-            )
 
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     def test_pypi_add_artifacts(
@@ -200,10 +194,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_session_with_user_provided_dataproc_config(
         self,
-        mock_display_link,
         mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
@@ -290,10 +282,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.get_session.assert_called_once_with(
                 get_session_request
             )
-            expected_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{mock_dataproc_session_id.return_value}/locations/test-region?project=test-project"
-            mock_display_link.assert_called_once_with(
-                "View Session Details", expected_url, "dashboard"
-            )
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -303,10 +291,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_session_with_env_vars_config(
         self,
-        mock_display_link,
         mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_session_controller_client,
@@ -395,10 +381,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.get_session.assert_called_once_with(
                 get_session_request
             )
-            expected_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{mock_dataproc_session_id.return_value}/locations/test-region?project=test-project"
-            mock_display_link.assert_called_once_with(
-                "View Session Details", expected_url, "dashboard"
-            )
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -409,10 +391,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_session_with_session_template(
         self,
-        mock_display_link,
         mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
@@ -480,10 +460,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.get_session.assert_called_once_with(
                 get_session_request
             )
-            expected_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{mock_dataproc_session_id.return_value}/locations/test-region?project=test-project"
-            mock_display_link.assert_called_once_with(
-                "View Session Details", expected_url, "dashboard"
-            )
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -494,10 +470,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-    @mock.patch("google.cloud.dataproc_spark_connect.session.display_link")
     def test_create_session_with_user_provided_dataproc_config_and_session_template(
         self,
-        mock_display_link,
         mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
@@ -570,10 +544,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
             mock_session_controller_client_instance.get_session.assert_called_once_with(
                 get_session_request
-            )
-            expected_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{mock_dataproc_session_id.return_value}/locations/test-region?project=test-project"
-            mock_display_link.assert_called_once_with(
-                "View Session Details", expected_url, "dashboard"
             )
 
     @mock.patch("google.auth.default")
@@ -1197,6 +1167,36 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.create_session.reset_mock()
             mock_logger.warning.reset_mock()
 
+    @mock.patch("IPython.display.display")
+    @mock.patch("IPython.display.HTML")
+    def test_display_button_without_icon(self, mock_html, mock_display):
+        DataprocSparkSession._display_button(
+            "Test Link",
+            "https://console.cloud.google.com/test",
+        )
+        mock_display.assert_called_once()
+        mock_html.assert_called_once()
+        html_arg = mock_html.call_args[0][0]
+        html = str(html_arg)
+        self.assertIn("Test Link", html)
+        self.assertIn("https://console.cloud.google.com/test", html)
+        self.assertIn("open_in_new", html)
+
+    @mock.patch("IPython.display.display")
+    @mock.patch("IPython.display.HTML")
+    def test_display_button_with_icon(self, mock_html, mock_display):
+        DataprocSparkSession._display_button(
+            "Test Link",
+            "https://console.cloud.google.com/test",
+            "dashboard",
+        )
+        mock_display.assert_called_once()
+        mock_html.assert_called_once()
+        html_arg = mock_html.call_args[0][0]
+        html = str(html_arg)
+        self.assertIn("Test Link", html)
+        self.assertIn("https://console.cloud.google.com/test", html)
+        self.assertIn("dashboard", html)
 
 if __name__ == "__main__":
     unittest.main()

@@ -254,10 +254,7 @@ class DataprocSparkSession(SparkSession):
                     print(
                         f"Creating Dataproc Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
-                    session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
-                    display_link(
-                        "View Session Details", f"{session_url}", "dashboard"
-                    )
+                    self.display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
                     session_response: Session = operation.result(
                         polling=retry.Retry(
@@ -335,10 +332,7 @@ class DataprocSparkSession(SparkSession):
                 print(
                     f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}"
                 )
-                session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{s8s_session_id}/locations/{self._region}?project={self._project_id}"
-                display_link(
-                    "View Session Details", f"{session_url}", "dashboard"
-                )
+                self.display_view_session_details_button(s8s_session_id)
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
                         session_response, session_name
@@ -443,6 +437,12 @@ class DataprocSparkSession(SparkSession):
                         f" {default_datasource}. Supported value is 'bigquery'."
                     )
             return dataproc_config
+
+        def display_view_session_details_button(self, session_id):
+            session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
+            DataprocSparkSession._display_button(
+                "View Session Details", f"{session_url}", "dashboard"
+            )
 
         @staticmethod
         def generate_dataproc_session_id():
@@ -568,6 +568,113 @@ class DataprocSparkSession(SparkSession):
             ):
                 DataprocSparkSession._active_session.session = None
 
+    # The code to get styles and a custom button is taken from -
+    # https://github.com/googleapis/python-aiplatform/blob/main/google/cloud/aiplatform/utils/_ipython_utils.py#L47
+    @staticmethod
+    def _get_styles() -> str:
+        """Returns the HTML style markup to support custom buttons."""
+        return """
+                    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+                    <style>
+                      .view-session-details,
+                      .view-session-details:hover,
+                      .view-session-details:visited {
+                        position: relative;
+                        display: inline-flex;
+                        flex-direction: row;
+                        height: 32px;
+                        padding: 0 12px;
+                          margin: 4px 18px;
+                        gap: 4px;
+                        border-radius: 4px;
+                
+                        align-items: center;
+                        justify-content: center;
+                        background-color: rgb(255, 255, 255);
+                        color: rgb(51, 103, 214);
+                
+                        font-family: Roboto,"Helvetica Neue",sans-serif;
+                        font-size: 13px;
+                        font-weight: 500;
+                        text-transform: uppercase;
+                        text-decoration: none !important;
+                
+                        transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1) 0s;
+                        box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
+                      }
+                      .view-session-details:active {
+                        box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12);
+                      }
+                      .view-session-details:active .view-vertex-ripple::before {
+                        position: absolute;
+                        top: 0;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        border-radius: 4px;
+                        pointer-events: none;
+                
+                        content: '';
+                        background-color: rgb(51, 103, 214);
+                        opacity: 0.12;
+                      }
+                      .view-icon {
+                        font-size: 18px;
+                      }
+                    </style>
+                  """
+
+    @staticmethod
+    def _display_button(
+        text: str, url: str, icon: Optional[str] = "open_in_new"
+    ) -> None:
+        """Creates View Session Details button in the cell output when creating a Dataproc Session
+
+        Args:
+            text: The text displayed on the clickable button.
+            url: The url that the button will lead to.
+            icon: The icon name on the button (from material-icons library)
+
+        Returns:
+            Dict of custom properties with keys mapped to column names
+        """
+
+        from uuid import uuid4
+
+        button_id = f"view-session-details-{str(uuid4())}"
+
+        # Add the markup for the CSS and link component
+        html = f"""
+                        {DataprocSparkSession._get_styles()}
+                        <a class="view-session-details" id="{button_id}" href="#view-{button_id}">
+                          <span class="material-icons view-icon">{icon}</span>
+                          <span>{text}</span>
+                        </a>
+                        """
+
+        # Add the click handler for the link
+        html += f"""
+                        <script>
+                          (function () {{
+                            const link = document.getElementById('{button_id}');
+                            link.addEventListener('click', (e) => {{
+                              if (window.google?.colab?.openUrl) {{
+                                window.google.colab.openUrl('{url}');
+                              }} else {{
+                                window.open('{url}', '_blank');
+                              }}
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }});
+                          }})();
+                        </script>
+                    """
+
+        from IPython.display import display
+        from IPython.display import HTML
+
+        display(HTML(html))
+
 
 def terminate_s8s_session(
     project_id, region, active_s8s_session_id, client_options=None
@@ -632,108 +739,3 @@ def is_s8s_session_active(session_name, client_options) -> bool:
     if get_active_s8s_session_response(session_name, client_options) is None:
         return False
     return True
-
-
-def _get_styles() -> None:
-    """Returns the HTML style markup to support custom buttons."""
-    return """
-            <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-            <style>
-              .view-session-details,
-              .view-session-details:hover,
-              .view-session-details:visited {
-                position: relative;
-                display: inline-flex;
-                flex-direction: row;
-                height: 32px;
-                padding: 0 12px;
-                  margin: 4px 18px;
-                gap: 4px;
-                border-radius: 4px;
-        
-                align-items: center;
-                justify-content: center;
-                background-color: rgb(255, 255, 255);
-                color: rgb(51, 103, 214);
-        
-                font-family: Roboto,"Helvetica Neue",sans-serif;
-                font-size: 13px;
-                font-weight: 500;
-                text-transform: uppercase;
-                text-decoration: none !important;
-        
-                transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1) 0s;
-                box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
-              }
-              .view-session-details:active {
-                box-shadow: 0px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12);
-              }
-              .view-session-details:active .view-vertex-ripple::before {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                border-radius: 4px;
-                pointer-events: none;
-        
-                content: '';
-                background-color: rgb(51, 103, 214);
-                opacity: 0.12;
-              }
-              .view-icon {
-                font-size: 18px;
-              }
-            </style>
-          """
-
-
-def display_link(
-    text: str, url: str, icon: Optional[str] = "open_in_new"
-) -> None:
-    """Creates View Session Details button in the cell output when creating a Dataproc Session
-
-    Args:
-        text: The text displayed on the clickable button.
-        url: The url that the button will lead to.
-        icon: The icon name on the button (from material-icons library)
-
-    Returns:
-        Dict of custom properties with keys mapped to column names
-    """
-
-    from uuid import uuid4
-
-    button_id = f"view-session-details-{str(uuid4())}"
-
-    # Add the markup for the CSS and link component
-    html = f"""
-                {_get_styles()}
-                <a class="view-session-details" id="{button_id}" href="#view-{button_id}">
-                  <span class="material-icons view-icon">{icon}</span>
-                  <span>{text}</span>
-                </a>
-                """
-
-    # Add the click handler for the link
-    html += f"""
-                <script>
-                  (function () {{
-                    const link = document.getElementById('{button_id}');
-                    link.addEventListener('click', (e) => {{
-                      if (window.google?.colab?.openUrl) {{
-                        window.google.colab.openUrl('{url}');
-                      }} else {{
-                        window.open('{url}', '_blank');
-                      }}
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }});
-                  }})();
-                </script>
-            """
-
-    from IPython.display import display
-    from IPython.display import HTML
-
-    display(HTML(html))
