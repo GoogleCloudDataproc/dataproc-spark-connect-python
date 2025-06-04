@@ -330,7 +330,6 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
 
 
 def test_add_artifacts_pypi_package():
-    os.environ["DATAPROC_SPARK_CONNECT_AUTH_TYPE"] = "END_USER_CREDENTIALS"
     connect_session = DataprocSparkSession.builder.getOrCreate()
     from pyspark.sql.connect.functions import udf, sum
     from pyspark.sql.types import IntegerType
