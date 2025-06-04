@@ -82,9 +82,11 @@ def echo_server_conn(outgoing_socket_timeout, backend_wait):
                 return
             # Define a single, consistent timeout for both ends of the proxy-echo connection path
             if outgoing_socket_timeout is not None:
-                proxy_echo_path_timeout = backend_wait + outgoing_socket_timeout + 0.5 # Generous buffer
-            else: # outgoing_socket_timeout is None
-                proxy_echo_path_timeout = backend_wait + 1.5 # Generous buffer
+                proxy_echo_path_timeout = (
+                    backend_wait + outgoing_socket_timeout + 0.5
+                )  # Generous buffer
+            else:  # outgoing_socket_timeout is None
+                proxy_echo_path_timeout = backend_wait + 1.5  # Generous buffer
             conn.settimeout(proxy_echo_path_timeout)
             t = threading.Thread(target=echo_messages, args=[conn], daemon=True)
             t.start()
@@ -132,11 +134,13 @@ def proxy_server_conn(incoming_socket_timeout, echo_server_conn):
         conn = socket.create_connection(server_socket.getsockname())
         if incoming_socket_timeout is None:
             conn.settimeout(15.0)  # Default timeout if None
-        else: # incoming_socket_timeout fixture parameter is 0.1s
+        else:  # incoming_socket_timeout fixture parameter is 0.1s
             # Set a more robust timeout for the actual socket operations,
             # even if the parameterization asks for a very short one.
             # The retry_on_timeouts wrapper still handles the overall 15s limit.
-            effective_client_socket_timeout = 0.5  # Increased from incoming_socket_timeout (0.1s)
+            effective_client_socket_timeout = (
+                0.5  # Increased from incoming_socket_timeout (0.1s)
+            )
             conn.settimeout(effective_client_socket_timeout)
         yield conn
 
