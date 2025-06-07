@@ -11,11 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import logging
+import uuid
+from typing import Optional
 
 import google
 import grpc
-from pyspark.sql.connect.client import ChannelBuilder
+import pyspark.sql.connect.proto as pb2
+from pyspark.sql.connect.client import ChannelBuilder, SparkConnectClient
 
 from . import proxy
 
@@ -137,3 +141,44 @@ class ProxiedChannel(grpc.Channel):
 
     def unsubscribe(self, *args, **kwargs):
         return self._wrap_method(self._wrapped.unsubscribe(*args, **kwargs))
+
+
+class DataprocSparkConnectClient(SparkConnectClient):
+    """
+    The remote spark session in Dataproc that communicates with the server.
+    Replaces the default :py:class:`SparkConnectClient` as the client for
+    :py:class:`DataprocSparkSession`.
+    """
+
+    # keep track of the active / most recent ExecutePlanRequest's operation_id
+    _last_operation_id: Optional[str] = None
+
+    def _execute_plan_request_with_metadata(self) -> pb2.ExecutePlanRequest:
+        req = super()._execute_plan_request_with_metadata()
+        if not req.operation_id:
+            req.operation_id = self._generate_dataproc_operation_id()
+            logger.debug(
+                f"No operation_id found. Setting operation_id: {req.operation_id}"
+            )
+        self._last_operation_id = req.operation_id
+        return req
+
+    @staticmethod
+    def _generate_dataproc_operation_id() -> str:
+        """
+        If an operation_id is not supplied in the ExecutePlanRequest, one is
+        generated and supplied by the dataproc client.
+
+        :return: UUID string of format '00112233-4455-6677-8899-aabbccddeeff'
+        """
+        return str(uuid.uuid4())
+
+    @property
+    def latest_operation_id(self) -> Optional[str]:
+        """
+        Operation ID is not an inherent property of the client itself, rather it
+        is the operation_id of the last request handled by the client.
+
+        :return: operation_id of the current / most recent ExecutePlanRequest
+        """
+        return self._last_operation_id
