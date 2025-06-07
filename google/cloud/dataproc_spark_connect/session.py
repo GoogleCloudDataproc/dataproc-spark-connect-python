@@ -234,6 +234,7 @@ class DataprocSparkSession(SparkSession):
                     print(
                         f"Creating Dataproc Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
+                    self.display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
                     session_response: Session = operation.result(
                         polling=retry.Retry(
@@ -311,6 +312,7 @@ class DataprocSparkSession(SparkSession):
                 print(
                     f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}"
                 )
+                self.display_view_session_details_button(s8s_session_id)
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
                         session_response, session_name
@@ -415,6 +417,17 @@ class DataprocSparkSession(SparkSession):
                         f" {default_datasource}. Supported value is 'bigquery'."
                     )
             return dataproc_config
+
+        def display_view_session_details_button(self, session_id):
+            try:
+                session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
+                from google.cloud.aiplatform.utils import _ipython_utils
+
+                _ipython_utils.display_link(
+                    "View Session Details", f"{session_url}", "dashboard"
+                )
+            except ImportError as e:
+                logger.debug(f"Import error: {e}")
 
         @staticmethod
         def generate_dataproc_session_id():
