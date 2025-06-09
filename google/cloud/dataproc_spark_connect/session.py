@@ -86,16 +86,6 @@ class DataprocSparkSession(SparkSession):
 
     class Builder(SparkSession.Builder):
 
-        _session_static_configs = [
-            "spark.executor.cores",
-            "spark.executor.memoryOverhead",
-            "spark.executor.memory",
-            "spark.driver.memory",
-            "spark.driver.cores",
-            "spark.eventLog.dir",
-            "spark.history.fs.logDirectory",
-        ]
-
         def __init__(self):
             self._options: Dict[str, Any] = {}
             self._channel_builder: Optional[DataprocChannelBuilder] = None
@@ -108,15 +98,6 @@ class DataprocSparkSession(SparkSession):
                     f"{self._region}-dataproc.googleapis.com",
                 )
             )
-
-        def __apply_options(self, session: "SparkSession") -> None:
-            with self._lock:
-                self._options = {
-                    key: value
-                    for key, value in self._options.items()
-                    if key not in self._session_static_configs
-                }
-                self._apply_options(session)
 
         def projectId(self, project_id):
             self._project_id = project_id
@@ -175,7 +156,6 @@ class DataprocSparkSession(SparkSession):
             session = DataprocSparkSession(connection=self._channel_builder)
 
             DataprocSparkSession._set_default_and_active_session(session)
-            self.__apply_options(session)
             return session
 
         def __create(self) -> "DataprocSparkSession":
@@ -257,6 +237,7 @@ class DataprocSparkSession(SparkSession):
                     print(
                         f"Creating Dataproc Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
+                    self._display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
                     session_response: Session = operation.result(
                         polling=retry.Retry(
@@ -334,6 +315,7 @@ class DataprocSparkSession(SparkSession):
                 print(
                     f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}"
                 )
+                self._display_view_session_details_button(s8s_session_id)
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
                         session_response, session_name
@@ -353,8 +335,6 @@ class DataprocSparkSession(SparkSession):
                 session = self._get_exiting_active_session()
                 if session is None:
                     session = self.__create()
-                if session:
-                    self.__apply_options(session)
                 return session
 
         def _get_dataproc_config(self):
@@ -410,9 +390,11 @@ class DataprocSparkSession(SparkSession):
                     )
                 }
             if "COLAB_NOTEBOOK_ID" in os.environ:
-                dataproc_config.labels["colab-notebook-id"] = os.environ[
-                    "COLAB_NOTEBOOK_ID"
-                ]
+                colab_notebook_name = os.environ["COLAB_NOTEBOOK_ID"]
+                # Extract the last part of the path, which is the ID
+                dataproc_config.labels["goog-colab-notebook-id"] = (
+                    os.path.basename(colab_notebook_name)
+                )
             default_datasource = os.getenv(
                 "DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE"
             )
@@ -438,6 +420,17 @@ class DataprocSparkSession(SparkSession):
                         f" {default_datasource}. Supported value is 'bigquery'."
                     )
             return dataproc_config
+
+        def _display_view_session_details_button(self, session_id):
+            try:
+                session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
+                from google.cloud.aiplatform.utils import _ipython_utils
+
+                _ipython_utils.display_link(
+                    "View Session Details", f"{session_url}", "dashboard"
+                )
+            except ImportError as e:
+                logger.debug(f"Import error: {e}")
 
         @staticmethod
         def generate_dataproc_session_id():

@@ -326,7 +326,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 "DATAPROC_SPARK_CONNECT_SUBNET": "test-subnet-from-env",
                 "DATAPROC_SPARK_CONNECT_TTL_SECONDS": "12",
                 "DATAPROC_SPARK_CONNECT_IDLE_TTL_SECONDS": "89",
-                "COLAB_NOTEBOOK_ID": "test-notebook-id",
+                "COLAB_NOTEBOOK_ID": "/embedded/projects/company.com%3Aproject1/locations/us-central1/repositories/test-notebook-id",
             },
         ).start()
 
@@ -346,8 +346,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         create_session_request.session.environment_config.execution_config.idle_ttl = {
             "seconds": 89
         }
-        create_session_request.session.labels["colab-notebook-id"] = (
-            "test-notebook-id"
+        create_session_request.session.labels["goog-colab-notebook-id"] = (
+            "test-notebook-id"  # Expecting the basename
         )
         create_session_request.parent = (
             "projects/test-project/locations/test-region"
@@ -1166,6 +1166,38 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             self.stopSession(mock_session_controller_client_instance, session)
             mock_session_controller_client_instance.create_session.reset_mock()
             mock_logger.warning.reset_mock()
+
+    @mock.patch("sys.modules", {"google.cloud.aiplatform": None})
+    @mock.patch("google.cloud.dataproc_spark_connect.session.logger")
+    def test_display_button_with_aiplatform_not_installed(self, mock_logger):
+        DataprocSparkSession.builder._display_view_session_details_button(
+            "test_session"
+        )
+        mock_logger.debug.assert_called_once_with(
+            "Import error: No module named 'google.cloud.aiplatform.utils'; 'google.cloud.aiplatform' is not a package"
+        )
+
+    @mock.patch.dict(
+        "sys.modules",
+        {
+            "google.cloud.aiplatform.utils": mock.MagicMock(
+                _ipython_utils=mock.MagicMock()
+            ),
+        },
+    )
+    def test_display_button_with_aiplatform_installed(self):
+        mock_ipython_utils = mock.sys.modules[
+            "google.cloud.aiplatform.utils"
+        ]._ipython_utils
+        test_session_url = "https://console.cloud.google.com/dataproc/interactive/sessions/test_session/locations/test-region?project=test-project"
+
+        mock_display_link = mock_ipython_utils.display_link
+        DataprocSparkSession.builder._display_view_session_details_button(
+            "test_session"
+        )
+        mock_display_link.assert_called_once_with(
+            "View Session Details", test_session_url, "dashboard"
+        )
 
 
 if __name__ == "__main__":
