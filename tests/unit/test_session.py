@@ -1167,15 +1167,15 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.create_session.reset_mock()
             mock_logger.warning.reset_mock()
 
+    @mock.patch("sys.modules", {"google.cloud.aiplatform": None})
     @mock.patch("google.cloud.dataproc_spark_connect.session.logger")
-    def test_import_error(self, mock_logger):
-        with mock.patch.dict("sys.modules", {"google.cloud.aiplatform": None}):
-            DataprocSparkSession.builder.display_view_session_details_button(
-                "test_session"
-            )
-            mock_logger.debug.assert_called_once_with(
-                "Import error: No module named 'google.cloud.aiplatform.utils'; 'google.cloud.aiplatform' is not a package"
-            )
+    def test_display_button_with_aiplatform_not_installed(self, mock_logger):
+        DataprocSparkSession.builder._display_view_session_details_button(
+            "test_session"
+        )
+        mock_logger.debug.assert_called_once_with(
+            "Import error: No module named 'google.cloud.aiplatform.utils'; 'google.cloud.aiplatform' is not a package"
+        )
 
     def test_display_button_with_aiplatform_installed(self):
 
@@ -1185,14 +1185,13 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         with mock.patch.dict(
             "sys.modules",
             {
-                "google.cloud.aiplatform.utils._ipython_utils": mock_ipython_utils,
                 "google.cloud.aiplatform.utils": mock.MagicMock(
                     _ipython_utils=mock_ipython_utils
                 ),
             },
         ):
             mock_display_link = mock_ipython_utils.display_link
-            DataprocSparkSession.builder.display_view_session_details_button(
+            DataprocSparkSession.builder._display_view_session_details_button(
                 "test_session"
             )
             mock_display_link.assert_called_once_with(
