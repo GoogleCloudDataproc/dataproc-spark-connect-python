@@ -1177,26 +1177,27 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             "Import error: No module named 'google.cloud.aiplatform.utils'; 'google.cloud.aiplatform' is not a package"
         )
 
+    @mock.patch.dict(
+        "sys.modules",
+        {
+            "google.cloud.aiplatform.utils": mock.MagicMock(
+                _ipython_utils=mock.MagicMock()
+            ),
+        },
+    )
     def test_display_button_with_aiplatform_installed(self):
-
-        mock_ipython_utils = mock.MagicMock()
+        mock_ipython_utils = mock.sys.modules[
+            "google.cloud.aiplatform.utils"
+        ]._ipython_utils
         test_session_url = "https://console.cloud.google.com/dataproc/interactive/sessions/test_session/locations/test-region?project=test-project"
 
-        with mock.patch.dict(
-            "sys.modules",
-            {
-                "google.cloud.aiplatform.utils": mock.MagicMock(
-                    _ipython_utils=mock_ipython_utils
-                ),
-            },
-        ):
-            mock_display_link = mock_ipython_utils.display_link
-            DataprocSparkSession.builder._display_view_session_details_button(
-                "test_session"
-            )
-            mock_display_link.assert_called_once_with(
-                "View Session Details", test_session_url, "dashboard"
-            )
+        mock_display_link = mock_ipython_utils.display_link
+        DataprocSparkSession.builder._display_view_session_details_button(
+            "test_session"
+        )
+        mock_display_link.assert_called_once_with(
+            "View Session Details", test_session_url, "dashboard"
+        )
 
 
 if __name__ == "__main__":
