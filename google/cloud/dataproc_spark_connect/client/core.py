@@ -204,7 +204,7 @@ class DataprocSparkConnectClient(SparkConnectClient):
 
         html_element = f"""
             <div>
-                <p><a href="{url}">View Spark UI (operation {operation_id})</a></p>
+                <p><a href="{url}">Spark UI</a> (operation {operation_id})</p>
             </div>
             """
         display(HTML(html_element))
