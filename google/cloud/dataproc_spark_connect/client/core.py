@@ -187,12 +187,14 @@ class DataprocSparkConnectClient(SparkConnectClient):
         return req
 
     def _display_operation_link(self, operation_id: str):
-        assert all([
-            operation_id is not None,
-            self._region is not None,
-            self._active_s8s_session_id is not None,
-            self._project_id is not None
-        ])
+        assert all(
+            [
+                operation_id is not None,
+                self._region is not None,
+                self._active_s8s_session_id is not None,
+                self._project_id is not None,
+            ]
+        )
 
         url = (
             f"https://console.cloud.google.com/dataproc/interactive/{self._region}/"
