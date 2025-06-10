@@ -150,9 +150,6 @@ class DataprocSparkConnectClient(SparkConnectClient):
     :py:class:`DataprocSparkSession`.
     """
 
-    # keep track of the active / most recent ExecutePlanRequest's operation_id
-    _last_operation_id: Optional[str] = None
-
     def _execute_plan_request_with_metadata(self) -> pb2.ExecutePlanRequest:
         req = super()._execute_plan_request_with_metadata()
         if not req.operation_id:
@@ -160,7 +157,6 @@ class DataprocSparkConnectClient(SparkConnectClient):
             logger.debug(
                 f"No operation_id found. Setting operation_id: {req.operation_id}"
             )
-        self._last_operation_id = req.operation_id
         return req
 
     @staticmethod
@@ -172,13 +168,3 @@ class DataprocSparkConnectClient(SparkConnectClient):
         :return: UUID string of format '00112233-4455-6677-8899-aabbccddeeff'
         """
         return str(uuid.uuid4())
-
-    @property
-    def latest_operation_id(self) -> Optional[str]:
-        """
-        Operation ID is not an inherent property of the client itself, rather it
-        is the operation_id of the last request handled by the client.
-
-        :return: operation_id of the current / most recent ExecutePlanRequest
-        """
-        return self._last_operation_id
