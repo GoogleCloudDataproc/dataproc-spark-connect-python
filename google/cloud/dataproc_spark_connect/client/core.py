@@ -13,15 +13,10 @@
 # limitations under the License.
 
 import logging
-import uuid
-from typing import Optional
 
 import google
 import grpc
-import pyspark.sql.connect.proto as pb2
-from pyspark.sql.connect.client import ChannelBuilder, SparkConnectClient
-from IPython.display import display, HTML
-
+from pyspark.sql.connect.client import ChannelBuilder
 from . import proxy
 
 logger = logging.getLogger(__name__)
@@ -142,79 +137,3 @@ class ProxiedChannel(grpc.Channel):
 
     def unsubscribe(self, *args, **kwargs):
         return self._wrap_method(self._wrapped.unsubscribe(*args, **kwargs))
-
-
-class DataprocSparkConnectClient(SparkConnectClient):
-    """
-    The remote spark session in Dataproc that communicates with the server.
-    Replaces the default :py:class:`SparkConnectClient` as the client for
-    :py:class:`DataprocSparkSession`.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """
-        Parameters
-        ----------
-
-        connection : str or :class:`ChannelBuilder` / `DataprocChannelBuilder`
-            Connection string that is used to extract the connection parameters
-            and configure the GRPC connection. Or instance of ChannelBuilder /
-            DataprocChannelBuilder that creates GRPC connection.
-        user_id : str, optional
-            If not set, will default to the $USER environment. Defining the user
-            ID as part of the connection string takes precedence.
-        region: str
-            Derived from the DataprocSparkSession
-        active_s8s_session_id: str
-            Derived from the DataprocSparkSession
-        project_id: str
-            Derived from the DataprocSparkSession
-        """
-        logger.debug("Initiating DataprocSparkConnectClient")
-        self._region = kwargs.pop("region", None)
-        self._active_s8s_session_id = kwargs.pop("active_s8s_session_id", None)
-        self._project_id = kwargs.pop("project_id", None)
-        super().__init__(*args, **kwargs)
-
-    def _execute_plan_request_with_metadata(self) -> pb2.ExecutePlanRequest:
-        req = super()._execute_plan_request_with_metadata()
-        if not req.operation_id:
-            req.operation_id = self._generate_dataproc_operation_id()
-            logger.debug(
-                f"No operation_id found. Setting operation_id: {req.operation_id}"
-            )
-        self._display_operation_link(req.operation_id)
-        return req
-
-    def _display_operation_link(self, operation_id: str):
-        assert all(
-            [
-                operation_id is not None,
-                self._region is not None,
-                self._active_s8s_session_id is not None,
-                self._project_id is not None,
-            ]
-        )
-
-        url = (
-            f"https://console.cloud.google.com/dataproc/interactive/{self._region}/"
-            f"{self._active_s8s_session_id}/sparkApplications/application/sql;"
-            f"associatedSqlOperationId={operation_id}?project={self._project_id}"
-        )
-
-        html_element = f"""
-            <div>
-                <p><a href="{url}">View Spark UI (operation {operation_id})</a></p>
-            </div>
-            """
-        display(HTML(html_element))
-
-    @staticmethod
-    def _generate_dataproc_operation_id() -> str:
-        """
-        If an operation_id is not supplied in the ExecutePlanRequest, one is
-        generated and supplied by the dataproc client.
-
-        :return: UUID string of format '00112233-4455-6677-8899-aabbccddeeff'
-        """
-        return str(uuid.uuid4())
