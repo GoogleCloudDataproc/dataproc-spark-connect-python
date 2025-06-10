@@ -461,7 +461,13 @@ class DataprocSparkSession(SparkSession):
             If not set, will default to the $USER environment. Defining the user
             ID as part of the connection string takes precedence.
         """
-        self._client = DataprocSparkConnectClient(connection, user_id)
+        self._client = DataprocSparkConnectClient(
+            connection,
+            user_id,
+            region=self._region,
+            active_s8s_session_id=self._active_s8s_session_id,
+            project_id=self._project_id,
+        )
         self._session_id = self._client._session_id
 
     def _repr_html_(self) -> str:
