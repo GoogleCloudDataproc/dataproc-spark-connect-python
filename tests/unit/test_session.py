@@ -22,6 +22,7 @@ from google.api_core.exceptions import (
 )
 from google.cloud.dataproc_spark_connect import DataprocSparkSession
 from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
+from google.cloud.dataproc_spark_connect.session import _is_valid_label_value
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
     CreateSessionRequest,
@@ -1198,6 +1199,211 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_display_link.assert_called_once_with(
             "View Session Details", test_session_url, "dashboard"
         )
+
+    def test_is_valid_label_value(self):
+        # Valid label values
+        self.assertTrue(_is_valid_label_value("valid-label-123"))
+        self.assertTrue(_is_valid_label_value("123"))
+        self.assertTrue(_is_valid_label_value("a"))
+        self.assertTrue(_is_valid_label_value("test-notebook-id"))
+        self.assertTrue(_is_valid_label_value("a1b2c3"))
+        self.assertTrue(_is_valid_label_value("valid123"))
+        self.assertTrue(_is_valid_label_value("123valid"))
+
+        # Invalid label values
+        self.assertFalse(_is_valid_label_value(""))  # Empty string
+        self.assertFalse(
+            _is_valid_label_value("Invalid-Capital")
+        )  # Capital letters
+        self.assertFalse(_is_valid_label_value("-invalid"))  # Starts with dash
+        self.assertFalse(_is_valid_label_value("invalid-"))  # Ends with dash
+        self.assertFalse(
+            _is_valid_label_value("invalid_underscore")
+        )  # Contains underscore
+        self.assertFalse(_is_valid_label_value("invalid.dot"))  # Contains dot
+        self.assertFalse(
+            _is_valid_label_value("invalid spaces")
+        )  # Contains spaces
+        self.assertFalse(
+            _is_valid_label_value("invalid@symbol")
+        )  # Contains special char
+        self.assertFalse(_is_valid_label_value("UPPERCASE"))  # All uppercase
+        self.assertFalse(_is_valid_label_value("-"))  # Just a dash
+
+        # Valid label value at maximum length (63 characters)
+        max_length_valid = "a" + "b" * 61 + "c"  # 63 characters: a + 61 b's + c
+        self.assertEqual(len(max_length_valid), 63)
+        self.assertTrue(_is_valid_label_value(max_length_valid))
+
+        # Invalid label value - too long (64 characters)
+        too_long_invalid = "a" + "b" * 62 + "c"  # 64 characters: a + 62 b's + c
+        self.assertEqual(len(too_long_invalid), 64)
+        self.assertFalse(_is_valid_label_value(too_long_invalid))
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
+    )
+    @mock.patch("google.cloud.dataproc_spark_connect.session.logger")
+    def test_create_session_with_invalid_notebook_id(
+        self,
+        mock_logger,
+        mock_is_s8s_session_active,
+        mock_dataproc_session_id,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        session = None
+        mock_is_s8s_session_active.return_value = True
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+        mock_dataproc_session_id.return_value = "sc-20240702-103952-abcdef"
+        cred = mock.MagicMock()
+        cred.token = "token"
+        mock_credentials.return_value = (cred, "")
+        mock_operation = mock.Mock()
+        session_response = Session()
+        session_response.runtime_info.endpoints = {
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
+        }
+        session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+        mock_operation.result.side_effect = [session_response]
+        mock_session_controller_client_instance.create_session.return_value = (
+            mock_operation
+        )
+
+        # Test with invalid notebook ID (contains uppercase and underscores)
+        mock.patch.dict(
+            os.environ,
+            {
+                "COLAB_NOTEBOOK_ID": "/path/to/Invalid_Notebook-ID_With.Special@Chars",
+            },
+        ).start()
+
+        create_session_request = CreateSessionRequest()
+        create_session_request.parent = (
+            "projects/test-project/locations/test-region"
+        )
+        create_session_request.session.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
+        create_session_request.session.runtime_config.version = (
+            self._default_runtime_version
+        )
+        create_session_request.session.spark_connect_session = (
+            SparkConnectConfig()
+        )
+        create_session_request.session_id = "sc-20240702-103952-abcdef"
+        # Note: No notebook label should be set due to invalid format
+
+        try:
+            session = DataprocSparkSession.builder.getOrCreate()
+            mock_session_controller_client_instance.create_session.assert_called_once_with(
+                create_session_request
+            )
+            # Verify warning was logged
+            mock_logger.warning.assert_called_once()
+            warning_call_args = mock_logger.warning.call_args[0][0]
+            self.assertIn(
+                "Warning while processing notebook ID:", warning_call_args
+            )
+            self.assertIn(
+                "Invalid_Notebook-ID_With.Special@Chars", warning_call_args
+            )
+            self.assertIn(
+                "not compliant with label value format", warning_call_args
+            )
+            self.assertIn(
+                "Only lowercase letters, numbers, and dashes are allowed",
+                warning_call_args,
+            )
+            self.assertIn("Maximum length is 63 characters", warning_call_args)
+            self.assertIn("Skipping notebook ID label", warning_call_args)
+
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
+    )
+    @mock.patch("google.cloud.dataproc_spark_connect.session.logger")
+    def test_create_session_with_valid_notebook_id(
+        self,
+        mock_logger,
+        mock_is_s8s_session_active,
+        mock_dataproc_session_id,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        session = None
+        mock_is_s8s_session_active.return_value = True
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+        mock_dataproc_session_id.return_value = "sc-20240702-103952-abcdef"
+        cred = mock.MagicMock()
+        cred.token = "token"
+        mock_credentials.return_value = (cred, "")
+        mock_operation = mock.Mock()
+        session_response = Session()
+        session_response.runtime_info.endpoints = {
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
+        }
+        session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+        mock_operation.result.side_effect = [session_response]
+        mock_session_controller_client_instance.create_session.return_value = (
+            mock_operation
+        )
+
+        # Test with valid notebook ID (lowercase, numbers, dashes only)
+        mock.patch.dict(
+            os.environ,
+            {
+                "COLAB_NOTEBOOK_ID": "/path/to/valid-notebook-123",
+            },
+        ).start()
+
+        create_session_request = CreateSessionRequest()
+        create_session_request.parent = (
+            "projects/test-project/locations/test-region"
+        )
+        create_session_request.session.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
+        create_session_request.session.runtime_config.version = (
+            self._default_runtime_version
+        )
+        create_session_request.session.spark_connect_session = (
+            SparkConnectConfig()
+        )
+        create_session_request.session_id = "sc-20240702-103952-abcdef"
+        # Valid notebook label should be set
+        create_session_request.session.labels["goog-colab-notebook-id"] = (
+            "valid-notebook-123"
+        )
+
+        try:
+            session = DataprocSparkSession.builder.getOrCreate()
+            mock_session_controller_client_instance.create_session.assert_called_once_with(
+                create_session_request
+            )
+            # Verify no warning was logged
+            mock_logger.warning.assert_not_called()
+
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
 
 
 if __name__ == "__main__":
