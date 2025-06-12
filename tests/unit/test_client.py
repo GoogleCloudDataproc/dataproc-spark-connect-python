@@ -119,6 +119,8 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
 
             mock_super_execute_plan_request.assert_called_once()
             mock_uuid4.assert_called_once()
+            mock_display_operation_link.assert_called_once_with(test_uuid)
+
             self.assertEqual(
                 result_request.session_id, test_execute_plan_request.session_id
             )
@@ -166,12 +168,13 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         mock_credentials,
     ):
         test_uuid = "f728f1b4-00a7-4e6e-8365-d12b4a7d42ab"
+        provided_uuid = "d27f4fc9-f627-4b72-b20a-aebb2481df74"
         test_execute_plan_request: ExecutePlanRequest = ExecutePlanRequest(
             session_id="mock-session_id-from-super",
             client_type="mock-client_type-from-super",
             tags=["mock-tag-from-super"],
             user_context=UserContext(user_id="mock-user-from-super"),
-            operation_id="d27f4fc9-f627-4b72-b20a-aebb2481df74",
+            operation_id=provided_uuid,
         )
 
         session = None
@@ -223,11 +226,9 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
 
             mock_super_execute_plan_request.assert_called_once()
             mock_uuid4.assert_not_called()
+            mock_display_operation_link.assert_called_once_with(provided_uuid)
 
-            self.assertEqual(
-                result_request.operation_id,
-                test_execute_plan_request.operation_id,
-            )
+            self.assertEqual(result_request.operation_id, provided_uuid)
             self.assertEqual(
                 result_request.session_id, test_execute_plan_request.session_id
             )
