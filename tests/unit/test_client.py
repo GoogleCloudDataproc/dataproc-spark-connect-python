@@ -17,7 +17,7 @@ from pyspark.sql.connect.proto import ExecutePlanRequest, UserContext
 from copy import deepcopy
 
 from google.cloud.dataproc_spark_connect import DataprocSparkSession
-from google.cloud.dataproc_v1 import Session, CreateSessionRequest, SparkConnectConfig
+from google.cloud.dataproc_v1 import Session
 from pyspark.sql.connect.client.core import ConfigResult
 from pyspark.sql.connect.proto import ConfigResponse
 
@@ -95,19 +95,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         mock_session_controller_client_instance.create_session.return_value = (
             mock_operation
         )
-
-        create_session_request = CreateSessionRequest()
-        create_session_request.parent = (
-            "projects/test-project/locations/test-region"
-        )
-        create_session_request.session.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-        create_session_request.session.runtime_config.version = (
-            DataprocSparkSession._DEFAULT_RUNTIME_VERSION
-        )
-        create_session_request.session.spark_connect_session = (
-            SparkConnectConfig()
-        )
-        create_session_request.session_id = "sc-20240702-103952-abcdef"
 
         try:
             session = DataprocSparkSession.builder.getOrCreate()
@@ -204,19 +191,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         mock_session_controller_client_instance.create_session.return_value = (
             mock_operation
         )
-
-        create_session_request = CreateSessionRequest()
-        create_session_request.parent = (
-            "projects/test-project/locations/test-region"
-        )
-        create_session_request.session.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-        create_session_request.session.runtime_config.version = (
-            DataprocSparkSession._DEFAULT_RUNTIME_VERSION
-        )
-        create_session_request.session.spark_connect_session = (
-            SparkConnectConfig()
-        )
-        create_session_request.session_id = "sc-20240702-103952-abcdef"
 
         try:
             session = DataprocSparkSession.builder.getOrCreate()
