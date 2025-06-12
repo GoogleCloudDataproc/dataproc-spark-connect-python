@@ -21,8 +21,11 @@ import random
 import string
 import threading
 import time
-import tqdm
+import uuid
+from typing import Any, cast, ClassVar, Dict, Optional, Union
 
+import tqdm
+from IPython.display import display, HTML
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import (
@@ -33,12 +36,6 @@ from google.api_core.exceptions import (
     PermissionDenied,
 )
 from google.api_core.future.polling import POLLING_PREDICATE
-from google.cloud.dataproc_spark_connect.client import (
-    DataprocChannelBuilder,
-    DataprocSparkConnectClient,
-)
-from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
-from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
     CreateSessionRequest,
@@ -48,9 +45,13 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from google.cloud.dataproc_v1.types import sessions
+from pyspark.sql.connect.client.core import SparkConnectClient
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
-from typing import Any, cast, ClassVar, Dict, Optional, Union
+
+from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
+from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
+from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -461,14 +462,24 @@ class DataprocSparkSession(SparkSession):
             If not set, will default to the $USER environment. Defining the user
             ID as part of the connection string takes precedence.
         """
-        self._client = DataprocSparkConnectClient(
-            connection,
-            user_id,
-            region=self._region,
-            active_s8s_session_id=self._active_s8s_session_id,
-            project_id=self._project_id,
-        )
-        self._session_id = self._client._session_id
+
+        def print_spark_ui_url(client: SparkConnectClient):
+            base_method = client._execute_plan_request_with_metadata
+
+            def wrapped_method(*args, **kwargs):
+                req = base_method(*args, **kwargs)
+                if not req.operation_id:
+                    req.operation_id = str(uuid.uuid4())
+                    logger.debug(
+                        f"No operation_id found. Setting operation_id: {req.operation_id}"
+                    )
+                self._display_operation_link(req.operation_id)
+                return req
+
+            client._execute_plan_request_with_metadata = wrapped_method
+
+        super().__init__(connection, user_id)
+        print_spark_ui_url(self._client)
 
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:
@@ -486,6 +497,29 @@ class DataprocSparkSession(SparkSession):
             <p><a href="{ui}?project={self._project_id}">Spark UI</a></p>
         </div>
         """
+
+    def _display_operation_link(self, operation_id: str):
+        assert all(
+            [
+                operation_id is not None,
+                self._region is not None,
+                self._active_s8s_session_id is not None,
+                self._project_id is not None,
+            ]
+        )
+
+        url = (
+            f"https://console.cloud.google.com/dataproc/interactive/{self._region}/"
+            f"{self._active_s8s_session_id}/sparkApplications/application/sql;"
+            f"associatedSqlOperationId={operation_id}?project={self._project_id}"
+        )
+
+        html_element = f"""
+                <div>
+                    <p><a href="{url}">Spark UI</a> (Operation: {operation_id})</p>
+                </div>
+                """
+        display(HTML(html_element))
 
     @staticmethod
     def _remove_stopped_session_from_file():
