@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.5...v0.8.0) (2025-06-13)
+
+
+### Features
+
+* Add 'View Session Details' button on Session create. ([#88](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/88)) ([54e42b7](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/54e42b7324e291ae6353266e1b32f093937ab981))
+* Add colab-notebook-id label to Dataproc Spark Connect session ([#94](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/94)) ([66883f7](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/66883f7a1c8c3ef98a450fc99780467d67961e04))
+* Per-operation Spark UI URL ([#91](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/91)) ([09392c7](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/09392c7bc30ccd3ff93212a04d63cdce04f6f170))
+
+
+### Bug Fixes
+
+* Extract Colab notebook ID from full path ([#103](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/103)) ([c209798](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/c209798476dc66e31fd6524846cb216b14ab5572))
+* Validate Colab notebook ID for Dataproc session labels ([#104](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/104)) ([d9fbf51](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/d9fbf518f2eb6b11bc1a1a519522e304c78f4a6f))
+
 ## [0.7.5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.4...v0.7.5) (2025-05-27)
 
 
