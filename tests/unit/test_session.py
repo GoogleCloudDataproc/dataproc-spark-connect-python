@@ -11,10 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from copy import deepcopy
 import os
 import unittest
 
-from copy import deepcopy
 from google.api_core.exceptions import (
     Aborted,
     FailedPrecondition,
@@ -1425,7 +1425,9 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
-    @mock.patch("google.cloud.dataproc_spark_connect.session.is_s8s_session_active")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
+    )
     @mock.patch("uuid.uuid4")
     @mock.patch(
         "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
@@ -1520,7 +1522,9 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
-    @mock.patch("google.cloud.dataproc_spark_connect.session.is_s8s_session_active")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
+    )
     @mock.patch("uuid.uuid4")
     @mock.patch(
         "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
