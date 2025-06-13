@@ -14,6 +14,7 @@
 import os
 import unittest
 
+from copy import deepcopy
 from google.api_core.exceptions import (
     Aborted,
     FailedPrecondition,
@@ -32,7 +33,7 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from pyspark.sql.connect.client.core import ConfigResult
-from pyspark.sql.connect.proto import ConfigResponse
+from pyspark.sql.connect.proto import ConfigResponse, ExecutePlanRequest, UserContext
 from unittest import mock
 
 
@@ -1398,6 +1399,209 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
             # Verify no warning was logged
             mock_logger.warning.assert_not_called()
+
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+
+
+class DataprocSparkConnectClientTest(unittest.TestCase):
+
+    @staticmethod
+    def stopSession(mock_session_controller_client_instance, session):
+        session_response = Session()
+        session_response.state = Session.State.TERMINATING
+        mock_session_controller_client_instance.get_session.return_value = (
+            session_response
+        )
+        if session is not None:
+            session.stop()
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch("google.cloud.dataproc_spark_connect.session.is_s8s_session_active")
+    @mock.patch("uuid.uuid4")
+    @mock.patch(
+        "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession._display_operation_link"
+    )
+    def test_execute_plan_request_default_behaviour(
+        self,
+        mock_display_operation_link,  # to prevent side effects
+        mock_super_execute_plan_request,
+        mock_uuid4,
+        mock_is_s8s_session_active,
+        mock_dataproc_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        test_uuid = "f728f1b4-00a7-4e6e-8365-d12b4a7d42ab"
+        test_execute_plan_request: ExecutePlanRequest = ExecutePlanRequest(
+            session_id="mock-session_id-from-super",
+            client_type="mock-client_type-from-super",
+            tags=["mock-tag-from-super"],
+            user_context=UserContext(user_id="mock-user-from-super"),
+            operation_id=None,
+        )
+
+        session = None
+        mock_super_execute_plan_request.return_value = deepcopy(
+            test_execute_plan_request
+        )
+        mock_uuid4.return_value = test_uuid
+        mock_is_s8s_session_active.return_value = True
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+
+        mock_dataproc_session_id.return_value = "sc-20240702-103952-abcdef"
+        mock_client_config.return_value = ConfigResult.fromProto(
+            ConfigResponse()
+        )
+        cred = mock.MagicMock()
+        cred.token = "token"
+        mock_credentials.return_value = (cred, "")
+        mock_operation = mock.Mock()
+        session_response = Session()
+        session_response.runtime_info.endpoints = {
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
+        }
+        session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+        mock_operation.result.side_effect = [session_response]
+        mock_session_controller_client_instance.create_session.return_value = (
+            mock_operation
+        )
+
+        try:
+            session = DataprocSparkSession.builder.getOrCreate()
+            client = session.client
+
+            result_request = client._execute_plan_request_with_metadata()
+
+            self.assertEqual(result_request.operation_id, test_uuid)
+
+            mock_super_execute_plan_request.assert_called_once()
+            mock_uuid4.assert_called_once()
+            mock_display_operation_link.assert_called_once_with(test_uuid)
+
+            self.assertEqual(
+                result_request.session_id, test_execute_plan_request.session_id
+            )
+            self.assertEqual(
+                result_request.client_type,
+                test_execute_plan_request.client_type,
+            )
+            self.assertEqual(
+                result_request.tags, test_execute_plan_request.tags
+            )
+            self.assertEqual(
+                result_request.user_context.user_id,
+                test_execute_plan_request.user_context.user_id,
+            )
+
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch("google.cloud.dataproc_spark_connect.session.is_s8s_session_active")
+    @mock.patch("uuid.uuid4")
+    @mock.patch(
+        "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession._display_operation_link"
+    )
+    def test_execute_plan_request_with_operation_id_provided(
+        self,
+        mock_display_operation_link,  # to prevent side effects
+        mock_super_execute_plan_request,
+        mock_uuid4,
+        mock_is_s8s_session_active,
+        mock_dataproc_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        test_uuid = "f728f1b4-00a7-4e6e-8365-d12b4a7d42ab"
+        provided_uuid = "d27f4fc9-f627-4b72-b20a-aebb2481df74"
+        test_execute_plan_request: ExecutePlanRequest = ExecutePlanRequest(
+            session_id="mock-session_id-from-super",
+            client_type="mock-client_type-from-super",
+            tags=["mock-tag-from-super"],
+            user_context=UserContext(user_id="mock-user-from-super"),
+            operation_id=provided_uuid,
+        )
+
+        session = None
+        mock_super_execute_plan_request.return_value = deepcopy(
+            test_execute_plan_request
+        )
+        mock_uuid4.return_value = test_uuid
+        mock_is_s8s_session_active.return_value = True
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+
+        mock_dataproc_session_id.return_value = "sc-20240702-103952-abcdef"
+        mock_client_config.return_value = ConfigResult.fromProto(
+            ConfigResponse()
+        )
+        cred = mock.MagicMock()
+        cred.token = "token"
+        mock_credentials.return_value = (cred, "")
+        mock_operation = mock.Mock()
+        session_response = Session()
+        session_response.runtime_info.endpoints = {
+            "Spark Connect Server": "sc://spark-connect-server.example.com:443"
+        }
+        session_response.uuid = "c002e4ef-fe5e-41a8-a157-160aa73e4f7f"
+        mock_operation.result.side_effect = [session_response]
+        mock_session_controller_client_instance.create_session.return_value = (
+            mock_operation
+        )
+
+        try:
+            session = DataprocSparkSession.builder.getOrCreate()
+            client = session.client
+
+            result_request = client._execute_plan_request_with_metadata()
+
+            mock_super_execute_plan_request.assert_called_once()
+            mock_uuid4.assert_not_called()
+            mock_display_operation_link.assert_called_once_with(provided_uuid)
+
+            self.assertEqual(result_request.operation_id, provided_uuid)
+            self.assertEqual(
+                result_request.session_id, test_execute_plan_request.session_id
+            )
+            self.assertEqual(
+                result_request.client_type,
+                test_execute_plan_request.client_type,
+            )
+            self.assertEqual(
+                result_request.tags, test_execute_plan_request.tags
+            )
+            self.assertEqual(
+                result_request.user_context.user_id,
+                test_execute_plan_request.user_context.user_id,
+            )
 
         finally:
             mock_session_controller_client_instance.terminate_session.return_value = (
