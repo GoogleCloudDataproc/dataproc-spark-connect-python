@@ -492,23 +492,21 @@ class DataprocSparkSession(SparkSession):
             ID as part of the connection string takes precedence.
         """
 
-        def print_spark_ui_url(client: SparkConnectClient):
-            base_method = client._execute_plan_request_with_metadata
-
-            def wrapped_method(*args, **kwargs):
-                req = base_method(*args, **kwargs)
-                if not req.operation_id:
-                    req.operation_id = str(uuid.uuid4())
-                    logger.debug(
-                        f"No operation_id found. Setting operation_id: {req.operation_id}"
-                    )
-                self._display_operation_link(req.operation_id)
-                return req
-
-            client._execute_plan_request_with_metadata = wrapped_method
-
         super().__init__(connection, user_id)
-        print_spark_ui_url(self._client)
+
+        base_method = self.client._execute_plan_request_with_metadata
+
+        def wrapped_method(*args, **kwargs):
+            req = base_method(*args, **kwargs)
+            if not req.operation_id:
+                req.operation_id = str(uuid.uuid4())
+                logger.debug(
+                    f"No operation_id found. Setting operation_id: {req.operation_id}"
+                )
+            self._display_operation_link(req.operation_id)
+            return req
+
+        self.client._execute_plan_request_with_metadata = wrapped_method
 
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:
