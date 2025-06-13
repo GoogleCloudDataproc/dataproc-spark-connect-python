@@ -546,17 +546,15 @@ class DataprocSparkSession(SparkSession):
             from IPython.core.interactiveshell import InteractiveShell
 
             if not InteractiveShell.initialized():
-                raise DataprocSparkConnectException(
-                    "Not in an interactive environment."
-                )
+                return
             html_element = f"""
               <div>
                   <p><a href="{url}">Spark UI</a> (Operation: {operation_id})</p>
               </div>
               """
             display(HTML(html_element))
-        except (ImportError, DataprocSparkConnectException):
-            print(f"Spark Operation: {url}")
+        except ImportError:
+            return
 
     @staticmethod
     def _remove_stopped_session_from_file():
