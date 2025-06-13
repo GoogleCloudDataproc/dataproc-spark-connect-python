@@ -26,7 +26,6 @@ import uuid
 from typing import Any, cast, ClassVar, Dict, Optional, Union
 
 import tqdm
-from IPython.display import display, HTML
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import (
@@ -545,12 +544,22 @@ class DataprocSparkSession(SparkSession):
             f"associatedSqlOperationId={operation_id}?project={self._project_id}"
         )
 
-        html_element = f"""
-                <div>
-                    <p><a href="{url}">Spark UI</a> (Operation: {operation_id})</p>
-                </div>
-                """
-        display(HTML(html_element))
+        try:
+            from IPython.display import display, HTML
+            from IPython.core.interactiveshell import InteractiveShell
+
+            if not InteractiveShell.initialized():
+                raise DataprocSparkConnectException(
+                    "Not in an interactive environment."
+                )
+            html_element = f"""
+              <div>
+                  <p><a href="{url}">Spark UI</a> (Operation: {operation_id})</p>
+              </div>
+              """
+            display(HTML(html_element))
+        except (ImportError, DataprocSparkConnectException):
+            print(f"Spark Operation: {url}")
 
     @staticmethod
     def _remove_stopped_session_from_file():
