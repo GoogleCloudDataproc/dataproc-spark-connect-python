@@ -24,6 +24,7 @@ import threading
 import time
 import uuid
 import tqdm
+
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
 from google.api_core.exceptions import (
@@ -538,7 +539,7 @@ class DataprocSparkSession(SparkSession):
 
         url = (
             f"https://console.cloud.google.com/dataproc/interactive/{self._region}/"
-            f"{self._active_s8s_session_id}/sparkApplications/application/sql;"
+            f"{self._active_s8s_session_id}/sparkApplications/application;"
             f"associatedSqlOperationId={operation_id}?project={self._project_id}"
         )
 
