@@ -22,6 +22,7 @@ import re
 import string
 import threading
 import time
+from typing import Any, cast, ClassVar, Dict, Optional, Union
 import uuid
 import tqdm
 
@@ -47,10 +48,8 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from google.cloud.dataproc_v1.types import sessions
-from pyspark.sql.connect.client.core import SparkConnectClient
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
-from typing import Any, cast, ClassVar, Dict, Optional, Union
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
