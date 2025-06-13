@@ -23,8 +23,6 @@ import string
 import threading
 import time
 import uuid
-from typing import Any, cast, ClassVar, Dict, Optional, Union
-
 import tqdm
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
@@ -36,6 +34,9 @@ from google.api_core.exceptions import (
     PermissionDenied,
 )
 from google.api_core.future.polling import POLLING_PREDICATE
+from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
+from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
+from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
     CreateSessionRequest,
@@ -48,10 +49,7 @@ from google.cloud.dataproc_v1.types import sessions
 from pyspark.sql.connect.client.core import SparkConnectClient
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
-
-from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
-from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
-from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
+from typing import Any, cast, ClassVar, Dict, Optional, Union
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
