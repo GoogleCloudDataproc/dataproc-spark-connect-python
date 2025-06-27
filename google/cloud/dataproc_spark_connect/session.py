@@ -253,9 +253,7 @@ class DataprocSparkSession(SparkSession):
                     operation = SessionControllerClient(
                         client_options=self._client_options
                     ).create_session(session_request)
-                    print(
-                        f"Creating Dataproc Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
-                    )
+                    self._display_session_link_on_creation(session_id)
                     self._display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
                     session_response: Session = operation.result(
@@ -269,7 +267,7 @@ class DataprocSparkSession(SparkSession):
                     )
                     stop_create_session_pbar_event.set()
                     create_session_pbar_thread.join()
-                    print("Dataproc Session was successfully created")
+                    self._print_session_created_message()
                     file_path = (
                         DataprocSparkSession._get_active_session_file_path()
                     )
@@ -313,6 +311,50 @@ class DataprocSparkSession(SparkSession):
                 return self.__create_spark_connect_session_from_s8s(
                     session_response, dataproc_config.name
                 )
+
+        def _display_session_link_on_creation(self, session_id):
+            assert all(
+                [
+                    session_id is not None,
+                    self._region is not None,
+                    self._project_id is not None,
+                ]
+            )
+
+            session_url = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
+
+            try:
+                from IPython.display import display, HTML
+                from IPython.core.interactiveshell import InteractiveShell
+
+                if not InteractiveShell.initialized():
+                    raise DataprocSparkConnectException(
+                        "Not in an Interactive IPython Environment"
+                    )
+                html_element = f"""
+                    <div>
+                        <p>Creating Dataproc Spark Session<p>
+                        <p><a href="{session_url}">Dataproc Session</a></p>
+                    </div>
+                """
+                display(HTML(html_element))
+            except (ImportError, DataprocSparkConnectException):
+                print(f"Creating Dataproc Session: {session_url}")
+
+        def _print_session_created_message(self):
+            message = f"Dataproc Session was successfully created"
+            try:
+                from IPython.display import display, HTML
+                from IPython.core.interactiveshell import InteractiveShell
+
+                if not InteractiveShell.initialized():
+                    raise DataprocSparkConnectException(
+                        "Not in an Interactive IPython Environment"
+                    )
+                html_element = f"<div><p>{message}</p></div>"
+                display(HTML(html_element))
+            except (ImportError, DataprocSparkConnectException):
+                print(message)
 
         def _get_exiting_active_session(
             self,
