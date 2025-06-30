@@ -1187,19 +1187,47 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             ),
         },
     )
-    def test_display_button_with_aiplatform_installed(self):
+    @mock.patch("IPython.core.interactiveshell.InteractiveShell.initialized")
+    def test_display_button_with_aiplatform_installed_ipython_interactive(
+        self, mock_initialized
+    ):
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
         test_session_url = "https://console.cloud.google.com/dataproc/interactive/sessions/test_session/locations/test-region?project=test-project"
 
         mock_display_link = mock_ipython_utils.display_link
+        mock_initialized.return_value = True
         DataprocSparkSession.builder._display_view_session_details_button(
             "test_session"
         )
         mock_display_link.assert_called_once_with(
             "View Session Details", test_session_url, "dashboard"
         )
+
+    @mock.patch.dict(
+        "sys.modules",
+        {
+            "google.cloud.aiplatform.utils": mock.MagicMock(
+                _ipython_utils=mock.MagicMock()
+            ),
+        },
+    )
+    @mock.patch("IPython.core.interactiveshell.InteractiveShell.initialized")
+    def test_display_button_with_aiplatform_installed_ipython_non_interactive(
+        self, mock_initialized
+    ):
+        mock_ipython_utils = mock.sys.modules[
+            "google.cloud.aiplatform.utils"
+        ]._ipython_utils
+        test_session_url = "https://console.cloud.google.com/dataproc/interactive/sessions/test_session/locations/test-region?project=test-project"
+
+        mock_display_link = mock_ipython_utils.display_link
+        mock_initialized.return_value = False
+        DataprocSparkSession.builder._display_view_session_details_button(
+            "test_session"
+        )
+        mock_display_link.assert_not_called()
 
     def test_is_valid_label_value(self):
         # Valid label values
