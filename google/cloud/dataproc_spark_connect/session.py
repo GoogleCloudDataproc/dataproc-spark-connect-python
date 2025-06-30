@@ -454,6 +454,10 @@ class DataprocSparkSession(SparkSession):
             try:
                 session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
                 from google.cloud.aiplatform.utils import _ipython_utils
+                from IPython.core.interactiveshell import InteractiveShell
+
+                if not InteractiveShell.initialized():
+                    return
 
                 _ipython_utils.display_link(
                     "View Session Details", f"{session_url}", "dashboard"
