@@ -313,36 +313,35 @@ class DataprocSparkSession(SparkSession):
                 )
 
         def _display_session_link_on_creation(self, session_id):
-            assert all(
-                [
-                    session_id is not None,
-                    self._region is not None,
-                    self._project_id is not None,
-                ]
-            )
+            assert all([session_id, self._region, self._project_id])
 
             session_url = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
+            plain_message = f"Creating Dataproc Session: {session_url}"
+            html_element = f"""
+                <div>
+                    <p>Creating Dataproc Spark Session<p>
+                    <p><a href="{session_url}">Dataproc Session</a></p>
+                </div>
+            """
 
-            try:
-                from IPython.display import display, HTML
-                from IPython.core.interactiveshell import InteractiveShell
-
-                if not InteractiveShell.initialized():
-                    raise DataprocSparkConnectException(
-                        "Not in an Interactive IPython Environment"
-                    )
-                html_element = f"""
-                    <div>
-                        <p>Creating Dataproc Spark Session<p>
-                        <p><a href="{session_url}">Dataproc Session</a></p>
-                    </div>
-                """
-                display(HTML(html_element))
-            except (ImportError, DataprocSparkConnectException):
-                print(f"Creating Dataproc Session: {session_url}")
+            self._output_element_or_message(plain_message, html_element)
 
         def _print_session_created_message(self):
-            message = f"Dataproc Session was successfully created"
+            plain_message = f"Dataproc Session was successfully created"
+            html_element = f"<div><p>{plain_message}</p></div>"
+
+            self._output_element_or_message(plain_message, html_element)
+
+        def _output_element_or_message(self, plain_message, html_element):
+            """
+            Display / print the needed rich HTML element or plain text depending
+            on whether rich element is supported or not.
+
+            :param plain_message: Message to print on non-IPython or
+                non-interactive shell
+            :param html_element: HTML element to display for interactive IPython
+                environment
+            """
             try:
                 from IPython.display import display, HTML
                 from IPython.core.interactiveshell import InteractiveShell
@@ -351,10 +350,9 @@ class DataprocSparkSession(SparkSession):
                     raise DataprocSparkConnectException(
                         "Not in an Interactive IPython Environment"
                     )
-                html_element = f"<div><p>{message}</p></div>"
                 display(HTML(html_element))
             except (ImportError, DataprocSparkConnectException):
-                print(message)
+                print(plain_message)
 
         def _get_exiting_active_session(
             self,
