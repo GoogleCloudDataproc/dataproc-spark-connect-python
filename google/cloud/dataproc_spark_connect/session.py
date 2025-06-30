@@ -256,6 +256,7 @@ class DataprocSparkSession(SparkSession):
                     print(
                         f"Creating Dataproc Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                     )
+                    # TODO: Add the 'View Session Details' button once the UI changes are done.
                     # self._display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
                     session_response: Session = operation.result(
@@ -334,6 +335,7 @@ class DataprocSparkSession(SparkSession):
                 print(
                     f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}"
                 )
+                # TODO: Add the 'View Session Details' button once the UI changes are done.
                 # self._display_view_session_details_button(s8s_session_id)
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
