@@ -313,8 +313,6 @@ class DataprocSparkSession(SparkSession):
                 )
 
         def _display_session_link_on_creation(self, session_id):
-            assert all([session_id, self._region, self._project_id])
-
             session_url = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
             plain_message = f"Creating Dataproc Session: {session_url}"
             html_element = f"""
