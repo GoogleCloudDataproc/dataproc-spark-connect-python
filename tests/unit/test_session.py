@@ -1170,8 +1170,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_logger.warning.reset_mock()
 
     @mock.patch("sys.modules", {"google.cloud.aiplatform": None})
+    @mock.patch("IPython.core.interactiveshell.InteractiveShell.initialized")
     @mock.patch("google.cloud.dataproc_spark_connect.session.logger")
-    def test_display_button_with_aiplatform_not_installed(self, mock_logger):
+    def test_display_button_with_aiplatform_not_installed(
+        self, mock_logger, mock_initialized
+    ):
+        mock_initialized.return_value = True
         DataprocSparkSession.builder._display_view_session_details_button(
             "test_session"
         )
