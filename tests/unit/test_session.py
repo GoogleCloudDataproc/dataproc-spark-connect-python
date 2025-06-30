@@ -1176,9 +1176,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     )
     @mock.patch("google.cloud.dataproc_spark_connect.session.logger")
     def test_display_button_with_aiplatform_not_installed(
-        self, mock_logger, mock_initialized
+        self, mock_logger, _mock_ipy
     ):
-        mock_initialized.return_value = True
         DataprocSparkSession.builder._display_view_session_details_button(
             "test_session"
         )
@@ -1199,7 +1198,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         return_value=True,
     )
     def test_display_button_with_aiplatform_installed_ipython_interactive(
-        self, mock_initialized
+        self, _mock_ipy
     ):
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
@@ -1227,12 +1226,11 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         return_value=False,
     )
     def test_display_button_with_aiplatform_installed_ipython_non_interactive(
-        self, mock_initialized
+        self, _mock_ipy
     ):
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
-        test_session_url = "https://console.cloud.google.com/dataproc/interactive/sessions/test_session/locations/test-region?project=test-project"
 
         mock_display_link = mock_ipython_utils.display_link
         DataprocSparkSession.builder._display_view_session_details_button(
