@@ -253,9 +253,9 @@ class DataprocSparkSession(SparkSession):
                     operation = SessionControllerClient(
                         client_options=self._client_options
                     ).create_session(session_request)
-                    print(
-                        f"Creating Dataproc Session: https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
-                    )
+                    self._display_session_link_on_creation(session_id)
+                    
+                    self._display_view_session_details_button(session_id)
                     # TODO: Add the 'View Session Details' button once the UI changes are done.
                     # self._display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
@@ -270,7 +270,7 @@ class DataprocSparkSession(SparkSession):
                     )
                     stop_create_session_pbar_event.set()
                     create_session_pbar_thread.join()
-                    print("Dataproc Session was successfully created")
+                    self._print_session_created_message()
                     file_path = (
                         DataprocSparkSession._get_active_session_file_path()
                     )
@@ -314,6 +314,46 @@ class DataprocSparkSession(SparkSession):
                 return self.__create_spark_connect_session_from_s8s(
                     session_response, dataproc_config.name
                 )
+
+        def _display_session_link_on_creation(self, session_id):
+            session_url = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
+            plain_message = f"Creating Dataproc Session: {session_url}"
+            html_element = f"""
+                <div>
+                    <p>Creating Dataproc Spark Session<p>
+                    <p><a href="{session_url}">Dataproc Session</a></p>
+                </div>
+            """
+
+            self._output_element_or_message(plain_message, html_element)
+
+        def _print_session_created_message(self):
+            plain_message = f"Dataproc Session was successfully created"
+            html_element = f"<div><p>{plain_message}</p></div>"
+
+            self._output_element_or_message(plain_message, html_element)
+
+        def _output_element_or_message(self, plain_message, html_element):
+            """
+            Display / print the needed rich HTML element or plain text depending
+            on whether rich element is supported or not.
+
+            :param plain_message: Message to print on non-IPython or
+                non-interactive shell
+            :param html_element: HTML element to display for interactive IPython
+                environment
+            """
+            try:
+                from IPython.display import display, HTML
+                from IPython.core.interactiveshell import InteractiveShell
+
+                if not InteractiveShell.initialized():
+                    raise DataprocSparkConnectException(
+                        "Not in an Interactive IPython Environment"
+                    )
+                display(HTML(html_element))
+            except (ImportError, DataprocSparkConnectException):
+                print(plain_message)
 
         def _get_exiting_active_session(
             self,
@@ -455,6 +495,11 @@ class DataprocSparkSession(SparkSession):
         def _display_view_session_details_button(self, session_id):
             try:
                 session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
+                from IPython.core.interactiveshell import InteractiveShell
+
+                if not InteractiveShell.initialized():
+                    return
+
                 from google.cloud.aiplatform.utils import _ipython_utils
 
                 _ipython_utils.display_link(
