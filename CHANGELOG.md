@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.8.0...v0.9.0) (2025-07-01)
+
+
+### Features
+
+* Hyperlink Session URL on Session creation ([#105](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/105)) ([58d3cdb](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/58d3cdbbab0d6a08e528451bb1bdfc3605d30ecc))
+
+
+### Bug Fixes
+
+* Don't show IPython display object for non-interactive IPython Environment ([#106](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/106)) ([832d018](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/832d01890d7401c11bcca9bf8e8ac1573a70a98e))
+* Fix unit tests providing needed mock dependencies ([#110](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/110)) ([d6e2ed6](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/d6e2ed619cbce8c31ef01f1cb55bdf780c1a3cdf))
+* Hide 'View Session Details' button from the output. ([#107](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/107)) ([a36df90](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/a36df90ea3b465a007d96e388ba12022b2be6ae4))
+
 ## [0.8.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.7.5...v0.8.0) (2025-06-13)
 
 
