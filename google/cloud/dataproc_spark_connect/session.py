@@ -234,6 +234,9 @@ class DataprocSparkSession(SparkSession):
                     target=create_session_pbar
                 )
 
+                # Activate Spark Connect mode for Spark client
+                os.environ["SPARK_CONNECT_MODE_ENABLED"] = "1"
+
                 try:
                     if (
                         os.getenv(
