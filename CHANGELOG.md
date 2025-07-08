@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.8.1...v0.8.2) (2025-07-08)
+
+
+### Bug Fixes
+
+* Set SPARK_CONNECT_MODE_ENABLED env var ([#112](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/112)) ([f3e0b7a](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/f3e0b7a482146aa25420c10c3d1b21cde1b576ed))
+
 ## [0.8.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.8.0...v0.8.1) (2025-07-01)
 
 
