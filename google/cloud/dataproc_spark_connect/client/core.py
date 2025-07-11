@@ -15,14 +15,14 @@ import logging
 
 import google
 import grpc
-from pyspark.sql.connect.client import ChannelBuilder
+from pyspark.sql.connect.client import DefaultChannelBuilder
 
 from . import proxy
 
 logger = logging.getLogger(__name__)
 
 
-class DataprocChannelBuilder(ChannelBuilder):
+class DataprocChannelBuilder(DefaultChannelBuilder):
     """
     This is a helper class that is used to create a GRPC channel based on the given
     connection string per the documentation of Spark Connect.
@@ -88,7 +88,9 @@ class ProxiedChannel(grpc.Channel):
         self._proxy = proxy.DataprocSessionProxy(0, target_host)
         self._proxy.start()
         self._proxied_connect_url = f"sc://localhost:{self._proxy.port}"
-        self._wrapped = ChannelBuilder(self._proxied_connect_url).toChannel()
+        self._wrapped = DefaultChannelBuilder(
+            self._proxied_connect_url
+        ).toChannel()
 
     def __enter__(self):
         return self
