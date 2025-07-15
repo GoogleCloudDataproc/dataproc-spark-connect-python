@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import importlib.metadata
+import sys
 import warnings
 
 from .session import DataprocSparkSession
@@ -27,3 +28,10 @@ try:
     )
 except:
     pass
+
+# Check Python version and show warning if below 3.11
+if sys.version_info < (3, 11):
+    warnings.warn(
+        f"Python 3.11 or higher is recommended for optimal compatibility. "
+        f"You are using Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}."
+    )
