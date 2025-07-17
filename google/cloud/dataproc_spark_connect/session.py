@@ -49,6 +49,9 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from google.cloud.dataproc_v1.types import sessions
+from google.cloud.dataproc_spark_connect import environment
+from google.cloud.dataproc_spark_connect.constants import (CLIENT_LABEL_KEY)
+
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
 
@@ -452,6 +455,8 @@ class DataprocSparkSession(SparkSession):
                         os.getenv("DATAPROC_SPARK_CONNECT_IDLE_TTL_SECONDS")
                     )
                 }
+            client_environment = environment.get_client_environment_label()
+            dataproc_config.labels[CLIENT_LABEL_KEY] = client_environment
             if "COLAB_NOTEBOOK_ID" in os.environ:
                 colab_notebook_name = os.environ["COLAB_NOTEBOOK_ID"]
                 # Extract the last part of the path, which is the ID
