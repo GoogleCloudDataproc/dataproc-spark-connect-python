@@ -32,6 +32,15 @@ from google.cloud.dataproc_v1 import (
     SparkConnectConfig,
     TerminateSessionRequest,
 )
+from google.cloud.dataproc_spark_connect.constants import (
+    CLIENT_LABEL_VALUE_UNKNOWN,
+    CLIENT_LABEL_VALUE_COLAB,
+    CLIENT_LABEL_VALUE_COLAB_ENTERPRISE,
+    CLIENT_LABEL_VALUE_WORKBENCH,
+    CLIENT_LABEL_VALUE_BQ_STUDIO,
+    CLIENT_LABEL_VALUE_VSCODE,
+    CLIENT_LABEL_VALUE_JUPYTER,
+)
 from google.cloud.dataproc_spark_connect.constants import CLIENT_LABEL_KEY
 from pyspark.sql.connect.client.core import ConfigResult
 from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, SqlCommand, UserContext

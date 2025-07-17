@@ -14,11 +14,13 @@
 # limitations under the License.
 # environment_utils.py
 
+# environment_utils.py
+
 import os
 import json
 import importlib
 import logging
-from typing import Optional
+from typing import Callable, Tuple, List
 
 from google.cloud.dataproc_spark_connect.constants import (
     CLIENT_LABEL_VALUE_UNKNOWN,
@@ -30,17 +32,14 @@ from google.cloud.dataproc_spark_connect.constants import (
     CLIENT_LABEL_VALUE_JUPYTER,
 )
 
-# Known extension and plugin identifiers
+# Known extension identifier
 GOOGLE_CLOUD_CODE_EXTENSION = "googlecloudtools.cloudcode"
-BIGQUERY_JUPYTER_PLUGIN = "bigquery_jupyter_plugin"
 
 
 def _is_vscode_extension_installed(extension_id: str) -> bool:
     """
-        Check if a VS Code extension is installed by scanning
-    the user extensions folder.
-        :param extension_id: Extension identifier (e.g. 'ms-python.python').
-        :return: True if extension folder and valid manifest found.
+    Scan the VS Code extensions
+    folder for a given ID.
     """
     try:
         home = os.path.expanduser("~")
@@ -48,26 +47,26 @@ def _is_vscode_extension_installed(extension_id: str) -> bool:
         if not os.path.isdir(ext_dir):
             return False
 
-        for d in os.listdir(ext_dir):
-            if not d.startswith(extension_id + "-"):
+        for folder in os.listdir(ext_dir):
+            if not folder.startswith(extension_id + "-"):
                 continue
-            manifest = os.path.join(ext_dir, d, "package.json")
+            manifest = os.path.join(ext_dir, folder, "package.json")
             if os.path.isfile(manifest):
                 with open(manifest, encoding="utf-8") as f:
-                    json.load(f)  # validate JSON
+                    json.load(f)
                 return True
     except Exception:
         logging.exception(
-            "Failed to detect VS Code extension: %s", extension_id
+            "Failed to detect extension %s",
+            extension_id,
         )
     return False
 
 
 def _is_package_installed(pkg: str) -> bool:
     """
-    Attempt to import a Python package to verify installation.
-    :param pkg: Package name (e.g. 'numpy').
-    :return: True if import succeeds, False otherwise.
+    Try importing a pkg to
+    determine if installed.
     """
     try:
         importlib.import_module(pkg)
@@ -77,73 +76,66 @@ def _is_package_installed(pkg: str) -> bool:
 
 
 def is_vscode() -> bool:
-    """Return True if running inside VS Code"""
+    """True if running in VS Code."""
     return bool(os.environ.get("VSCODE_PID"))
 
 
 def is_vscode_cloud_code() -> bool:
-    """Return True if Google Cloud Code extension is installed in VS Code"""
+    """True if Cloud Code extension present."""
     return _is_vscode_extension_installed(GOOGLE_CLOUD_CODE_EXTENSION)
 
 
 def is_jupyter() -> bool:
-    """Return True if running inside a Jupyter environment"""
+    """True if in a Jupyter env."""
     return bool(os.environ.get("JPY_PARENT_PID"))
 
 
-def is_bigquery_plugin() -> bool:
-    """Return True if BigQuery Jupyter plugin is installed"""
-    return _is_package_installed(BIGQUERY_JUPYTER_PLUGIN)
+def is_bq_studio() -> bool:
+    """
+    True if BigQuery Jupyter
+    plugin is the default datasource.
+    """
+    return (
+        os.environ.get("DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE")
+        == "bigquery"
+    )
 
 
 def is_colab() -> bool:
-    """Return True if running inside Google Colab"""
+    """True if running in Colab."""
     return bool(os.environ.get("COLAB_RELEASE_TAG"))
 
 
-def get_deploy_source() -> Optional[str]:
-    """
-    Retrieve the deployment source from environment.
-    :return: Value of CLOUD_SDK_COMMAND_NAME, or None if unavailable.
-    """
-    try:
-        return os.environ.get("CLOUD_SDK_COMMAND_NAME")
-    except Exception:
-        logging.warning("Unable to read deploy source", exc_info=True)
-        return None
-
-
 def is_colab_enterprise() -> bool:
-    """Return True if deployed via Colab Enterprise"""
-    return get_deploy_source() == "notebook_colab_enterprise"
+    """True if deployed via Colab Enterprise."""
+    return os.environ.get("VERTEX_PRODUCT") == "COLAB_ENTERPRISE"
 
 
 def is_workbench() -> bool:
-    """Return True if deployed via Workbench"""
-    return get_deploy_source() == "notebook_workbench"
-
-
-def is_bq_studio() -> bool:
-    """Return True if BigQuery Studio is detected"""
-    return is_bigquery_plugin()
+    """True if deployed via Workbench."""
+    return os.environ.get("VERTEX_PRODUCT") == "WORKBENCH_INSTANCE"
 
 
 def get_client_environment_label() -> str:
     """
-    Map the current environment to a client label constant.
-    Order of checks enforces priority:
-    enterprise -> colab -> workbench -> bq_studio -> vscode -> jupyter
+    Map current environment to
+    a standardized client label.
+    Priority:
+      enterprise → colab →
+      workbench → bq_studio →
+      vscode → jupyter → unknown
     """
-    if is_colab_enterprise():
-        return CLIENT_LABEL_VALUE_COLAB_ENTERPRISE
-    if is_colab():
-        return CLIENT_LABEL_VALUE_COLAB
-    if is_workbench():
-        return CLIENT_LABEL_VALUE_WORKBENCH
-    if is_bq_studio():
-        return CLIENT_LABEL_VALUE_BQ_STUDIO
-    if is_vscode():
-        return CLIENT_LABEL_VALUE_VSCODE
-    if is_jupyter():
-        return CLIENT_LABEL_VALUE_JUPYTER
+    checks: List[Tuple[Callable[[], bool], str]] = [
+        (is_colab_enterprise, CLIENT_LABEL_VALUE_COLAB_ENTERPRISE),
+        (is_colab, CLIENT_LABEL_VALUE_COLAB),
+        (is_workbench, CLIENT_LABEL_VALUE_WORKBENCH),
+        (is_bq_studio, CLIENT_LABEL_VALUE_BQ_STUDIO),
+        (is_vscode, CLIENT_LABEL_VALUE_VSCODE),
+        (is_jupyter, CLIENT_LABEL_VALUE_JUPYTER),
+    ]
+
+    for detector, label in checks:
+        if detector():
+            return label
+
     return CLIENT_LABEL_VALUE_UNKNOWN
