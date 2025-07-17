@@ -573,7 +573,7 @@ class DataprocSparkSession(SparkSession):
         def execute_and_fetch_as_iterator_wrapped_method(
             client_self, req, *args, **kwargs
         ):
-            if not (self._sql_lazy_transformation(req)):
+            if not self._sql_lazy_transformation(req):
                 self._display_operation_link(req.operation_id)
             return execute_and_fetch_as_iterator_base_method(
                 req, *args, **kwargs
