@@ -596,7 +596,7 @@ class DataprocSparkSession(SparkSession):
                 return
             html_element = f"""
               <div>
-                  <p><a href="{url}">Spark UI</a> (Operation: {operation_id})</p>
+                  <p><a href="{url}">Spark Job</a> (Operation: {operation_id})</p>
               </div>
               """
             display(HTML(html_element))
