@@ -137,6 +137,91 @@ class DataprocSparkSession(SparkSession):
                     self._options[cast(str, k)] = to_str(v)
                 return self
 
+        def _ensure_dataproc_config(self):
+            if self._dataproc_config is None:
+                self._dataproc_config = Session()
+            return self._dataproc_config
+
+        def runtimeVersion(self, version: str):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.runtime_config.version = version
+                return self
+
+        def runtimeProperty(self, key: str, value: str):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.runtime_config.properties[key] = value
+                self._options[key] = value
+                return self
+
+        def runtimeProperties(self, properties: Dict[str, str]):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.runtime_config.properties.update(properties)
+                self._options.update(properties)
+                return self
+
+        def serviceAccount(self, account: str):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.environment_config.execution_config.service_account = (
+                    account
+                )
+                return self
+
+        def authType(
+            self, auth_type: "AuthenticationConfig.AuthenticationType"
+        ):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                    auth_type
+                )
+                return self
+
+        def subnetwork(self, subnet: str):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.environment_config.execution_config.subnetwork_uri = (
+                    subnet
+                )
+                return self
+
+        def ttl(self, seconds: int):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.environment_config.execution_config.ttl = {
+                    "seconds": seconds
+                }
+                return self
+
+        def idleTtl(self, seconds: int):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.environment_config.execution_config.idle_ttl = {
+                    "seconds": seconds
+                }
+                return self
+
+        def sessionTemplate(self, template: str):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.session_template = template
+                return self
+
+        def label(self, key: str, value: str):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.labels[key] = value
+                return self
+
+        def labels(self, labels: Dict[str, str]):
+            with self._lock:
+                config = self._ensure_dataproc_config()
+                config.labels.update(labels)
+                return self
+
         def remote(self, url: Optional[str] = None) -> "SparkSession.Builder":
             if url:
                 raise NotImplemented(
