@@ -1662,6 +1662,20 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             user_context=UserContext(user_id="mock-user-from-super"),
             operation_id=test_uuid,
         )
+        test_execute_plan_request_3: ExecutePlanRequest = ExecutePlanRequest(
+            session_id="mock-session_id-from-super",
+            client_type="mock-client_type-from-super",
+            plan=Plan(
+                command=Command(
+                    sql_command=SqlCommand(
+                        sql="DROP TABLE IF EXISTS selections"
+                    )
+                )
+            ),
+            tags=["mock-tag-from-super"],
+            user_context=UserContext(user_id="mock-user-from-super"),
+            operation_id=test_uuid,
+        )
 
         self.assertTrue(
             DataprocSparkSession._sql_lazy_transformation(
@@ -1671,6 +1685,11 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         self.assertFalse(
             DataprocSparkSession._sql_lazy_transformation(
                 test_execute_plan_request_2
+            )
+        )
+        self.assertFalse(
+            DataprocSparkSession._sql_lazy_transformation(
+                test_execute_plan_request_3
             )
         )
 

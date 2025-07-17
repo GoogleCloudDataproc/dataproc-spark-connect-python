@@ -587,7 +587,10 @@ class DataprocSparkSession(SparkSession):
     def _sql_lazy_transformation(req):
         # Select SQL command
         if req.plan and req.plan.command and req.plan.command.sql_command:
-            return "select" in req.plan.command.sql_command.sql.lower()
+            return (
+                "select"
+                in req.plan.command.sql_command.sql.strip().lower().split()
+            )
 
         return False
 
