@@ -33,7 +33,7 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from pyspark.sql.connect.client.core import ConfigResult
-from pyspark.sql.connect.proto import ConfigResponse, ExecutePlanRequest, UserContext, Plan, Command, SqlCommand
+from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, SqlCommand, UserContext
 from unittest import mock
 
 
