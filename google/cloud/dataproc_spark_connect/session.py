@@ -22,9 +22,10 @@ import re
 import string
 import threading
 import time
-from typing import Any, cast, ClassVar, Dict, Optional, Union
 import uuid
 import tqdm
+from types import MethodType
+from typing import Any, cast, ClassVar, Dict, Optional, Union
 
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
@@ -541,19 +542,57 @@ class DataprocSparkSession(SparkSession):
 
         super().__init__(connection, user_id)
 
-        base_method = self.client._execute_plan_request_with_metadata
+        execute_plan_request_base_method = (
+            self.client._execute_plan_request_with_metadata
+        )
+        execute_base_method = self.client._execute
+        execute_and_fetch_as_iterator_base_method = (
+            self.client._execute_and_fetch_as_iterator
+        )
 
-        def wrapped_method(*args, **kwargs):
-            req = base_method(*args, **kwargs)
+        def execute_plan_request_wrapped_method(*args, **kwargs):
+            req = execute_plan_request_base_method(*args, **kwargs)
             if not req.operation_id:
                 req.operation_id = str(uuid.uuid4())
                 logger.debug(
                     f"No operation_id found. Setting operation_id: {req.operation_id}"
                 )
-            self._display_operation_link(req.operation_id)
             return req
 
-        self.client._execute_plan_request_with_metadata = wrapped_method
+        self.client._execute_plan_request_with_metadata = (
+            execute_plan_request_wrapped_method
+        )
+
+        def execute_wrapped_method(client_self, req, *args, **kwargs):
+            if not self._sql_lazy_transformation(req):
+                self._display_operation_link(req.operation_id)
+            execute_base_method(req, *args, **kwargs)
+
+        self.client._execute = MethodType(execute_wrapped_method, self.client)
+
+        def execute_and_fetch_as_iterator_wrapped_method(
+            client_self, req, *args, **kwargs
+        ):
+            if not self._sql_lazy_transformation(req):
+                self._display_operation_link(req.operation_id)
+            return execute_and_fetch_as_iterator_base_method(
+                req, *args, **kwargs
+            )
+
+        self.client._execute_and_fetch_as_iterator = MethodType(
+            execute_and_fetch_as_iterator_wrapped_method, self.client
+        )
+
+    @staticmethod
+    def _sql_lazy_transformation(req):
+        # Select SQL command
+        if req.plan and req.plan.command and req.plan.command.sql_command:
+            return (
+                "select"
+                in req.plan.command.sql_command.sql.strip().lower().split()
+            )
+
+        return False
 
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:
