@@ -55,6 +55,12 @@ from pyspark.sql.utils import to_str
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# System labels that should not be overridden by user
+SYSTEM_LABELS = {
+    "dataproc-session-client",
+    "goog-colab-notebook-id",
+}
+
 
 def _is_valid_label_value(value: str) -> bool:
     """
@@ -148,25 +154,16 @@ class DataprocSparkSession(SparkSession):
                 config.runtime_config.version = version
                 return self
 
-        def runtimeProperty(self, key: str, value: str):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.runtime_config.properties[key] = value
-                self._options[key] = value
-                return self
-
-        def runtimeProperties(self, properties: Dict[str, str]):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.runtime_config.properties.update(properties)
-                self._options.update(properties)
-                return self
-
         def serviceAccount(self, account: str):
             with self._lock:
                 config = self._ensure_dataproc_config()
                 config.environment_config.execution_config.service_account = (
                     account
+                )
+                # Automatically set auth type to SERVICE_ACCOUNT when service account is provided
+                # This overrides any env var setting to simplify user experience
+                config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                    AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
                 )
                 return self
 
@@ -211,15 +208,30 @@ class DataprocSparkSession(SparkSession):
                 return self
 
         def label(self, key: str, value: str):
+            if key in SYSTEM_LABELS:
+                logger.warning(
+                    f"Label '{key}' is a system label and cannot be overridden by user. Skipping."
+                )
+                return self
             with self._lock:
                 config = self._ensure_dataproc_config()
                 config.labels[key] = value
                 return self
 
         def labels(self, labels: Dict[str, str]):
+            # Filter out system labels and warn user
+            filtered_labels = {}
+            for key, value in labels.items():
+                if key in SYSTEM_LABELS:
+                    logger.warning(
+                        f"Label '{key}' is a system label and cannot be overridden by user. Skipping."
+                    )
+                else:
+                    filtered_labels[key] = value
+
             with self._lock:
                 config = self._ensure_dataproc_config()
-                config.labels.update(labels)
+                config.labels.update(filtered_labels)
                 return self
 
         def remote(self, url: Optional[str] = None) -> "SparkSession.Builder":
