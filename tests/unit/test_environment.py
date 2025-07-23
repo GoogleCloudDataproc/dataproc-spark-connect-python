@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,19 +19,7 @@ from unittest import mock
 import importlib
 
 from google.cloud.dataproc_spark_connect import environment
-from google.cloud.dataproc_spark_connect.constants import (
-    CLIENT_LABEL_VALUE_BQ_STUDIO,
-    CLIENT_LABEL_VALUE_COLAB,
-    CLIENT_LABEL_VALUE_COLAB_ENTERPRISE,
-    CLIENT_LABEL_VALUE_JUPYTER,
-    CLIENT_LABEL_VALUE_VSCODE,
-    CLIENT_LABEL_VALUE_UNKNOWN,
-)
-# import new labels
 from google.cloud.dataproc_spark_connect.environment import (
-    WORKBENCH_LABEL,
-    INTELLIJ_LABEL,
-    PYCHARM_LABEL,
     BIGQUERY_JUPYTER_PLUGIN_NAME,
     DATAPROC_JUPYTER_PLUGIN_NAME,
 )
@@ -153,16 +141,6 @@ class TestEnvironment(unittest.TestCase):
     def test_is_jupyter_dataproc_plugin_installed_false(self, mock_import):
         self.assertFalse(environment.is_jupyter_dataproc_plugin_installed())
 
-    def test_is_bq_studio_true(self):
-        os.environ["DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE"] = "bigquery"
-        self.assertTrue(environment.is_bq_studio())
-
-    def test_is_bq_studio_false(self):
-        os.environ["DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE"] = "other"
-        self.assertFalse(environment.is_bq_studio())
-        os.environ.pop("DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE", None)
-        self.assertFalse(environment.is_bq_studio())
-
     def test_is_colab_true(self):
         os.environ["COLAB_RELEASE_TAG"] = "colab-20240718"
         self.assertTrue(environment.is_colab())
@@ -204,6 +182,56 @@ class TestEnvironment(unittest.TestCase):
         self.assertFalse(environment.is_pycharm())
 
     @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_jupyter_bigquery_plugin_installed",
+        return_value=True,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_jupyter_dataproc_plugin_installed",
+        return_value=True,
+    )
+    def test_is_dataproc_jupyter_true_when_both_plugins(self, mock_dp, mock_bq):
+        self.assertTrue(environment.is_dataproc_jupyter())
+
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_jupyter_bigquery_plugin_installed",
+        return_value=True,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_jupyter_dataproc_plugin_installed",
+        return_value=False,
+    )
+    def test_is_dataproc_jupyter_true_when_only_bigquery(
+        self, mock_dp, mock_bq
+    ):
+        self.assertTrue(environment.is_dataproc_jupyter())
+
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_jupyter_bigquery_plugin_installed",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_jupyter_dataproc_plugin_installed",
+        return_value=True,
+    )
+    def test_is_dataproc_jupyter_true_when_only_dataproc(
+        self, mock_dp, mock_bq
+    ):
+        self.assertTrue(environment.is_dataproc_jupyter())
+
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_jupyter_bigquery_plugin_installed",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_jupyter_dataproc_plugin_installed",
+        return_value=False,
+    )
+    def test_is_dataproc_jupyter_false_when_no_plugins(self, mock_dp, mock_bq):
+        self.assertFalse(environment.is_dataproc_jupyter())
+
+    # ---- get_client_environment_label tests ----
+
+    @mock.patch(
         "google.cloud.dataproc_spark_connect.environment.is_colab_enterprise",
         return_value=False,
     )
@@ -216,7 +244,11 @@ class TestEnvironment(unittest.TestCase):
         return_value=False,
     )
     @mock.patch(
-        "google.cloud.dataproc_spark_connect.environment.is_bq_studio",
+        "google.cloud.dataproc_spark_connect.environment.is_dataproc_jupyter",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_vscode_cloud_code",
         return_value=False,
     )
     @mock.patch(
@@ -235,10 +267,10 @@ class TestEnvironment(unittest.TestCase):
         "google.cloud.dataproc_spark_connect.environment.is_jupyter",
         return_value=False,
     )
-    def test_get_client_environment_label_unknown(self, *args):
+    def test_get_client_environment_label_unknown(self, *mocks):
         self.assertEqual(
             environment.get_client_environment_label(),
-            CLIENT_LABEL_VALUE_UNKNOWN,
+            "unknown",
         )
 
     @mock.patch(
@@ -249,48 +281,40 @@ class TestEnvironment(unittest.TestCase):
         "google.cloud.dataproc_spark_connect.environment.is_colab",
         return_value=True,
     )
-    def test_get_client_environment_label_colab(self, *args):
+    def test_get_client_environment_label_colab(self, *mocks):
         self.assertEqual(
             environment.get_client_environment_label(),
-            CLIENT_LABEL_VALUE_COLAB,
+            "colab",
         )
 
     @mock.patch(
         "google.cloud.dataproc_spark_connect.environment.is_colab_enterprise",
         return_value=True,
     )
-    def test_get_client_environment_label_colab_enterprise(self, *args):
+    def test_get_client_environment_label_colab_enterprise(
+        self, mock_colab_ent
+    ):
         self.assertEqual(
             environment.get_client_environment_label(),
-            CLIENT_LABEL_VALUE_COLAB_ENTERPRISE,
+            "colab-enterprise",
         )
 
     @mock.patch(
         "google.cloud.dataproc_spark_connect.environment.is_colab_enterprise",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_colab",
         return_value=False,
     )
     @mock.patch(
         "google.cloud.dataproc_spark_connect.environment.is_workbench",
         return_value=True,
     )
-    def test_get_client_environment_label_workbench(self, *args):
+    def test_get_client_environment_label_workbench(self, *mocks):
         self.assertEqual(
             environment.get_client_environment_label(),
-            WORKBENCH_LABEL,
-        )
-
-    @mock.patch(
-        "google.cloud.dataproc_spark_connect.environment.is_colab_enterprise",
-        return_value=False,
-    )
-    @mock.patch(
-        "google.cloud.dataproc_spark_connect.environment.is_bq_studio",
-        return_value=True,
-    )
-    def test_get_client_environment_label_bq_studio(self, *args):
-        self.assertEqual(
-            environment.get_client_environment_label(),
-            CLIENT_LABEL_VALUE_BQ_STUDIO,
+            "workbench-jupyter",
         )
 
     @mock.patch(
@@ -306,17 +330,43 @@ class TestEnvironment(unittest.TestCase):
         return_value=False,
     )
     @mock.patch(
-        "google.cloud.dataproc_spark_connect.environment.is_bq_studio",
+        "google.cloud.dataproc_spark_connect.environment.is_dataproc_jupyter",
+        return_value=True,
+    )
+    def test_get_client_environment_label_dataproc_jupyter(self, *mocks):
+        self.assertEqual(
+            environment.get_client_environment_label(),
+            "dataproc-jupyter",
+        )
+
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_colab_enterprise",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_colab",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_workbench",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_dataproc_jupyter",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_vscode_cloud_code",
         return_value=False,
     )
     @mock.patch(
         "google.cloud.dataproc_spark_connect.environment.is_vscode",
         return_value=True,
     )
-    def test_get_client_environment_label_vscode(self, *args):
+    def test_get_client_environment_label_vscode(self, *mocks):
         self.assertEqual(
             environment.get_client_environment_label(),
-            CLIENT_LABEL_VALUE_VSCODE,
+            "vscode",
         )
 
     @mock.patch(
@@ -332,7 +382,11 @@ class TestEnvironment(unittest.TestCase):
         return_value=False,
     )
     @mock.patch(
-        "google.cloud.dataproc_spark_connect.environment.is_bq_studio",
+        "google.cloud.dataproc_spark_connect.environment.is_dataproc_jupyter",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_vscode_cloud_code",
         return_value=False,
     )
     @mock.patch(
@@ -343,10 +397,10 @@ class TestEnvironment(unittest.TestCase):
         "google.cloud.dataproc_spark_connect.environment.is_intellij",
         return_value=True,
     )
-    def test_get_client_environment_label_intellij(self, *args):
+    def test_get_client_environment_label_intellij(self, *mocks):
         self.assertEqual(
             environment.get_client_environment_label(),
-            INTELLIJ_LABEL,
+            "intellij",
         )
 
     @mock.patch(
@@ -362,7 +416,11 @@ class TestEnvironment(unittest.TestCase):
         return_value=False,
     )
     @mock.patch(
-        "google.cloud.dataproc_spark_connect.environment.is_bq_studio",
+        "google.cloud.dataproc_spark_connect.environment.is_dataproc_jupyter",
+        return_value=False,
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.is_vscode_cloud_code",
         return_value=False,
     )
     @mock.patch(
@@ -377,10 +435,10 @@ class TestEnvironment(unittest.TestCase):
         "google.cloud.dataproc_spark_connect.environment.is_pycharm",
         return_value=True,
     )
-    def test_get_client_environment_label_pycharm(self, *args):
+    def test_get_client_environment_label_pycharm(self, *mocks):
         self.assertEqual(
             environment.get_client_environment_label(),
-            PYCHARM_LABEL,
+            "pycharm",
         )
 
     @mock.patch(
@@ -396,7 +454,7 @@ class TestEnvironment(unittest.TestCase):
     ):
         self.assertEqual(
             environment.get_client_environment_label(),
-            CLIENT_LABEL_VALUE_COLAB_ENTERPRISE,
+            "colab-enterprise",
         )
 
 

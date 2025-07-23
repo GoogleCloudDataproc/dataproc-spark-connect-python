@@ -32,16 +32,7 @@ from google.cloud.dataproc_v1 import (
     SparkConnectConfig,
     TerminateSessionRequest,
 )
-from google.cloud.dataproc_spark_connect.constants import (
-    CLIENT_LABEL_VALUE_UNKNOWN,
-    CLIENT_LABEL_VALUE_COLAB,
-    CLIENT_LABEL_VALUE_COLAB_ENTERPRISE,
-    CLIENT_LABEL_VALUE_WORKBENCH,
-    CLIENT_LABEL_VALUE_BQ_STUDIO,
-    CLIENT_LABEL_VALUE_VSCODE,
-    CLIENT_LABEL_VALUE_JUPYTER,
-)
-from google.cloud.dataproc_spark_connect.constants import CLIENT_LABEL_KEY
+
 from pyspark.sql.connect.client.core import ConfigResult
 from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, SqlCommand, UserContext
 from unittest import mock
@@ -130,7 +121,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
-        create_session_request.session.labels[CLIENT_LABEL_KEY] = "unknown"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
         try:
             session = DataprocSparkSession.builder.getOrCreate()
             mock_session_controller_client_instance.create_session.assert_called_once_with(
@@ -263,7 +256,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
-        create_session_request.session.labels[CLIENT_LABEL_KEY] = "unknown"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
 
         try:
             dataproc_config = Session()
@@ -378,7 +373,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
-        create_session_request.session.labels[CLIENT_LABEL_KEY] = "unknown"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
 
         try:
             session = DataprocSparkSession.builder.getOrCreate()
@@ -453,7 +450,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
-        create_session_request.session.labels[CLIENT_LABEL_KEY] = "unknown"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
         create_session_request.session.session_template = "projects/test-project/locations/test-region/sessionTemplates/test_template"
 
         try:
@@ -537,7 +536,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         )
         create_session_request.session.session_template = "projects/test-project/locations/test-region/sessionTemplates/test_template"
         create_session_request.session_id = "sc-20240702-103952-abcdef"
-        create_session_request.session.labels[CLIENT_LABEL_KEY] = "unknown"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
 
         try:
             dataproc_config = Session()
@@ -1354,7 +1355,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
-        create_session_request.session.labels[CLIENT_LABEL_KEY] = "unknown"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
         # Note: No notebook label should be set due to invalid format
 
         try:
@@ -1444,7 +1447,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
-        create_session_request.session.labels[CLIENT_LABEL_KEY] = "unknown"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
         # Valid notebook label should be set
         create_session_request.session.labels["goog-colab-notebook-id"] = (
             "valid-notebook-123"
@@ -1752,13 +1757,15 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         mock_credentials.return_value = (cred, "")
 
         environments_to_test = [
-            CLIENT_LABEL_VALUE_COLAB,
-            CLIENT_LABEL_VALUE_BQ_STUDIO,
-            CLIENT_LABEL_VALUE_COLAB_ENTERPRISE,
-            CLIENT_LABEL_VALUE_JUPYTER,
-            CLIENT_LABEL_VALUE_VSCODE,
-            CLIENT_LABEL_VALUE_UNKNOWN,
+            "colab-enterprise",
+            "colab",
+            "workbench-jupyter",
+            "dataproc-jupyter",
+            "vscode",
+            "jupyter",
+            "unknown",
         ]
+
         for env_label in environments_to_test:
             with self.subTest(env=env_label):
                 session = None
