@@ -32,6 +32,7 @@ from google.cloud.dataproc_v1 import (
     SparkConnectConfig,
     TerminateSessionRequest,
 )
+
 from pyspark.sql.connect.client.core import ConfigResult
 from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, SqlCommand, UserContext
 from unittest import mock
@@ -71,6 +72,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.get_client_environment_label"
+    )
     def test_create_spark_session_with_default_notebook_behavior(
         self,
         mock_is_s8s_session_active,
@@ -78,6 +82,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_client_config,
         mock_session_controller_client,
         mock_credentials,
+        mock_get_client_environment_label,
     ):
         session = None
         mock_is_s8s_session_active.return_value = True
@@ -102,6 +107,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_session_controller_client_instance.create_session.return_value = (
             mock_operation
         )
+        mock_get_client_environment_label.return_value = "unknown"
 
         create_session_request = CreateSessionRequest()
         create_session_request.parent = (
@@ -115,7 +121,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
-
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
         try:
             session = DataprocSparkSession.builder.getOrCreate()
             mock_session_controller_client_instance.create_session.assert_called_once_with(
@@ -248,6 +256,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
 
         try:
             dataproc_config = Session()
@@ -362,6 +373,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
 
         try:
             session = DataprocSparkSession.builder.getOrCreate()
@@ -436,6 +450,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
         create_session_request.session.session_template = "projects/test-project/locations/test-region/sessionTemplates/test_template"
 
         try:
@@ -519,6 +536,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         )
         create_session_request.session.session_template = "projects/test-project/locations/test-region/sessionTemplates/test_template"
         create_session_request.session_id = "sc-20240702-103952-abcdef"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
 
         try:
             dataproc_config = Session()
@@ -1335,6 +1355,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
         # Note: No notebook label should be set due to invalid format
 
         try:
@@ -1424,6 +1447,9 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             SparkConnectConfig()
         )
         create_session_request.session_id = "sc-20240702-103952-abcdef"
+        create_session_request.session.labels["dataproc-session-client"] = (
+            "unknown"
+        )
         # Valid notebook label should be set
         create_session_request.session.labels["goog-colab-notebook-id"] = (
             "valid-notebook-123"
@@ -1692,6 +1718,104 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 test_execute_plan_request_3
             )
         )
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.environment.get_client_environment_label"
+    )
+    def test_create_session_with_client_environment_label(
+        self,
+        mock_get_client_environment_label,
+        mock_is_s8s_session_active,
+        mock_dataproc_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        """Tests that the client environment label is correctly added to the session request."""
+        # Setup common mocks
+        mock_is_s8s_session_active.return_value = True
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+        mock_dataproc_session_id.return_value = (
+            "6fa459ea-ee8a-3ca4-894e-db77e160355e"
+        )
+        mock_client_config.return_value = ConfigResult.fromProto(
+            ConfigResponse()
+        )
+        cred = mock.MagicMock()
+        cred.token = "token"
+        mock_credentials.return_value = (cred, "")
+
+        environments_to_test = [
+            "colab-enterprise",
+            "colab",
+            "workbench-jupyter",
+            "dataproc-jupyter",
+            "vscode",
+            "jupyter",
+            "unknown",
+        ]
+
+        for env_label in environments_to_test:
+            with self.subTest(env=env_label):
+                session = None
+                mock_session_controller_client_instance.create_session.reset_mock()
+                mock_get_client_environment_label.reset_mock()
+
+                # Set mock returns for this specific subtest
+                mock_get_client_environment_label.return_value = env_label
+                mock_operation = mock.Mock()
+                session_response = Session()
+                session_response.runtime_info.endpoints = {
+                    "Spark Connect Server": "sc://spark-connect-server.example.com:443"
+                }
+                session_response.uuid = "6fa459ea-ee8a-3ca4-894e-db77e160355e"
+                mock_operation.result.side_effect = [session_response]
+                mock_session_controller_client_instance.create_session.return_value = (
+                    mock_operation
+                )
+
+                # Build the expected request for this subtest
+                expected_request = CreateSessionRequest()
+                expected_request.parent = (
+                    "projects/test-project/locations/test-region"
+                )
+                expected_request.session_id = (
+                    "6fa459ea-ee8a-3ca4-894e-db77e160355e"
+                )
+                expected_request.session.name = "projects/test-project/locations/test-region/sessions/6fa459ea-ee8a-3ca4-894e-db77e160355e"
+                expected_request.session.spark_connect_session = (
+                    SparkConnectConfig()
+                )
+                # This is the crucial part of the test
+                expected_request.session.labels[CLIENT_LABEL_KEY] = env_label
+
+                try:
+                    # Reset singleton state before each subtest run
+                    DataprocSparkSession._active_s8s_session_id = None
+                    DataprocSparkSession._default_session = None
+
+                    session = DataprocSparkSession.builder.getOrCreate()
+
+                    mock_get_client_environment_label.assert_called_once()
+                    mock_session_controller_client_instance.create_session.assert_called_once_with(
+                        expected_request
+                    )
+                finally:
+                    if session:
+                        self.stopSession(
+                            mock_session_controller_client_instance, session
+                        )
 
 
 if __name__ == "__main__":
