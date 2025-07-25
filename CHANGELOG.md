@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.8.2...v0.8.3) (2025-07-21)
+
+
+### Bug Fixes
+
+* Update per-operation Spark UI URL print logic to skip SELECT clause ([#118](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/118)) ([c01f9a5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/c01f9a54d3c0101b6d6cd54d4653338b7321af39))
+
 ## [0.8.2](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.8.1...v0.8.2) (2025-07-08)
 
 

@@ -33,7 +33,7 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from pyspark.sql.connect.client.core import ConfigResult
-from pyspark.sql.connect.proto import ConfigResponse, ExecutePlanRequest, UserContext
+from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, SqlCommand, UserContext
 from unittest import mock
 
 
@@ -1469,12 +1469,8 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
     @mock.patch(
         "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
     )
-    @mock.patch(
-        "google.cloud.dataproc_spark_connect.DataprocSparkSession._display_operation_link"
-    )
     def test_execute_plan_request_default_behaviour(
         self,
-        mock_display_operation_link,  # to prevent side effects
         mock_super_execute_plan_request,
         mock_uuid4,
         mock_is_s8s_session_active,
@@ -1530,7 +1526,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
 
             mock_super_execute_plan_request.assert_called_once()
             mock_uuid4.assert_called_once()
-            mock_display_operation_link.assert_called_once_with(test_uuid)
 
             self.assertEqual(
                 result_request.session_id, test_execute_plan_request.session_id
@@ -1566,12 +1561,8 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
     @mock.patch(
         "pyspark.sql.connect.client.SparkConnectClient._execute_plan_request_with_metadata"
     )
-    @mock.patch(
-        "google.cloud.dataproc_spark_connect.DataprocSparkSession._display_operation_link"
-    )
     def test_execute_plan_request_with_operation_id_provided(
         self,
-        mock_display_operation_link,  # to prevent side effects
         mock_super_execute_plan_request,
         mock_uuid4,
         mock_is_s8s_session_active,
@@ -1626,7 +1617,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
 
             mock_super_execute_plan_request.assert_called_once()
             mock_uuid4.assert_not_called()
-            mock_display_operation_link.assert_called_once_with(provided_uuid)
 
             self.assertEqual(result_request.operation_id, provided_uuid)
             self.assertEqual(
@@ -1649,6 +1639,59 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 mock.Mock()
             )
             self.stopSession(mock_session_controller_client_instance, session)
+
+    def test_sql_lazy_transformation(self):
+        test_uuid = "f728f1b4-00a7-4e6e-8365-d12b4a7d42ab"
+        test_execute_plan_request_1: ExecutePlanRequest = ExecutePlanRequest(
+            session_id="mock-session_id-from-super",
+            client_type="mock-client_type-from-super",
+            plan=Plan(command=Command(sql_command=SqlCommand(sql="SELECT 1"))),
+            tags=["mock-tag-from-super"],
+            user_context=UserContext(user_id="mock-user-from-super"),
+            operation_id=test_uuid,
+        )
+        test_execute_plan_request_2: ExecutePlanRequest = ExecutePlanRequest(
+            session_id="mock-session_id-from-super",
+            client_type="mock-client_type-from-super",
+            plan=Plan(
+                command=Command(
+                    sql_command=SqlCommand(sql="INSERT INTO test_table_2 ...")
+                )
+            ),
+            tags=["mock-tag-from-super"],
+            user_context=UserContext(user_id="mock-user-from-super"),
+            operation_id=test_uuid,
+        )
+        test_execute_plan_request_3: ExecutePlanRequest = ExecutePlanRequest(
+            session_id="mock-session_id-from-super",
+            client_type="mock-client_type-from-super",
+            plan=Plan(
+                command=Command(
+                    sql_command=SqlCommand(
+                        sql="DROP TABLE IF EXISTS selections"
+                    )
+                )
+            ),
+            tags=["mock-tag-from-super"],
+            user_context=UserContext(user_id="mock-user-from-super"),
+            operation_id=test_uuid,
+        )
+
+        self.assertTrue(
+            DataprocSparkSession._sql_lazy_transformation(
+                test_execute_plan_request_1
+            )
+        )
+        self.assertFalse(
+            DataprocSparkSession._sql_lazy_transformation(
+                test_execute_plan_request_2
+            )
+        )
+        self.assertFalse(
+            DataprocSparkSession._sql_lazy_transformation(
+                test_execute_plan_request_3
+            )
+        )
 
 
 if __name__ == "__main__":
