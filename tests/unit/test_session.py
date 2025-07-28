@@ -98,7 +98,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client.return_value
         )
 
-        mock_dataproc_session_id.return_value = "sc-20240702-103952-abcdef"
+        session_id = "sc-20240702-103952-abcdef"
+        mock_dataproc_session_id.return_value = session_id
         mock_client_config.return_value = ConfigResult.fromProto(
             ConfigResponse()
         )
@@ -118,7 +119,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
-        test_session_url = "https://console.cloud.google.com/dataproc/interactive/sessions/sc-20240702-103952-abcdef/locations/test-region?project=test-project"
+        test_session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/test-region?project=test-project"
         mock_display_link = mock_ipython_utils.display_link
 
 
