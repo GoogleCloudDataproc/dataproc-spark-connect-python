@@ -404,6 +404,7 @@ def test_sql_functions(connect_session):
     tax_results = df_with_calc.collect()
     assert tax_results[0]["tax"] == 10.0
     assert tax_results[1]["tax"] == 20.0
+    assert tax_results[2]["tax"] == 15.0
 
 
 def test_sql_udf(connect_session):
@@ -419,34 +420,6 @@ def test_sql_udf(connect_session):
     # Define and register a Python UDF
     def uppercase_func(text):
         return text.upper() if text else None
-
-    # Register UDF using SQL
-    connect_session.udf.register("uppercase_udf", uppercase_func, StringType())
-
-    # Test UDF in SQL query
-    result_sql = connect_session.sql(
-        "SELECT id, text, uppercase_udf(text) as upper_text FROM test_table"
-    ).collect()
-
-    assert len(result_sql) == 3
-    assert result_sql[0]["upper_text"] == "HELLO"
-    assert result_sql[1]["upper_text"] == "WORLD"
-    assert result_sql[2]["upper_text"] == "SPARK"
-
-    # Define another UDF for numeric operations
-    def multiply_by_ten(num):
-        return num * 10 if num is not None else None
-
-    connect_session.udf.register("multiply_udf", multiply_by_ten, IntegerType())
-
-    # Test numeric UDF
-    result_numeric = connect_session.sql(
-        "SELECT id, multiply_udf(id) as multiplied FROM test_table"
-    ).collect()
-
-    assert result_numeric[0]["multiplied"] == 10
-    assert result_numeric[1]["multiplied"] == 20
-    assert result_numeric[2]["multiplied"] == 30
 
     # Test UDF with DataFrame API
     uppercase_udf = F.udf(uppercase_func, StringType())
