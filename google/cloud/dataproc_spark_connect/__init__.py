@@ -29,23 +29,33 @@ try:
 except:
     pass
 
-# Check Python version and show compatibility warnings
-python_version = sys.version_info[:2]  # (major, minor)
+# Check Python version and show compatibility warnings for Python UDFs
+client_python = sys.version_info[:2]  # (major, minor)
 
-# Runtime version to Python version compatibility mapping
-runtime_python_map = {"1.2": (3, 12), "2.2": (3, 12), "2.3": (3, 11)}
+# Runtime version to server Python version mapping
+RUNTIME_PYTHON_MAP = {"1.2": (3, 12), "2.2": (3, 12), "2.3": (3, 11)}
 
-# Warn about Python version compatibility
-if python_version < (3, 11):
+# Show informative warnings about Python version mismatches for UDF compatibility
+supported_versions = sorted(set(RUNTIME_PYTHON_MAP.values()))
+version_strings = [f"{major}.{minor}" for major, minor in supported_versions]
+
+if client_python not in supported_versions:
     warnings.warn(
-        f"Python 3.11 or higher is required for compatibility. "
-        f"You are using Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}. "
-        f"Runtime versions have specific Python requirements: "
-        f"runtime 1.2/2.2 require Python 3.12, runtime 2.3 requires Python 3.11."
+        f"Python version mismatch: Client is using Python {sys.version_info.major}.{sys.version_info.minor}, "
+        f"but Dataproc runtime versions support Python {' and '.join(version_strings)}. "
+        f"This mismatch may cause issues with Python UDF (User Defined Function) compatibility. "
+        f"Consider using a matching Python version for optimal UDF execution."
     )
-elif python_version == (3, 11):
-    # Python 3.11 users should be aware of runtime compatibility
+else:
+    # Client has a supported version, inform about runtime compatibility
+    matching_runtimes = [
+        rt
+        for rt, py_ver in RUNTIME_PYTHON_MAP.items()
+        if py_ver == client_python
+    ]
+    runtime_list = ", ".join(matching_runtimes)
     warnings.warn(
-        f"You are using Python 3.11. Note that runtime versions 1.2 and 2.2 require Python 3.12. "
-        f"Only runtime version 2.3 is compatible with Python 3.11."
+        f"Python {client_python[0]}.{client_python[1]} detected. "
+        f"For optimal Python UDF compatibility, use Dataproc runtime version(s): {runtime_list}. "
+        f"Using other runtime versions may cause Python UDF execution issues due to version mismatch."
     )
