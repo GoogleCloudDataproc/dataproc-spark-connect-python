@@ -2087,13 +2087,13 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             # Verify warnings were logged
             expected_calls = [
                 mock.call(
-                    "Label 'dataproc-session-client' is a system label and cannot be overridden by user. Skipping."
+                    "Label 'dataproc-session-client' is a system label and cannot be overridden by user. Ignoring."
                 ),
                 mock.call(
-                    "Label 'goog-colab-notebook-id' is a system label and cannot be overridden by user. Skipping."
+                    "Label 'goog-colab-notebook-id' is a system label and cannot be overridden by user. Ignoring."
                 ),
                 mock.call(
-                    "Label 'dataproc-session-client' is a system label and cannot be overridden by user. Skipping."
+                    "Label 'dataproc-session-client' is a system label and cannot be overridden by user. Ignoring."
                 ),
             ]
             mock_logger.warning.assert_has_calls(expected_calls, any_order=True)

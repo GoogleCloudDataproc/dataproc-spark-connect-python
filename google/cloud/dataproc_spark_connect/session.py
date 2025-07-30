@@ -143,69 +143,56 @@ class DataprocSparkSession(SparkSession):
                     self._options[cast(str, k)] = to_str(v)
                 return self
 
-        def _ensure_dataproc_config(self):
-            if self._dataproc_config is None:
-                self._dataproc_config = Session()
-            return self._dataproc_config
+        @property
+        def dataproc_config(self):
+            with self._lock:
+                self._dataproc_config = self._dataproc_config or Session()
+                return self._dataproc_config
 
         def runtimeVersion(self, version: str):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.runtime_config.version = version
-                return self
+            self.dataproc_config.runtime_config.version = version
+            return self
 
         def serviceAccount(self, account: str):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.environment_config.execution_config.service_account = (
-                    account
-                )
-                # Automatically set auth type to SERVICE_ACCOUNT when service account is provided
-                # This overrides any env var setting to simplify user experience
-                config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
-                    AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
-                )
-                return self
+            self.dataproc_config.environment_config.execution_config.service_account = (
+                account
+            )
+            # Automatically set auth type to SERVICE_ACCOUNT when service account is provided
+            # This overrides any env var setting to simplify user experience
+            self.dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
+            )
+            return self
 
         def authType(
             self, auth_type: "AuthenticationConfig.AuthenticationType"
         ):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
-                    auth_type
-                )
-                return self
+            self.dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                auth_type
+            )
+            return self
 
         def subnetwork(self, subnet: str):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.environment_config.execution_config.subnetwork_uri = (
-                    subnet
-                )
-                return self
+            self.dataproc_config.environment_config.execution_config.subnetwork_uri = (
+                subnet
+            )
+            return self
 
         def ttl(self, seconds: int):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.environment_config.execution_config.ttl = {
-                    "seconds": seconds
-                }
-                return self
+            self.dataproc_config.environment_config.execution_config.ttl = {
+                "seconds": seconds
+            }
+            return self
 
         def idleTtl(self, seconds: int):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.environment_config.execution_config.idle_ttl = {
-                    "seconds": seconds
-                }
-                return self
+            self.dataproc_config.environment_config.execution_config.idle_ttl = {
+                "seconds": seconds
+            }
+            return self
 
         def sessionTemplate(self, template: str):
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.session_template = template
-                return self
+            self.dataproc_config.session_template = template
+            return self
 
         def label(self, key: str, value: str):
             return self.labels({key: value})
@@ -221,10 +208,8 @@ class DataprocSparkSession(SparkSession):
                 else:
                     filtered_labels[key] = value
 
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.labels.update(filtered_labels)
-                return self
+            self.dataproc_config.labels.update(filtered_labels)
+            return self
 
         def remote(self, url: Optional[str] = None) -> "SparkSession.Builder":
             if url:
@@ -489,11 +474,10 @@ class DataprocSparkSession(SparkSession):
                 return session
 
         def _get_dataproc_config(self):
-            dataproc_config = Session()
-            if self._dataproc_config:
-                dataproc_config = self._dataproc_config
-                for k, v in self._options.items():
-                    dataproc_config.runtime_config.properties[k] = v
+            # Use the property to ensure we always have a config
+            dataproc_config = self.dataproc_config
+            for k, v in self._options.items():
+                dataproc_config.runtime_config.properties[k] = v
             dataproc_config.spark_connect_session = (
                 sessions.SparkConnectConfig()
             )
