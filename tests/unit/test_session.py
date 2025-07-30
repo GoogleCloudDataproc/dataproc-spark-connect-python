@@ -1825,7 +1825,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-
     def test_builder_pattern_runtime_config(
         self,
         mock_is_s8s_session_active,
@@ -2205,7 +2204,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
-
     @mock.patch(
         "google.cloud.dataproc_spark_connect.environment.get_client_environment_label"
     )
