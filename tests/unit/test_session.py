@@ -128,7 +128,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         test_session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/test-region?project=test-project"
         mock_display_link = mock_ipython_utils.display_link
 
-
         create_session_request = CreateSessionRequest()
         create_session_request.parent = (
             "projects/test-project/locations/test-region"
