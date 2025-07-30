@@ -2236,8 +2236,8 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             "colab-enterprise",
             "colab",
             "workbench-jupyter",
-            "dataproc-jupyter",
             "vscode",
+            "jetbrains",
             "jupyter",
             "unknown",
         ]
@@ -2274,7 +2274,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                     SparkConnectConfig()
                 )
                 # This is the crucial part of the test
-
                 expected_request.session.labels["dataproc-session-client"] = (
                     env_label
                 )
