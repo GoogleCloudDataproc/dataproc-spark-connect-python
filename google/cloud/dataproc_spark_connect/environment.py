@@ -55,7 +55,7 @@ def get_client_environment_label() -> str:
       2. Colab ("colab")
       3. Workbench ("workbench-jupyter")
       4. VS Code ("vscode")
-      5. JetBrains ("jetbrains")
+      5. JetBrains IDE ("jetbrains")
       6. Jupyter ("jupyter")
       7. Unknown ("unknown")
     """
