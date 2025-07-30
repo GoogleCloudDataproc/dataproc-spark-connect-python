@@ -208,15 +208,7 @@ class DataprocSparkSession(SparkSession):
                 return self
 
         def label(self, key: str, value: str):
-            if key in SYSTEM_LABELS:
-                logger.warning(
-                    f"Label '{key}' is a system label and cannot be overridden by user. Skipping."
-                )
-                return self
-            with self._lock:
-                config = self._ensure_dataproc_config()
-                config.labels[key] = value
-                return self
+            return self.labels({key: value})
 
         def labels(self, labels: Dict[str, str]):
             # Filter out system labels and warn user
@@ -224,7 +216,7 @@ class DataprocSparkSession(SparkSession):
             for key, value in labels.items():
                 if key in SYSTEM_LABELS:
                     logger.warning(
-                        f"Label '{key}' is a system label and cannot be overridden by user. Skipping."
+                        f"Label '{key}' is a system label and cannot be overridden by user. Ignoring."
                     )
                 else:
                     filtered_labels[key] = value
