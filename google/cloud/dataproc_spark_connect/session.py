@@ -22,9 +22,10 @@ import re
 import string
 import threading
 import time
-from typing import Any, cast, ClassVar, Dict, Optional, Union
 import uuid
 import tqdm
+from types import MethodType
+from typing import Any, cast, ClassVar, Dict, Optional, Union
 
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
@@ -48,6 +49,7 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from google.cloud.dataproc_v1.types import sessions
+from google.cloud.dataproc_spark_connect import environment
 from pyspark.sql.connect.session import SparkSession
 from pyspark.sql.utils import to_str
 
@@ -331,8 +333,7 @@ class DataprocSparkSession(SparkSession):
                         client_options=self._client_options
                     ).create_session(session_request)
                     self._display_session_link_on_creation(session_id)
-                    # TODO: Add the 'View Session Details' button once the UI changes are done.
-                    # self._display_view_session_details_button(session_id)
+                    self._display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
                     session_response: Session = operation.result(
                         polling=retry.Retry(
@@ -450,8 +451,7 @@ class DataprocSparkSession(SparkSession):
                 print(
                     f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}"
                 )
-                # TODO: Add the 'View Session Details' button once the UI changes are done.
-                # self._display_view_session_details_button(s8s_session_id)
+                self._display_view_session_details_button(s8s_session_id)
                 if session is None:
                     session = self.__create_spark_connect_session_from_s8s(
                         session_response, session_name
@@ -524,6 +524,10 @@ class DataprocSparkSession(SparkSession):
                         os.getenv("DATAPROC_SPARK_CONNECT_IDLE_TTL_SECONDS")
                     )
                 }
+            client_environment = environment.get_client_environment_label()
+            dataproc_config.labels["dataproc-session-client"] = (
+                client_environment
+            )
             if "COLAB_NOTEBOOK_ID" in os.environ:
                 colab_notebook_name = os.environ["COLAB_NOTEBOOK_ID"]
                 # Extract the last part of the path, which is the ID
@@ -614,19 +618,57 @@ class DataprocSparkSession(SparkSession):
 
         super().__init__(connection, user_id)
 
-        base_method = self.client._execute_plan_request_with_metadata
+        execute_plan_request_base_method = (
+            self.client._execute_plan_request_with_metadata
+        )
+        execute_base_method = self.client._execute
+        execute_and_fetch_as_iterator_base_method = (
+            self.client._execute_and_fetch_as_iterator
+        )
 
-        def wrapped_method(*args, **kwargs):
-            req = base_method(*args, **kwargs)
+        def execute_plan_request_wrapped_method(*args, **kwargs):
+            req = execute_plan_request_base_method(*args, **kwargs)
             if not req.operation_id:
                 req.operation_id = str(uuid.uuid4())
                 logger.debug(
                     f"No operation_id found. Setting operation_id: {req.operation_id}"
                 )
-            self._display_operation_link(req.operation_id)
             return req
 
-        self.client._execute_plan_request_with_metadata = wrapped_method
+        self.client._execute_plan_request_with_metadata = (
+            execute_plan_request_wrapped_method
+        )
+
+        def execute_wrapped_method(client_self, req, *args, **kwargs):
+            if not self._sql_lazy_transformation(req):
+                self._display_operation_link(req.operation_id)
+            execute_base_method(req, *args, **kwargs)
+
+        self.client._execute = MethodType(execute_wrapped_method, self.client)
+
+        def execute_and_fetch_as_iterator_wrapped_method(
+            client_self, req, *args, **kwargs
+        ):
+            if not self._sql_lazy_transformation(req):
+                self._display_operation_link(req.operation_id)
+            return execute_and_fetch_as_iterator_base_method(
+                req, *args, **kwargs
+            )
+
+        self.client._execute_and_fetch_as_iterator = MethodType(
+            execute_and_fetch_as_iterator_wrapped_method, self.client
+        )
+
+    @staticmethod
+    def _sql_lazy_transformation(req):
+        # Select SQL command
+        if req.plan and req.plan.command and req.plan.command.sql_command:
+            return (
+                "select"
+                in req.plan.command.sql_command.sql.strip().lower().split()
+            )
+
+        return False
 
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:
@@ -669,7 +711,7 @@ class DataprocSparkSession(SparkSession):
                 return
             html_element = f"""
               <div>
-                  <p><a href="{url}">Spark UI</a> (Operation: {operation_id})</p>
+                  <p><a href="{url}">Spark Query</a> (Operation: {operation_id})</p>
               </div>
               """
             display(HTML(html_element))
