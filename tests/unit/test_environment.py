@@ -201,7 +201,7 @@ class TestEnvironment(unittest.TestCase):
         "google.cloud.dataproc_spark_connect.environment.is_jetbrains_ide",
         return_value=True,
     )
-    def test_get_client_environment_label_intellij(self, *mocks):
+    def test_get_client_environment_label_jetbrains_ide(self, *mocks):
         self.assertEqual(
             environment.get_client_environment_label(),
             "jetbrains",

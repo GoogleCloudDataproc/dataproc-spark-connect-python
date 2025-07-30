@@ -42,7 +42,7 @@ def is_workbench() -> bool:
 
 
 def is_jetbrains_ide() -> bool:
-    """True if running inside IntelliJ IDEA."""
+    """True if running inside any JetBrains IDE."""
     return "jetbrains" in os.getenv("TERMINAL_EMULATOR", "").lower()
 
 
