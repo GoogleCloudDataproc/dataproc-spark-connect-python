@@ -75,11 +75,11 @@ class TestEnvironment(unittest.TestCase):
         os.environ["TERMINAL_EMULATOR"] = "JetBrains term"
         self.assertTrue(environment.is_jetbrains_ide())
 
-    def test_is_intellij_false_env_var_not_set(self):
+    def test_is_jetbrains_ide_false_env_var_not_set(self):
         os.environ.pop("TERMINAL_EMULATOR", None)
         self.assertFalse(environment.is_jetbrains_ide())
 
-    def test_is_intellij_false_env_var_not_jetbrains(self):
+    def test_is_jetbrains_ide_false_env_var_not_jetbrains(self):
         os.environ["TERMINAL_EMULATOR"] = "real term"
         self.assertFalse(environment.is_jetbrains_ide())
 
