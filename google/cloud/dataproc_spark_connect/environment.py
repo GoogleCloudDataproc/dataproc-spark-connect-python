@@ -45,6 +45,7 @@ def is_jetbrains_ide() -> bool:
     """True if running inside IntelliJ IDEA."""
     return "jetbrains" in os.getenv("TERMINAL_EMULATOR", "").lower()
 
+
 def get_client_environment_label() -> str:
     """
     Map current environment to a standardized client label.
