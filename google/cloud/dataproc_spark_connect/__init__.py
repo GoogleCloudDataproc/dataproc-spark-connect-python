@@ -28,34 +28,3 @@ try:
     )
 except:
     pass
-
-# Check Python version and show compatibility warnings for Python UDFs
-client_python = sys.version_info[:2]  # (major, minor)
-
-# Runtime version to server Python version mapping
-RUNTIME_PYTHON_MAP = {"1.2": (3, 12), "2.2": (3, 12), "2.3": (3, 11)}
-
-# Show informative warnings about Python version mismatches for UDF compatibility
-supported_versions = sorted(set(RUNTIME_PYTHON_MAP.values()))
-version_strings = [f"{major}.{minor}" for major, minor in supported_versions]
-
-if client_python not in supported_versions:
-    warnings.warn(
-        f"Python version mismatch: Client is using Python {sys.version_info.major}.{sys.version_info.minor}, "
-        f"but Dataproc runtime versions support Python {' and '.join(version_strings)}. "
-        f"This mismatch may cause issues with Python UDF (User Defined Function) compatibility. "
-        f"Consider using a matching Python version for optimal UDF execution."
-    )
-else:
-    # Client has a supported version, inform about runtime compatibility
-    matching_runtimes = [
-        rt
-        for rt, py_ver in RUNTIME_PYTHON_MAP.items()
-        if py_ver == client_python
-    ]
-    runtime_list = ", ".join(matching_runtimes)
-    warnings.warn(
-        f"Python {client_python[0]}.{client_python[1]} detected. "
-        f"For optimal Python UDF compatibility, use Dataproc runtime version(s): {runtime_list}. "
-        f"Using other runtime versions may cause Python UDF execution issues due to version mismatch."
-    )

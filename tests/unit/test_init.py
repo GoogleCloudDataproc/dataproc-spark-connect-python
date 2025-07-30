@@ -15,102 +15,97 @@ import sys
 import unittest
 from unittest import mock
 
+from google.cloud.dataproc_spark_connect.session import DataprocSparkSession
+
 
 class TestPythonVersionCheck(unittest.TestCase):
 
-    def test_python_version_warning_for_unsupported_version(self):
-        """Test that warning is shown for unsupported Python versions"""
-        # Create a mock version_info object with the necessary attributes
-        mock_version_info = mock.MagicMock()
-        mock_version_info.__getitem__ = (
-            lambda self, key: (3, 10) if key == slice(None, 2) else None
-        )
-        mock_version_info.major = 3
-        mock_version_info.minor = 10
-        mock_version_info.micro = 5
-
-        with mock.patch(
-            "google.cloud.dataproc_spark_connect.sys.version_info",
-            mock_version_info,
-        ):
+    def test_python_version_mismatch_warning_for_runtime_12(self):
+        """Test that warning is shown when client Python doesn't match runtime 1.2 (Python 3.12)"""
+        with mock.patch("sys.version_info", (3, 11, 0)):
             with mock.patch("warnings.warn") as mock_warn:
-                # Clear module cache to force re-import
-                if "google.cloud.dataproc_spark_connect" in sys.modules:
-                    del sys.modules["google.cloud.dataproc_spark_connect"]
+                session_builder = DataprocSparkSession.Builder()
+                session_builder._check_python_version_compatibility("1.2")
 
-                # Import the module to trigger the version check
-                import google.cloud.dataproc_spark_connect
-
-                # Verify warning was called with the expected message
                 expected_warning = (
-                    "Python version mismatch: Client is using Python 3.10, "
-                    "but Dataproc runtime versions support Python 3.11 and 3.12. "
+                    "Python version mismatch detected: Client is using Python 3.11, "
+                    "but Dataproc runtime 1.2 uses Python 3.12. "
                     "This mismatch may cause issues with Python UDF (User Defined Function) compatibility. "
-                    "Consider using a matching Python version for optimal UDF execution."
+                    "Consider using Python 3.12 for optimal UDF execution."
                 )
-                mock_warn.assert_any_call(expected_warning)
+                mock_warn.assert_called_once_with(
+                    expected_warning, stacklevel=3
+                )
 
-    def test_python_version_warning_for_python_311(self):
-        """Test that informative warning is shown for Python 3.11"""
-        # Create a mock version_info object with the necessary attributes
-        mock_version_info = mock.MagicMock()
-        mock_version_info.__getitem__ = (
-            lambda self, key: (3, 11) if key == slice(None, 2) else None
-        )
-        mock_version_info.major = 3
-        mock_version_info.minor = 11
-        mock_version_info.micro = 0
-
-        with mock.patch(
-            "google.cloud.dataproc_spark_connect.sys.version_info",
-            mock_version_info,
-        ):
+    def test_python_version_mismatch_warning_for_runtime_22(self):
+        """Test that warning is shown when client Python doesn't match runtime 2.2 (Python 3.12)"""
+        with mock.patch("sys.version_info", (3, 11, 0)):
             with mock.patch("warnings.warn") as mock_warn:
-                # Clear module cache to force re-import
-                if "google.cloud.dataproc_spark_connect" in sys.modules:
-                    del sys.modules["google.cloud.dataproc_spark_connect"]
+                session_builder = DataprocSparkSession.Builder()
+                session_builder._check_python_version_compatibility("2.2")
 
-                # Import the module to trigger the version check
-                import google.cloud.dataproc_spark_connect
-
-                # Verify warning was called with the expected message
                 expected_warning = (
-                    "Python 3.11 detected. "
-                    "For optimal Python UDF compatibility, use Dataproc runtime version(s): 2.3. "
-                    "Using other runtime versions may cause Python UDF execution issues due to version mismatch."
+                    "Python version mismatch detected: Client is using Python 3.11, "
+                    "but Dataproc runtime 2.2 uses Python 3.12. "
+                    "This mismatch may cause issues with Python UDF (User Defined Function) compatibility. "
+                    "Consider using Python 3.12 for optimal UDF execution."
                 )
-                mock_warn.assert_any_call(expected_warning)
+                mock_warn.assert_called_once_with(
+                    expected_warning, stacklevel=3
+                )
 
-    def test_python_version_warning_for_python_312(self):
-        """Test that informative warning is shown for Python 3.12"""
-        # Create a mock version_info object with the necessary attributes
-        mock_version_info = mock.MagicMock()
-        mock_version_info.__getitem__ = (
-            lambda self, key: (3, 12) if key == slice(None, 2) else None
-        )
-        mock_version_info.major = 3
-        mock_version_info.minor = 12
-        mock_version_info.micro = 0
-
-        with mock.patch(
-            "google.cloud.dataproc_spark_connect.sys.version_info",
-            mock_version_info,
-        ):
+    def test_python_version_mismatch_warning_for_runtime_23(self):
+        """Test that warning is shown when client Python doesn't match runtime 2.3 (Python 3.11)"""
+        with mock.patch("sys.version_info", (3, 12, 0)):
             with mock.patch("warnings.warn") as mock_warn:
-                # Clear module cache to force re-import
-                if "google.cloud.dataproc_spark_connect" in sys.modules:
-                    del sys.modules["google.cloud.dataproc_spark_connect"]
+                session_builder = DataprocSparkSession.Builder()
+                session_builder._check_python_version_compatibility("2.3")
 
-                # Import the module to trigger the version check
-                import google.cloud.dataproc_spark_connect
-
-                # Verify warning was called with the expected message
                 expected_warning = (
-                    "Python 3.12 detected. "
-                    "For optimal Python UDF compatibility, use Dataproc runtime version(s): 1.2, 2.2. "
-                    "Using other runtime versions may cause Python UDF execution issues due to version mismatch."
+                    "Python version mismatch detected: Client is using Python 3.12, "
+                    "but Dataproc runtime 2.3 uses Python 3.11. "
+                    "This mismatch may cause issues with Python UDF (User Defined Function) compatibility. "
+                    "Consider using Python 3.11 for optimal UDF execution."
                 )
-                mock_warn.assert_any_call(expected_warning)
+                mock_warn.assert_called_once_with(
+                    expected_warning, stacklevel=3
+                )
+
+    def test_no_warning_when_python_versions_match_runtime_12(self):
+        """Test that no warning is shown when client Python matches runtime 1.2 (Python 3.12)"""
+        with mock.patch("sys.version_info", (3, 12, 0)):
+            with mock.patch("warnings.warn") as mock_warn:
+                session_builder = DataprocSparkSession.Builder()
+                session_builder._check_python_version_compatibility("1.2")
+
+                mock_warn.assert_not_called()
+
+    def test_no_warning_when_python_versions_match_runtime_22(self):
+        """Test that no warning is shown when client Python matches runtime 2.2 (Python 3.12)"""
+        with mock.patch("sys.version_info", (3, 12, 0)):
+            with mock.patch("warnings.warn") as mock_warn:
+                session_builder = DataprocSparkSession.Builder()
+                session_builder._check_python_version_compatibility("2.2")
+
+                mock_warn.assert_not_called()
+
+    def test_no_warning_when_python_versions_match_runtime_23(self):
+        """Test that no warning is shown when client Python matches runtime 2.3 (Python 3.11)"""
+        with mock.patch("sys.version_info", (3, 11, 0)):
+            with mock.patch("warnings.warn") as mock_warn:
+                session_builder = DataprocSparkSession.Builder()
+                session_builder._check_python_version_compatibility("2.3")
+
+                mock_warn.assert_not_called()
+
+    def test_no_warning_for_unknown_runtime_version(self):
+        """Test that no warning is shown for unknown runtime versions"""
+        with mock.patch("sys.version_info", (3, 10, 0)):
+            with mock.patch("warnings.warn") as mock_warn:
+                session_builder = DataprocSparkSession.Builder()
+                session_builder._check_python_version_compatibility("unknown")
+
+                mock_warn.assert_not_called()
 
 
 if __name__ == "__main__":

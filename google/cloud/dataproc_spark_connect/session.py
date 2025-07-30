@@ -412,6 +412,11 @@ class DataprocSparkSession(SparkSession):
                 dataproc_config.runtime_config.version = (
                     DataprocSparkSession._DEFAULT_RUNTIME_VERSION
                 )
+
+            # Check for Python version mismatch with runtime for UDF compatibility
+            self._check_python_version_compatibility(
+                dataproc_config.runtime_config.version
+            )
             if (
                 not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
                 and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
@@ -492,6 +497,32 @@ class DataprocSparkSession(SparkSession):
                         f" {default_datasource}. Supported value is 'bigquery'."
                     )
             return dataproc_config
+
+        def _check_python_version_compatibility(self, runtime_version):
+            """Check if client Python version matches server Python version for UDF compatibility."""
+            import sys
+            import warnings
+
+            # Runtime version to server Python version mapping
+            RUNTIME_PYTHON_MAP = {
+                "1.2": (3, 12),
+                "2.2": (3, 12),
+                "2.3": (3, 11),
+            }
+
+            client_python = sys.version_info[:2]  # (major, minor)
+
+            if runtime_version in RUNTIME_PYTHON_MAP:
+                server_python = RUNTIME_PYTHON_MAP[runtime_version]
+
+                if client_python != server_python:
+                    warnings.warn(
+                        f"Python version mismatch detected: Client is using Python {client_python[0]}.{client_python[1]}, "
+                        f"but Dataproc runtime {runtime_version} uses Python {server_python[0]}.{server_python[1]}. "
+                        f"This mismatch may cause issues with Python UDF (User Defined Function) compatibility. "
+                        f"Consider using Python {server_python[0]}.{server_python[1]} for optimal UDF execution.",
+                        stacklevel=3,
+                    )
 
         def _display_view_session_details_button(self, session_id):
             try:
