@@ -139,11 +139,10 @@ class DataprocSparkSession(SparkSession):
             return self
 
         def dataprocSessionConfig(self, dataproc_config: Session):
-            with self._lock:
-                self._dataproc_config = dataproc_config
-                for k, v in dataproc_config.runtime_config.properties.items():
-                    self._options[cast(str, k)] = to_str(v)
-                return self
+            self._dataproc_config = dataproc_config
+            for k, v in dataproc_config.runtime_config.properties.items():
+                self._options[cast(str, k)] = to_str(v)
+            return self
 
         @property
         def dataproc_config(self):
@@ -180,13 +179,29 @@ class DataprocSparkSession(SparkSession):
             )
             return self
 
-        def ttl(self, seconds: int):
+        def ttl(self, duration: datetime.timedelta):
+            """Set the time-to-live (TTL) for the session using a timedelta object."""
+            self.dataproc_config.environment_config.execution_config.ttl = {
+                "seconds": int(duration.total_seconds())
+            }
+            return self
+
+        def ttlSeconds(self, seconds: int):
+            """Set the time-to-live (TTL) for the session in seconds."""
             self.dataproc_config.environment_config.execution_config.ttl = {
                 "seconds": seconds
             }
             return self
 
-        def idleTtl(self, seconds: int):
+        def idleTtl(self, duration: datetime.timedelta):
+            """Set the idle time-to-live (idle TTL) for the session using a timedelta object."""
+            self.dataproc_config.environment_config.execution_config.idle_ttl = {
+                "seconds": int(duration.total_seconds())
+            }
+            return self
+
+        def idleTtlSeconds(self, seconds: int):
+            """Set the idle time-to-live (idle TTL) for the session in seconds."""
             self.dataproc_config.environment_config.execution_config.idle_ttl = {
                 "seconds": seconds
             }
@@ -197,6 +212,7 @@ class DataprocSparkSession(SparkSession):
             return self
 
         def label(self, key: str, value: str):
+            """Add a single label to the session."""
             return self.labels({key: value})
 
         def labels(self, labels: Dict[str, str]):
@@ -542,7 +558,7 @@ class DataprocSparkSession(SparkSession):
                         f"Only lowercase letters, numbers, and dashes are allowed. "
                         f"The value must start with lowercase letter or number and end with a lowercase letter or number. "
                         f"Maximum length is 63 characters. "
-                        f"Skipping notebook ID label."
+                        f"Ignoring notebook ID label."
                     )
             default_datasource = os.getenv(
                 "DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE"

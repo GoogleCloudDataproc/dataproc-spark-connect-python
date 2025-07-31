@@ -128,15 +128,15 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     def test_create_spark_session_with_default_notebook_behavior(
         self,
         mock_interactive_shell,
+        mock_get_client_environment_label,
         mock_is_s8s_session_active,
         mock_dataproc_session_id,
         mock_client_config,
         mock_session_controller_client,
         mock_credentials,
-        mock_get_client_environment_label,
     ):
         session = None
-        mock_is_s8s_session_active.return_value = True
+        mock_is_s8s_session_active.return_value = False  # No existing session
         mock_session_controller_client_instance = (
             mock_session_controller_client.return_value
         )
@@ -182,7 +182,11 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             "unknown"
         )
         try:
-            session = DataprocSparkSession.builder.getOrCreate()
+            session = (
+                DataprocSparkSession.builder.projectId("test-project")
+                .location("test-region")
+                .getOrCreate()
+            )
             mock_session_controller_client_instance.create_session.assert_called_once_with(
                 create_session_request
             )
@@ -1442,7 +1446,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 warning_call_args,
             )
             self.assertIn("Maximum length is 63 characters", warning_call_args)
-            self.assertIn("Skipping notebook ID label", warning_call_args)
+            self.assertIn("Ignoring notebook ID label", warning_call_args)
 
         finally:
             mock_session_controller_client_instance.terminate_session.return_value = (
@@ -1909,8 +1913,8 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 .subnetwork(
                     "projects/test-project/regions/us-central1/subnetworks/test-subnet"
                 )
-                .ttl(3600)
-                .idleTtl(1800)
+                .ttlSeconds(3600)
+                .idleTtlSeconds(1800)
                 .getOrCreate()
             )
 
@@ -1941,6 +1945,73 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             else:
                 self.assertEqual(ttl_value, {"seconds": 3600})
 
+            idle_ttl_value = (
+                create_session_request.session.environment_config.execution_config.idle_ttl
+            )
+            if isinstance(idle_ttl_value, datetime.timedelta):
+                self.assertEqual(idle_ttl_value.total_seconds(), 1800)
+            else:
+                self.assertEqual(idle_ttl_value, {"seconds": 1800})
+
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
+    )
+    def test_builder_pattern_ttl_with_timedelta(
+        self,
+        mock_is_s8s_session_active,
+        mock_dataproc_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        session = None
+        mock_session_controller_client_instance = (
+            self._setup_session_creation_mocks(
+                mock_is_s8s_session_active,
+                mock_dataproc_session_id,
+                mock_client_config,
+                mock_session_controller_client,
+                mock_credentials,
+            )
+        )
+
+        try:
+            # Test using timedelta objects
+            session = (
+                DataprocSparkSession.builder.ttl(datetime.timedelta(hours=1))
+                .idleTtl(datetime.timedelta(minutes=30))
+                .getOrCreate()
+            )
+
+            # Verify the session was created with the correct TTL values
+            create_session_request = mock_session_controller_client_instance.create_session.call_args[
+                0
+            ][
+                0
+            ]
+
+            # TTL should be 3600 seconds (1 hour)
+            ttl_value = (
+                create_session_request.session.environment_config.execution_config.ttl
+            )
+            if isinstance(ttl_value, datetime.timedelta):
+                self.assertEqual(ttl_value.total_seconds(), 3600)
+            else:
+                self.assertEqual(ttl_value, {"seconds": 3600})
+
+            # Idle TTL should be 1800 seconds (30 minutes)
             idle_ttl_value = (
                 create_session_request.session.environment_config.execution_config.idle_ttl
             )
@@ -2270,6 +2341,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                     "6fa459ea-ee8a-3ca4-894e-db77e160355e"
                 )
                 expected_request.session.name = "projects/test-project/locations/test-region/sessions/6fa459ea-ee8a-3ca4-894e-db77e160355e"
+                expected_request.session.runtime_config.version = "2.3"
                 expected_request.session.spark_connect_session = (
                     SparkConnectConfig()
                 )
@@ -2283,7 +2355,12 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                     DataprocSparkSession._active_s8s_session_id = None
                     DataprocSparkSession._default_session = None
 
-                    session = DataprocSparkSession.builder.getOrCreate()
+                    # Set up project and region for the builder
+                    session = (
+                        DataprocSparkSession.builder.projectId("test-project")
+                        .location("test-region")
+                        .getOrCreate()
+                    )
 
                     mock_get_client_environment_label.assert_called_once()
                     mock_session_controller_client_instance.create_session.assert_called_once_with(
