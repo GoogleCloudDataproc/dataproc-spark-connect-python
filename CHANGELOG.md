@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.8.3...v0.9.0) (2025-07-31)
+
+
+### Features
+
+* add builder methods for session configuration ([#115](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/115)) ([3a6a218](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/3a6a21883782ccc8b62624906bee53e0cb708e64))
+* Add Python version check and warning ([#114](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/114)) ([65e8d4d](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/65e8d4d83c35e02a0ed3cac66c95db5cb5255a9f))
+* Add view session details button ([#123](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/123)) ([01b8f05](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/01b8f05e6fbff2d359fe01924fb2e0d212d34402))
+* Refactor and centralize client environment detection ([#117](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/117)) ([3b1a0a0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/3b1a0a0c928b89773ee583aa2303d1f334dbc82d))
+
+
+### Bug Fixes
+
+* Detect only IDE (not plugins) in the `environment.py` ([#125](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/125)) ([4733981](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/47339810b8015169951fd418fe11e3de5f78359f))
+
 ## [0.8.3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.8.2...v0.8.3) (2025-07-21)
 
 
