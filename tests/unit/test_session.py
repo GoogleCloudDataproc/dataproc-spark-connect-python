@@ -1042,6 +1042,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
+                    "spark.sql.legacy.createHiveTableByDefault"
+                ),
+                "false",
+            )
+            self.assertEqual(
+                create_session_request.session.runtime_config.properties.get(
                     "spark.sql.sources.default"
                 ),
                 "bigquery",
@@ -1091,6 +1097,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
             os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
             dataproc_config = Session()
+            dataproc_config.runtime_config.version = "3.0"
             dataproc_config.runtime_config.properties = {
                 "spark.datasource.bigquery.writeMethod": "override_method",
                 "spark.some.other.property": "some_value",
@@ -1116,6 +1123,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                     "spark.datasource.bigquery.viewsEnabled"
                 ),
                 "true",
+            )  # Default should still be set
+            self.assertEqual(
+                create_session_request.session.runtime_config.properties.get(
+                    "spark.sql.legacy.createHiveTableByDefault"
+                ),
+                "false",
             )  # Default should still be set
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
