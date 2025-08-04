@@ -33,13 +33,13 @@ from google.cloud.dataproc_v1 import (
 )
 from pyspark.errors.exceptions import connect as connect_exceptions
 from pyspark.sql import functions as F
-from pyspark.sql.types import IntegerType, StringType
+from pyspark.sql.types import StringType
 
 
 _SERVICE_ACCOUNT_KEY_FILE_ = "service_account_key.json"
 
 
-@pytest.fixture(params=[None, "2.2", "3.0"])
+@pytest.fixture(params=[None, "3.0"])
 def image_version(request):
     return request.param
 

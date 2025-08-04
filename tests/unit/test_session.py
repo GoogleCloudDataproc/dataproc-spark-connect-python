@@ -1027,7 +1027,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             ][
                 0
             ]
-            # With runtime version 2.3, the BigQuery properties should be set
+            # BigQuery properties should be set
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
                     "spark.datasource.bigquery.writeMethod"
@@ -1039,12 +1039,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                     "spark.datasource.bigquery.viewsEnabled"
                 ),
                 "true",
-            )
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.sql.legacy.createHiveTableByDefault"
-                ),
-                "false",
             )
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
@@ -1063,107 +1057,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.create_session.reset_mock()
             mock_logger.warning.reset_mock()
 
-        # Scenario 3: DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to "bigquery" and runtime version is "2.2"
-        with mock.patch.dict(
-            os.environ,
-            {"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE": "bigquery"},
-            clear=True,
-        ):
-            os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
-            os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
-            dataproc_config = Session()
-            dataproc_config.runtime_config.version = (
-                "2.2"  # Set runtime version to "2.2"
-            )
-            session = DataprocSparkSession.builder.dataprocSessionConfig(
-                dataproc_config
-            ).getOrCreate()
-            create_session_request = mock_session_controller_client_instance.create_session.call_args[
-                0
-            ][
-                0
-            ]
-            # With runtime version 2.2, the BigQuery properties should NOT be set
-            self.assertNotIn(
-                "spark.datasource.bigquery.writeMethod",
-                create_session_request.session.runtime_config.properties,
-            )
-            self.assertNotIn(
-                "spark.datasource.bigquery.viewsEnabled",
-                create_session_request.session.runtime_config.properties,
-            )
-            self.assertNotIn(
-                "spark.sql.legacy.createHiveTableByDefault",
-                create_session_request.session.runtime_config.properties,
-            )
-            self.assertNotIn(
-                "spark.sql.sources.default",
-                create_session_request.session.runtime_config.properties,
-            )
-            self.assertNotIn(
-                "spark.sql.catalog.spark_catalog",
-                create_session_request.session.runtime_config.properties,
-            )
-            mock_logger.warning.assert_not_called()
-            self.stopSession(mock_session_controller_client_instance, session)
-            mock_session_controller_client_instance.create_session.reset_mock()
-            mock_logger.warning.reset_mock()
-
-        # Scenario 4: DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to "bigquery" and runtime version is "2.3"
-        with mock.patch.dict(
-            os.environ,
-            {"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE": "bigquery"},
-            clear=True,
-        ):
-            os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
-            os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
-            dataproc_config = Session()
-            dataproc_config.runtime_config.version = "2.3"
-            session = DataprocSparkSession.builder.dataprocSessionConfig(
-                dataproc_config
-            ).getOrCreate()
-            create_session_request = mock_session_controller_client_instance.create_session.call_args[
-                0
-            ][
-                0
-            ]
-            # With runtime version > 2.3, the BigQuery properties should be set
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.datasource.bigquery.writeMethod"
-                ),
-                "direct",
-            )
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.datasource.bigquery.viewsEnabled"
-                ),
-                "true",
-            )
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.sql.legacy.createHiveTableByDefault"
-                ),
-                "false",
-            )
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.sql.sources.default"
-                ),
-                "bigquery",
-            )
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.sql.catalog.spark_catalog"
-                ),
-                "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
-            )
-            mock_logger.warning.assert_not_called()
-            self.stopSession(mock_session_controller_client_instance, session)
-            mock_session_controller_client_instance.create_session.reset_mock()
-            mock_logger.warning.reset_mock()
-
-        # Scenario 5: DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value
+        # Scenario 3: DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value
         with mock.patch.dict(
             os.environ,
             {"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE": "invalid_datasource"},
@@ -1188,7 +1082,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.create_session.reset_mock()
             mock_logger.warning.reset_mock()
 
-        # Scenario 6: DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to "bigquery" with pre-existing properties and runtime version > "2.3"
+        # Scenario 4: DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to "bigquery" with pre-existing properties
         with mock.patch.dict(
             os.environ,
             {"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE": "bigquery"},
@@ -1197,7 +1091,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
             os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
             dataproc_config = Session()
-            dataproc_config.runtime_config.version = "2.3"
             dataproc_config.runtime_config.properties = {
                 "spark.datasource.bigquery.writeMethod": "override_method",
                 "spark.some.other.property": "some_value",
@@ -1210,7 +1103,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             ][
                 0
             ]
-            # With runtime version 2.3, the BigQuery default properties should be set,
+            # The BigQuery default properties should be set,
             # but pre-existing properties should override defaults.
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
@@ -2341,7 +2234,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                     "6fa459ea-ee8a-3ca4-894e-db77e160355e"
                 )
                 expected_request.session.name = "projects/test-project/locations/test-region/sessions/6fa459ea-ee8a-3ca4-894e-db77e160355e"
-                expected_request.session.runtime_config.version = "2.3"
+                expected_request.session.runtime_config.version = "3.0"
                 expected_request.session.spark_connect_session = (
                     SparkConnectConfig()
                 )
