@@ -1042,12 +1042,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
-                    "spark.sql.legacy.createHiveTableByDefault"
-                ),
-                "false",
-            )
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
                     "spark.sql.sources.default"
                 ),
                 "bigquery",
@@ -1123,12 +1117,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                     "spark.datasource.bigquery.viewsEnabled"
                 ),
                 "true",
-            )  # Default should still be set
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.sql.legacy.createHiveTableByDefault"
-                ),
-                "false",
             )  # Default should still be set
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
