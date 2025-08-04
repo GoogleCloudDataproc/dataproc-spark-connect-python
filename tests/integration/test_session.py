@@ -78,6 +78,8 @@ def os_environment(auth_type, image_version, test_project, test_region):
             _SERVICE_ACCOUNT_KEY_FILE_
         )
     os.environ["DATAPROC_SPARK_CONNECT_AUTH_TYPE"] = auth_type
+    if auth_type == "END_USER_CREDENTIALS":
+        os.environ.pop("DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT")
     # Add SSL certificate fix
     os.environ["SSL_CERT_FILE"] = certifi.where()
     os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()

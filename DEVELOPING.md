@@ -49,5 +49,6 @@ env \
   GOOGLE_CLOUD_PROJECT='project-id' \
   GOOGLE_CLOUD_REGION='us-central1' \
   DATAPROC_SPARK_CONNECT_SUBNET='subnet-id' \
+  DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT='service@account.test' \
   pytest -n auto --tb=auto -v
 ```

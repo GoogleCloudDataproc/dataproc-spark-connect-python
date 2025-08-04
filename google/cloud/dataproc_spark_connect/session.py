@@ -158,19 +158,6 @@ class DataprocSparkSession(SparkSession):
             self.dataproc_config.environment_config.execution_config.service_account = (
                 account
             )
-            # Automatically set auth type to SERVICE_ACCOUNT when service account is provided
-            # This overrides any env var setting to simplify user experience
-            self.dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
-                AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
-            )
-            return self
-
-        def authType(
-            self, auth_type: "AuthenticationConfig.AuthenticationType"
-        ):
-            self.dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
-                auth_type
-            )
             return self
 
         def subnetwork(self, subnet: str):
@@ -181,10 +168,7 @@ class DataprocSparkSession(SparkSession):
 
         def ttl(self, duration: datetime.timedelta):
             """Set the time-to-live (TTL) for the session using a timedelta object."""
-            self.dataproc_config.environment_config.execution_config.ttl = {
-                "seconds": int(duration.total_seconds())
-            }
-            return self
+            return ttlSeconds(duration.total_seconds())
 
         def ttlSeconds(self, seconds: int):
             """Set the time-to-live (TTL) for the session in seconds."""
@@ -195,10 +179,7 @@ class DataprocSparkSession(SparkSession):
 
         def idleTtl(self, duration: datetime.timedelta):
             """Set the idle time-to-live (idle TTL) for the session using a timedelta object."""
-            self.dataproc_config.environment_config.execution_config.idle_ttl = {
-                "seconds": int(duration.total_seconds())
-            }
-            return self
+            return idleTtlSeconds(duration.total_seconds())
 
         def idleTtlSeconds(self, seconds: int):
             """Set the idle time-to-live (idle TTL) for the session in seconds."""
@@ -568,23 +549,19 @@ class DataprocSparkSession(SparkSession):
             default_datasource = os.getenv(
                 "DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE"
             )
-            if default_datasource:
-                if default_datasource == "bigquery":
-                    # User-specified config takes precedence
-                    dataproc_config.runtime_config.properties.setdefault(
-                        "spark.datasource.bigquery.viewsEnabled", "true"
-                    )
-                    dataproc_config.runtime_config.properties.setdefault(
-                        "spark.datasource.bigquery.writeMethod", "direct"
-                    )
-                    dataproc_config.runtime_config.properties.setdefault(
-                        "spark.sql.catalog.spark_catalog",
-                        "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
-                    )
-                    dataproc_config.runtime_config.properties.setdefault(
-                        "spark.sql.sources.default", "bigquery"
-                    )
-                else:
+            match default_datasource:
+                case "bigquery":
+                    # Merge default configs with existing properties,
+                    # user configs take precedence
+                    for k, v in {
+                        "spark.datasource.bigquery.viewsEnabled": "true",
+                        "spark.datasource.bigquery.writeMethod": "direct",
+                        "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
+                        "spark.sql.sources.default": "bigquery",
+                    }:
+                        if k not in dataproc_config.runtime_config.properties:
+                            dataproc_config.runtime_config.properties[k] = v
+                case _:
                     logger.warning(
                         f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value:"
                         f" {default_datasource}. Supported value is 'bigquery'."
