@@ -248,6 +248,7 @@ class DataprocSparkSession(SparkSession):
             session = DataprocSparkSession(connection=self._channel_builder)
 
             DataprocSparkSession._set_default_and_active_session(session)
+
             return session
 
         def __create(self) -> "DataprocSparkSession":
@@ -261,6 +262,9 @@ class DataprocSparkSession(SparkSession):
                 from google.cloud.dataproc_v1 import SessionControllerClient
 
                 dataproc_config: Session = self._get_dataproc_config()
+
+                # Check runtime version compatibility before creating session
+                self._check_runtime_compatibility(dataproc_config)
 
                 session_id = self.generate_dataproc_session_id()
                 dataproc_config.name = f"projects/{self._project_id}/locations/{self._region}/sessions/{session_id}"
@@ -592,6 +596,49 @@ class DataprocSparkSession(SparkSession):
                         f"Consider using Python {server_python[0]}.{server_python[1]} for optimal UDF execution.",
                         stacklevel=3,
                     )
+
+        def _check_runtime_compatibility(self, dataproc_config):
+            """Check if runtime version 3.0 client is compatible with older runtime versions.
+
+            Runtime version 3.0 clients do not support older runtime versions (pre-3.0).
+            There is no backward or forward compatibility between different runtime versions.
+
+            Args:
+                dataproc_config: The Session configuration containing runtime version
+
+            Raises:
+                DataprocSparkConnectException: If server is using pre-3.0 runtime version
+            """
+            try:
+                runtime_version = dataproc_config.runtime_config.version
+                logger.debug(
+                    f"Detected server runtime version: {runtime_version}"
+                )
+
+                # Parse runtime version to check if it's pre-3.0
+                if runtime_version:
+                    try:
+                        major_version = float(runtime_version.split(".")[0])
+                        if major_version < 3.0:
+                            raise DataprocSparkConnectException(
+                                f"Runtime version 3.0 client does not support older runtime versions. "
+                                f"Detected server runtime version: {runtime_version}. "
+                                f"Please use a compatible client for runtime version {runtime_version} or upgrade your server to runtime version 3.0+."
+                            )
+                    except (ValueError, IndexError):
+                        # If we can't parse the version, log a warning but continue
+                        logger.warning(
+                            f"Could not parse runtime version: {runtime_version}"
+                        )
+            except DataprocSparkConnectException:
+                # Re-raise our compatibility exception
+                raise
+            except Exception as e:
+                # Log warning if we can't check version, but don't fail
+                logger.warning(
+                    f"Could not verify runtime version compatibility: {e}"
+                )
+                # Continue with session creation
 
         def _display_view_session_details_button(self, session_id):
             try:
