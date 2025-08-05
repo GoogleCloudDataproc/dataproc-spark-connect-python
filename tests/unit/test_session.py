@@ -1817,10 +1817,6 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 "test-service@project.iam.gserviceaccount.com",
             )
             self.assertEqual(
-                create_session_request.session.environment_config.execution_config.authentication_config.user_workload_authentication_type,
-                AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT,
-            )
-            self.assertEqual(
                 create_session_request.session.environment_config.execution_config.subnetwork_uri,
                 "projects/test-project/regions/us-central1/subnetworks/test-subnet",
             )

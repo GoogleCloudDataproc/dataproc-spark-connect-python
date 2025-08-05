@@ -168,7 +168,7 @@ class DataprocSparkSession(SparkSession):
 
         def ttl(self, duration: datetime.timedelta):
             """Set the time-to-live (TTL) for the session using a timedelta object."""
-            return ttlSeconds(duration.total_seconds())
+            return self.ttlSeconds(int(duration.total_seconds()))
 
         def ttlSeconds(self, seconds: int):
             """Set the time-to-live (TTL) for the session in seconds."""
@@ -179,7 +179,7 @@ class DataprocSparkSession(SparkSession):
 
         def idleTtl(self, duration: datetime.timedelta):
             """Set the idle time-to-live (idle TTL) for the session using a timedelta object."""
-            return idleTtlSeconds(duration.total_seconds())
+            return self.idleTtlSeconds(int(duration.total_seconds()))
 
         def idleTtlSeconds(self, seconds: int):
             """Set the idle time-to-live (idle TTL) for the session in seconds."""
@@ -558,14 +558,15 @@ class DataprocSparkSession(SparkSession):
                         "spark.datasource.bigquery.writeMethod": "direct",
                         "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
                         "spark.sql.sources.default": "bigquery",
-                    }:
+                    }.items():
                         if k not in dataproc_config.runtime_config.properties:
                             dataproc_config.runtime_config.properties[k] = v
                 case _:
-                    logger.warning(
-                        f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value:"
-                        f" {default_datasource}. Supported value is 'bigquery'."
-                    )
+                    if default_datasource:
+                        logger.warning(
+                            f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value:"
+                            f" {default_datasource}. Supported value is 'bigquery'."
+                        )
             return dataproc_config
 
         def _check_python_version_compatibility(self, runtime_version):
