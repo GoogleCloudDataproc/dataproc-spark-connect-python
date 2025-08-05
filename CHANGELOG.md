@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.9.0...v1.0.0) (2025-08-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* Upgrade to Spark 4 client ([#111](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/111))
+
+### Features
+
+* Upgrade to Spark 4 client ([#111](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/111)) ([931b560](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/931b56015cb83ad6db19df8a7219c9d829dd2f08))
+
 ## [0.9.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.8.3...v0.9.0) (2025-07-31)
 
 
