@@ -611,34 +611,32 @@ class DataprocSparkSession(SparkSession):
             """
             try:
                 runtime_version = dataproc_config.runtime_config.version
-                logger.debug(
-                    f"Detected server runtime version: {runtime_version}"
-                )
-
-                # Parse runtime version to check if it's pre-3.0
-                if runtime_version:
-                    try:
-                        major_version = float(runtime_version.split(".")[0])
-                        if major_version < 3.0:
-                            raise DataprocSparkConnectException(
-                                f"Runtime version 3.0 client does not support older runtime versions. "
-                                f"Detected server runtime version: {runtime_version}. "
-                                f"Please use a compatible client for runtime version {runtime_version} or upgrade your server to runtime version 3.0+."
-                            )
-                    except (ValueError, IndexError):
-                        # If we can't parse the version, log a warning but continue
-                        logger.warning(
-                            f"Could not parse runtime version: {runtime_version}"
-                        )
-            except DataprocSparkConnectException:
-                # Re-raise our compatibility exception
-                raise
             except Exception as e:
                 # Log warning if we can't check version, but don't fail
                 logger.warning(
                     f"Could not verify runtime version compatibility: {e}"
                 )
-                # Continue with session creation
+                return
+
+            if not runtime_version:
+                return
+
+            logger.debug(f"Detected server runtime version: {runtime_version}")
+
+            # Parse runtime version to check if it's pre-3.0
+            try:
+                major_version = int(runtime_version.split(".")[0])
+                if major_version < 3:
+                    raise DataprocSparkConnectException(
+                        f"Runtime version 3.0 client does not support older runtime versions. "
+                        f"Detected server runtime version: {runtime_version}. "
+                        f"Please use a compatible client for runtime version {runtime_version} or upgrade your server to runtime version 3.0+."
+                    )
+            except (ValueError, IndexError):
+                # If we can't parse the version, log a warning but continue
+                logger.warning(
+                    f"Could not parse runtime version: {runtime_version}"
+                )
 
         def _display_view_session_details_button(self, session_id):
             try:

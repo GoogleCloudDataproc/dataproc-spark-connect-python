@@ -58,107 +58,48 @@ class TestPythonVersionCheck(unittest.TestCase):
 
 class TestRuntimeVersionCompatibility(unittest.TestCase):
 
-    def test_runtime_24_raises_exception(self):
-        """Test that runtime version 2.4 raises DataprocSparkConnectException"""
+    def test_older_runtimes_raise_exception(self):
+        """Test that runtime versions < 3.0 raise DataprocSparkConnectException"""
         session_builder = DataprocSparkSession.Builder()
+        old_versions = ["2.4", "2.2", "1.0"]
 
-        # Mock dataproc config with runtime version 2.4
-        mock_dataproc_config = mock.Mock()
-        mock_dataproc_config.runtime_config.version = "2.4"
+        for version in old_versions:
+            with self.subTest(version=version):
+                mock_dataproc_config = mock.Mock()
+                mock_dataproc_config.runtime_config.version = version
 
-        with self.assertRaises(DataprocSparkConnectException) as context:
-            session_builder._check_runtime_compatibility(mock_dataproc_config)
+                with self.assertRaises(
+                    DataprocSparkConnectException
+                ) as context:
+                    session_builder._check_runtime_compatibility(
+                        mock_dataproc_config
+                    )
 
-        expected_message = (
-            "Runtime version 3.0 client does not support older runtime versions. "
-            "Detected server runtime version: 2.4. "
-            "Please use a compatible client for runtime version 2.4 or upgrade your server to runtime version 3.0+."
-        )
-        self.assertEqual(str(context.exception), expected_message)
+                expected_message = (
+                    f"Runtime version 3.0 client does not support older runtime versions. "
+                    f"Detected server runtime version: {version}. "
+                    f"Please use a compatible client for runtime version {version} or upgrade your server to runtime version 3.0+."
+                )
+                self.assertEqual(str(context.exception), expected_message)
 
-    def test_runtime_22_raises_exception(self):
-        """Test that runtime version 2.2 raises DataprocSparkConnectException"""
+    def test_newer_runtimes_succeed(self):
+        """Test that runtime versions >= 3.0 succeed"""
         session_builder = DataprocSparkSession.Builder()
+        new_versions = ["3.0", "3.1", "4.0"]
 
-        # Mock dataproc config with runtime version 2.2
-        mock_dataproc_config = mock.Mock()
-        mock_dataproc_config.runtime_config.version = "2.2"
+        for version in new_versions:
+            with self.subTest(version=version):
+                mock_dataproc_config = mock.Mock()
+                mock_dataproc_config.runtime_config.version = version
 
-        with self.assertRaises(DataprocSparkConnectException) as context:
-            session_builder._check_runtime_compatibility(mock_dataproc_config)
-
-        expected_message = (
-            "Runtime version 3.0 client does not support older runtime versions. "
-            "Detected server runtime version: 2.2. "
-            "Please use a compatible client for runtime version 2.2 or upgrade your server to runtime version 3.0+."
-        )
-        self.assertEqual(str(context.exception), expected_message)
-
-    def test_runtime_30_succeeds(self):
-        """Test that runtime version 3.0 succeeds"""
-        session_builder = DataprocSparkSession.Builder()
-
-        # Mock dataproc config with runtime version 3.0
-        mock_dataproc_config = mock.Mock()
-        mock_dataproc_config.runtime_config.version = "3.0"
-
-        # Should not raise any exception
-        try:
-            session_builder._check_runtime_compatibility(mock_dataproc_config)
-        except DataprocSparkConnectException:
-            self.fail(
-                "_check_runtime_compatibility raised DataprocSparkConnectException unexpectedly"
-            )
-
-    def test_runtime_31_succeeds(self):
-        """Test that runtime version 3.1 succeeds"""
-        session_builder = DataprocSparkSession.Builder()
-
-        # Mock dataproc config with runtime version 3.1
-        mock_dataproc_config = mock.Mock()
-        mock_dataproc_config.runtime_config.version = "3.1"
-
-        # Should not raise any exception
-        try:
-            session_builder._check_runtime_compatibility(mock_dataproc_config)
-        except DataprocSparkConnectException:
-            self.fail(
-                "_check_runtime_compatibility raised DataprocSparkConnectException unexpectedly"
-            )
-
-    def test_runtime_40_succeeds(self):
-        """Test that runtime version 4.0 succeeds"""
-        session_builder = DataprocSparkSession.Builder()
-
-        # Mock dataproc config with runtime version 4.0
-        mock_dataproc_config = mock.Mock()
-        mock_dataproc_config.runtime_config.version = "4.0"
-
-        # Should not raise any exception
-        try:
-            session_builder._check_runtime_compatibility(mock_dataproc_config)
-        except DataprocSparkConnectException:
-            self.fail(
-                "_check_runtime_compatibility raised DataprocSparkConnectException unexpectedly"
-            )
-
-    def test_runtime_10_raises_exception(self):
-        """Test that runtime version 1.0 raises DataprocSparkConnectException"""
-        session_builder = DataprocSparkSession.Builder()
-
-        # Mock dataproc config with runtime version 1.0
-        mock_dataproc_config = mock.Mock()
-        mock_dataproc_config.runtime_config.version = "1.0"
-
-        with self.assertRaises(DataprocSparkConnectException) as context:
-            session_builder._check_runtime_compatibility(mock_dataproc_config)
-
-        expected_message = (
-            "Runtime version 3.0 client does not support older runtime versions. "
-            "Detected server runtime version: 1.0. "
-            "Please use a compatible client for runtime version 1.0 or upgrade your server to runtime version 3.0+."
-        )
-        self.assertEqual(str(context.exception), expected_message)
+                try:
+                    session_builder._check_runtime_compatibility(
+                        mock_dataproc_config
+                    )
+                except DataprocSparkConnectException:
+                    self.fail(
+                        f"_check_runtime_compatibility raised DataprocSparkConnectException unexpectedly for version {version}"
+                    )
 
     @mock.patch("google.cloud.dataproc_spark_connect.session.logger")
     def test_invalid_runtime_version_logs_warning(self, mock_logger):
@@ -188,9 +129,10 @@ class TestRuntimeVersionCompatibility(unittest.TestCase):
 
         # Mock dataproc config that raises exception when accessing version
         mock_dataproc_config = mock.Mock()
-        # Make runtime_config.version return a Mock that can't be split (not subscriptable)
-        mock_dataproc_config.runtime_config.version = mock.Mock()
-        # This will cause the split(".") call to fail with "'Mock' object is not subscriptable"
+        # Make accessing .version on the runtime_config mock raise an exception
+        type(mock_dataproc_config.runtime_config).version = mock.PropertyMock(
+            side_effect=Exception("Access error")
+        )
 
         # Should not raise any exception, but should log warning
         try:
@@ -200,9 +142,8 @@ class TestRuntimeVersionCompatibility(unittest.TestCase):
                 "_check_runtime_compatibility raised exception unexpectedly"
             )
 
-        # The actual error message will be about Mock not being subscriptable
         mock_logger.warning.assert_called_once_with(
-            "Could not verify runtime version compatibility: 'Mock' object is not subscriptable"
+            "Could not verify runtime version compatibility: Access error"
         )
 
 
