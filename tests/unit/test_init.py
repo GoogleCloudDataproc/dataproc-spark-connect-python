@@ -186,11 +186,11 @@ class TestRuntimeVersionCompatibility(unittest.TestCase):
         """Test that runtime version check errors are logged as warnings but don't fail session creation"""
         session_builder = DataprocSparkSession.Builder()
 
-        # Mock dataproc config that raises exception when accessing runtime version
+        # Mock dataproc config that raises exception when accessing version
         mock_dataproc_config = mock.Mock()
-        mock_dataproc_config.runtime_config.version.side_effect = Exception(
-            "Access error"
-        )
+        # Make runtime_config.version return a Mock that can't be split (not subscriptable)
+        mock_dataproc_config.runtime_config.version = mock.Mock()
+        # This will cause the split(".") call to fail with "'Mock' object is not subscriptable"
 
         # Should not raise any exception, but should log warning
         try:
@@ -200,8 +200,9 @@ class TestRuntimeVersionCompatibility(unittest.TestCase):
                 "_check_runtime_compatibility raised exception unexpectedly"
             )
 
+        # The actual error message will be about Mock not being subscriptable
         mock_logger.warning.assert_called_once_with(
-            "Could not verify runtime version compatibility: Access error"
+            "Could not verify runtime version compatibility: 'Mock' object is not subscriptable"
         )
 
 
