@@ -715,6 +715,9 @@ class DataprocSparkSession(SparkSession):
             operation_id: Optional[str],
             done: bool,
         ):
+            if operation_id is None:
+                return
+
             total_tasks = 0
             completed_tasks = 0
 
