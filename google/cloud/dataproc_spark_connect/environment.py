@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import sys
 from typing import Callable, Tuple, List
 
 
@@ -44,6 +45,31 @@ def is_workbench() -> bool:
 def is_jetbrains_ide() -> bool:
     """True if running inside any JetBrains IDE."""
     return "jetbrains" in os.getenv("TERMINAL_EMULATOR", "").lower()
+
+
+def is_interactive():
+    return hasattr(sys, "ps1")
+
+
+def is_ipython():
+    try:
+        from IPython import get_ipython
+
+        return get_ipython() is not None
+    except ImportError:
+        return False
+
+
+def is_terminal():
+    return sys.stdin.isatty()
+
+
+def is_ipython_terminal():
+    return is_ipython() and is_terminal()
+
+
+def is_plain_python_terminal():
+    return not is_ipython() and is_terminal()
 
 
 def get_client_environment_label() -> str:

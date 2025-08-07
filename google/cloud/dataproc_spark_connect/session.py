@@ -20,7 +20,6 @@ import os
 import random
 import re
 import string
-import sys
 import threading
 import time
 import uuid
@@ -720,7 +719,7 @@ class DataprocSparkSession(SparkSession):
 
             # Don't build / render progress bar for non-interactive (despite
             # Ipython or non-IPython)
-            if not is_interactive():
+            if not environment.is_interactive():
                 return
 
             total_tasks = 0
@@ -731,7 +730,10 @@ class DataprocSparkSession(SparkSession):
                 completed_tasks += stage.num_completed_tasks
 
             tqdm_pbar = notebook_tqdm
-            if is_ipython_terminal() or is_plain_python_terminal():
+            if (
+                environment.is_ipython_terminal()
+                or environment.is_plain_python_terminal()
+            ):
                 tqdm_pbar = cli_tqdm
 
             # Use a lock to ensure only one thread can access and modify
@@ -985,28 +987,3 @@ def is_s8s_session_active(session_name, client_options) -> bool:
     if get_active_s8s_session_response(session_name, client_options) is None:
         return False
     return True
-
-
-def is_interactive():
-    return hasattr(sys, "ps1")
-
-
-def is_ipython():
-    try:
-        from IPython import get_ipython
-
-        return get_ipython() is not None
-    except ImportError:
-        return False
-
-
-def is_terminal():
-    return sys.stdin.isatty()
-
-
-def is_ipython_terminal():
-    return is_ipython() and is_terminal()
-
-
-def is_plain_python_terminal():
-    return not is_ipython() and is_terminal()
