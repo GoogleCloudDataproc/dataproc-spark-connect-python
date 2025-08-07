@@ -693,9 +693,7 @@ class DataprocSparkSession(SparkSession):
         if hasattr(self, "clearProgressHandlers"):
             clearProgressHandlers_base_method = self.clearProgressHandlers
 
-            def clearProgressHandlers_wrapper_method(
-                _, *args, **kwargs
-            ):
+            def clearProgressHandlers_wrapper_method(_, *args, **kwargs):
                 clearProgressHandlers_base_method(*args, **kwargs)
 
                 self._register_progress_execution_handler()
