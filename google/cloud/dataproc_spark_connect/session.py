@@ -20,10 +20,12 @@ import os
 import random
 import re
 import string
+import sys
 import threading
 import time
 import uuid
 import tqdm
+from tqdm import tqdm as cli_tqdm
 from tqdm.notebook import tqdm as notebook_tqdm
 from types import MethodType
 from typing import Any, cast, ClassVar, Dict, Iterable, Optional, Union
@@ -722,6 +724,15 @@ class DataprocSparkSession(SparkSession):
                 total_tasks += stage.num_tasks
                 completed_tasks += stage.num_completed_tasks
 
+            # Don't build / render progress bar for non-interactive (despite
+            # Ipython or non-IPython)
+            if not is_interactive():
+                return
+
+            tqdm_pbar = notebook_tqdm
+            if is_ipython_terminal() or is_plain_python_terminal():
+                tqdm_pbar = cli_tqdm
+
             # Use a lock to ensure only one thread can access and modify
             # the shared dictionaries at a time.
             with self._lock:
@@ -732,7 +743,7 @@ class DataprocSparkSession(SparkSession):
                             total=total_tasks
                         )  # This force resets the progress bar % too on next refresh
                 else:
-                    pbar = notebook_tqdm(
+                    pbar = tqdm_pbar(
                         total=total_tasks,
                         leave=True,
                         dynamic_ncols=True,
@@ -973,3 +984,28 @@ def is_s8s_session_active(session_name, client_options) -> bool:
     if get_active_s8s_session_response(session_name, client_options) is None:
         return False
     return True
+
+
+def is_interactive():
+    return hasattr(sys, "ps1")
+
+
+def is_ipython():
+    try:
+        from IPython import get_ipython
+
+        return get_ipython() is not None
+    except ImportError:
+        return False
+
+
+def is_terminal():
+    return sys.stdin.isatty()
+
+
+def is_ipython_terminal():
+    return is_ipython() and is_terminal()
+
+
+def is_plain_python_terminal():
+    return not is_ipython() and is_terminal()
