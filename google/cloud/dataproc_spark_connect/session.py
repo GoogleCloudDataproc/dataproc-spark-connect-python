@@ -694,7 +694,7 @@ class DataprocSparkSession(SparkSession):
             clearProgressHandlers_base_method = self.clearProgressHandlers
 
             def clearProgressHandlers_wrapper_method(
-                session_self, *args, **kwargs
+                _, *args, **kwargs
             ):
                 clearProgressHandlers_base_method(*args, **kwargs)
 
