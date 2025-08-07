@@ -104,6 +104,7 @@ class DataprocSparkSession(SparkSession):
     """
 
     _DEFAULT_RUNTIME_VERSION = "3.0"
+    _MIN_SUPPORTED_RUNTIME_VERSION = 3
 
     _active_s8s_session_uuid: ClassVar[Optional[str]] = None
     _project_id = None
@@ -609,28 +610,24 @@ class DataprocSparkSession(SparkSession):
             Raises:
                 DataprocSparkConnectException: If server is using pre-3.0 runtime version
             """
-            try:
-                runtime_version = dataproc_config.runtime_config.version
-            except Exception as e:
-                # Log warning if we can't check version, but don't fail
-                logger.warning(
-                    f"Could not verify runtime version compatibility: {e}"
-                )
-                return
+            runtime_version = dataproc_config.runtime_config.version
 
             if not runtime_version:
                 return
 
             logger.debug(f"Detected server runtime version: {runtime_version}")
 
-            # Parse runtime version to check if it's pre-3.0
+            # Parse runtime version to check if it's below minimum supported version
             try:
                 major_version = int(runtime_version.split(".")[0])
-                if major_version < 3:
+                if (
+                    major_version
+                    < DataprocSparkSession._MIN_SUPPORTED_RUNTIME_VERSION
+                ):
                     raise DataprocSparkConnectException(
-                        f"Runtime version 3.0 client does not support older runtime versions. "
+                        f"Runtime version {DataprocSparkSession._MIN_SUPPORTED_RUNTIME_VERSION}.0 client does not support older runtime versions. "
                         f"Detected server runtime version: {runtime_version}. "
-                        f"Please use a compatible client for runtime version {runtime_version} or upgrade your server to runtime version 3.0+."
+                        f"Please use a compatible client for runtime version {runtime_version} or upgrade your server to runtime version {DataprocSparkSession._MIN_SUPPORTED_RUNTIME_VERSION}.0+."
                     )
             except (ValueError, IndexError):
                 # If we can't parse the version, log a warning but continue
