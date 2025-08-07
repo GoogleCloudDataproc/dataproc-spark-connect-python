@@ -721,7 +721,7 @@ class DataprocSparkSession(SparkSession):
             total_tasks = 0
             completed_tasks = 0
 
-            for stage in stages:
+            for stage in stages or []:
                 total_tasks += stage.num_tasks
                 completed_tasks += stage.num_completed_tasks
 
