@@ -718,17 +718,17 @@ class DataprocSparkSession(SparkSession):
             if operation_id is None:
                 return
 
+            # Don't build / render progress bar for non-interactive (despite
+            # Ipython or non-IPython)
+            if not is_interactive():
+                return
+
             total_tasks = 0
             completed_tasks = 0
 
             for stage in stages or []:
                 total_tasks += stage.num_tasks
                 completed_tasks += stage.num_completed_tasks
-
-            # Don't build / render progress bar for non-interactive (despite
-            # Ipython or non-IPython)
-            if not is_interactive():
-                return
 
             tqdm_pbar = notebook_tqdm
             if is_ipython_terminal() or is_plain_python_terminal():
