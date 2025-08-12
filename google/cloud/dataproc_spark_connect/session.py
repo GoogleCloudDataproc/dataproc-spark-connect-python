@@ -750,7 +750,7 @@ class DataprocSparkSession(SparkSession):
                         total=total_tasks,
                         leave=True,
                         dynamic_ncols=True,
-                        bar_format='{l_bar}{bar} {n_fmt}/{total_fmt}',
+                        bar_format="{l_bar}{bar} {n_fmt}/{total_fmt}",
                     )
                     self._execution_progress_bar[operation_id] = pbar
 
