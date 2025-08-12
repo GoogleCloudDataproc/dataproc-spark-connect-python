@@ -235,43 +235,30 @@ class TestEnvironment(unittest.TestCase):
             del mock_sys.ps1
         self.assertFalse(environment.is_interactive())
 
-    @mock.patch("IPython.get_ipython", return_value=mock.MagicMock())
-    def test_is_ipython_true(self, mock_get_ipython):
-        self.assertTrue(environment.is_ipython())
-
-    @mock.patch("IPython.get_ipython", return_value=None)
-    def test_is_ipython_false(self, mock_get_ipython):
-        self.assertFalse(environment.is_ipython())
-
-    @mock.patch("sys.stdin.isatty", return_value=True)
-    def test_is_terminal_true(self, mock_isatty):
+    @mock.patch("sys.stdin")
+    def test_is_terminal_true(self, mock_stdin):
+        mock_stdin.isatty.return_value = True
         self.assertTrue(environment.is_terminal())
 
-    @mock.patch("sys.stdin.isatty", return_value=False)
-    def test_is_terminal_false(self, mock_isatty):
+    @mock.patch("sys.stdin")
+    def test_is_terminal_false(self, mock_stdin):
+        mock_stdin.isatty.return_value = False
         self.assertFalse(environment.is_terminal())
 
-    @mock.patch("IPython.get_ipython", return_value=mock.MagicMock())
-    @mock.patch("sys.stdin.isatty", return_value=True)
-    def test_is_ipython_terminal_true(self, mock_isatty, mock_get_ipython):
-        self.assertTrue(environment.is_ipython_terminal())
+    @mock.patch("sys.stdin")
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_terminal_true(self, mock_sys, mock_stdin):
+        mock_sys.ps1 = ">>>"
+        mock_stdin.isatty.return_value = True
+        self.assertTrue(environment.is_interactive_terminal())
 
-    @mock.patch("IPython.get_ipython", return_value=None)
-    @mock.patch("sys.stdin.isatty", return_value=True)
-    def test_is_ipython_terminal_false(self, mock_isatty, mock_get_ipython):
-        self.assertFalse(environment.is_ipython_terminal())
-
-    @mock.patch("IPython.get_ipython", return_value=None)
-    @mock.patch("sys.stdin.isatty", return_value=True)
-    def test_is_plain_python_terminal_true(self, mock_isatty, mock_get_ipython):
-        self.assertTrue(environment.is_plain_python_terminal())
-
-    @mock.patch("IPython.get_ipython", return_value=mock.MagicMock())
-    @mock.patch("sys.stdin.isatty", return_value=True)
-    def test_is_plain_python_terminal_false(
-        self, mock_isatty, mock_get_ipython
-    ):
-        self.assertFalse(environment.is_plain_python_terminal())
+    @mock.patch("sys.stdin")
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_terminal_true(self, mock_sys, mock_stdin):
+        if hasattr(mock_sys, "ps1"):
+            del mock_sys.ps1
+        mock_stdin.isatty.return_value = False
+        self.assertFalse(environment.is_interactive_terminal())
 
 
 if __name__ == "__main__":

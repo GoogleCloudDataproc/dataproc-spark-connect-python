@@ -730,10 +730,7 @@ class DataprocSparkSession(SparkSession):
                 completed_tasks += stage.num_completed_tasks
 
             tqdm_pbar = notebook_tqdm
-            if (
-                environment.is_ipython_terminal()
-                or environment.is_plain_python_terminal()
-            ):
+            if environment.is_interactive_terminal():
                 tqdm_pbar = cli_tqdm
 
             # Use a lock to ensure only one thread can access and modify
