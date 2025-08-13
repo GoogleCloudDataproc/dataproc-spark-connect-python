@@ -24,8 +24,10 @@ import threading
 import time
 import uuid
 import tqdm
+from tqdm import tqdm as cli_tqdm
+from tqdm.notebook import tqdm as notebook_tqdm
 from types import MethodType
-from typing import Any, cast, ClassVar, Dict, Optional, Union
+from typing import Any, cast, ClassVar, Dict, Iterable, Optional, Union
 
 from google.api_core import retry
 from google.api_core.client_options import ClientOptions
@@ -110,6 +112,7 @@ class DataprocSparkSession(SparkSession):
     _region = None
     _client_options = None
     _active_s8s_session_id: ClassVar[Optional[str]] = None
+    _execution_progress_bar = dict()
 
     class Builder(SparkSession.Builder):
 
@@ -246,6 +249,9 @@ class DataprocSparkSession(SparkSession):
 
             assert self._channel_builder is not None
             session = DataprocSparkSession(connection=self._channel_builder)
+
+            # Register handler for Cell Execution Progress bar
+            session._register_progress_execution_handler()
 
             DataprocSparkSession._set_default_and_active_session(session)
             return session
@@ -681,6 +687,78 @@ class DataprocSparkSession(SparkSession):
         self.client._execute_and_fetch_as_iterator = MethodType(
             execute_and_fetch_as_iterator_wrapped_method, self.client
         )
+
+        # Patching clearProgressHandlers method to not remove Dataproc Progress Handler
+        clearProgressHandlers_base_method = self.clearProgressHandlers
+
+        def clearProgressHandlers_wrapper_method(_, *args, **kwargs):
+            clearProgressHandlers_base_method(*args, **kwargs)
+
+            self._register_progress_execution_handler()
+
+        self.clearProgressHandlers = MethodType(
+            clearProgressHandlers_wrapper_method, self
+        )
+
+    def _register_progress_execution_handler(self):
+        from pyspark.sql.connect.shell.progress import StageInfo
+
+        def handler(
+            stages: Optional[Iterable[StageInfo]],
+            inflight_tasks: int,
+            operation_id: Optional[str],
+            done: bool,
+        ):
+            if operation_id is None:
+                return
+
+            # Don't build / render progress bar for non-interactive (despite
+            # Ipython or non-IPython)
+            if not environment.is_interactive():
+                return
+
+            total_tasks = 0
+            completed_tasks = 0
+
+            for stage in stages or []:
+                total_tasks += stage.num_tasks
+                completed_tasks += stage.num_completed_tasks
+
+            tqdm_pbar = notebook_tqdm
+            if environment.is_interactive_terminal():
+                tqdm_pbar = cli_tqdm
+
+            # Use a lock to ensure only one thread can access and modify
+            # the shared dictionaries at a time.
+            with self._lock:
+                if operation_id in self._execution_progress_bar:
+                    pbar = self._execution_progress_bar[operation_id]
+                    if pbar.total != total_tasks:
+                        pbar.reset(
+                            total=total_tasks
+                        )  # This force resets the progress bar % too on next refresh
+                else:
+                    pbar = tqdm_pbar(
+                        total=total_tasks,
+                        leave=True,
+                        dynamic_ncols=True,
+                        bar_format="{l_bar}{bar} {n_fmt}/{total_fmt} Tasks",
+                    )
+                    self._execution_progress_bar[operation_id] = pbar
+
+                # To handle skipped or failed tasks.
+                # StageInfo proto doesn't have skipped and failed tasks information to process.
+                if done and completed_tasks < total_tasks:
+                    completed_tasks = total_tasks
+
+                pbar.n = completed_tasks
+                pbar.refresh()
+
+                if done:
+                    pbar.close()
+                    self._execution_progress_bar.pop(operation_id, None)
+
+        self.registerProgressHandler(handler)
 
     @staticmethod
     def _sql_lazy_transformation(req):
