@@ -689,23 +689,18 @@ class DataprocSparkSession(SparkSession):
         )
 
         # Patching clearProgressHandlers method to not remove Dataproc Progress Handler
-        if hasattr(self, "clearProgressHandlers"):
-            clearProgressHandlers_base_method = self.clearProgressHandlers
+        clearProgressHandlers_base_method = self.clearProgressHandlers
 
-            def clearProgressHandlers_wrapper_method(_, *args, **kwargs):
-                clearProgressHandlers_base_method(*args, **kwargs)
+        def clearProgressHandlers_wrapper_method(_, *args, **kwargs):
+            clearProgressHandlers_base_method(*args, **kwargs)
 
-                self._register_progress_execution_handler()
+            self._register_progress_execution_handler()
 
-            self.clearProgressHandlers = MethodType(
-                clearProgressHandlers_wrapper_method, self
-            )
+        self.clearProgressHandlers = MethodType(
+            clearProgressHandlers_wrapper_method, self
+        )
 
     def _register_progress_execution_handler(self):
-        # Execution progress support is available Spark 4.0 onwards
-        if not hasattr(self, "registerProgressHandler"):
-            return
-
         from pyspark.sql.connect.shell.progress import StageInfo
 
         def handler(
