@@ -1738,7 +1738,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
 
         try:
             session = (
-                DataprocSparkSession.builder.runtimeVersion("2.4")
+                DataprocSparkSession.builder.runtimeVersion("3.0")
                 .config(
                     "spark.executor.cores", "8"
                 )  # Use existing Spark config method
@@ -1754,7 +1754,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 0
             ]
             self.assertEqual(
-                create_session_request.session.runtime_config.version, "2.4"
+                create_session_request.session.runtime_config.version, "3.0"
             )
             # Note: Spark configs are handled through existing Spark mechanisms
             # The key is that runtimeVersion works correctly
@@ -2011,7 +2011,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         try:
             # Test combining dataprocSessionConfig with builder pattern methods
             base_config = Session()
-            base_config.runtime_config.version = "2.2"
+            base_config.runtime_config.version = "3.0"
             base_config.runtime_config.properties["spark.executor.cores"] = "4"
             base_config.labels["base-label"] = "base-value"
 
@@ -2034,7 +2034,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 0
             ]
             self.assertEqual(
-                create_session_request.session.runtime_config.version, "2.2"
+                create_session_request.session.runtime_config.version, "3.0"
             )
             self.assertEqual(
                 create_session_request.session.labels["base-label"],
