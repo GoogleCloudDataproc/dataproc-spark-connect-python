@@ -24,6 +24,7 @@ import threading
 import time
 import uuid
 import tqdm
+from packaging import version
 from types import MethodType
 from typing import Any, cast, ClassVar, Dict, Optional, Union
 
@@ -104,7 +105,7 @@ class DataprocSparkSession(SparkSession):
     """
 
     _DEFAULT_RUNTIME_VERSION = "3.0"
-    _MIN_SUPPORTED_RUNTIME_VERSION = 3
+    _MIN_RUNTIME_VERSION = "3.0"
 
     _active_s8s_session_uuid: ClassVar[Optional[str]] = None
     _project_id = None
@@ -619,17 +620,18 @@ class DataprocSparkSession(SparkSession):
 
             # Parse runtime version to check if it's below minimum supported version
             try:
-                major_version = int(runtime_version.split(".")[0])
-                if (
-                    major_version
-                    < DataprocSparkSession._MIN_SUPPORTED_RUNTIME_VERSION
-                ):
+                server_version = version.parse(runtime_version)
+                min_version = version.parse(
+                    DataprocSparkSession._MIN_RUNTIME_VERSION
+                )
+
+                if server_version < min_version:
                     raise DataprocSparkConnectException(
-                        f"Runtime version {DataprocSparkSession._MIN_SUPPORTED_RUNTIME_VERSION}.0 client does not support older runtime versions. "
+                        f"Runtime version {DataprocSparkSession._MIN_RUNTIME_VERSION} client does not support older runtime versions. "
                         f"Detected server runtime version: {runtime_version}. "
-                        f"Please use a compatible client for runtime version {runtime_version} or upgrade your server to runtime version {DataprocSparkSession._MIN_SUPPORTED_RUNTIME_VERSION}.0+."
+                        f"Please use a compatible client for runtime version {runtime_version} or upgrade your server to runtime version {DataprocSparkSession._MIN_RUNTIME_VERSION}+."
                     )
-            except (ValueError, IndexError):
+            except version.InvalidVersion:
                 # If we can't parse the version, log a warning but continue
                 logger.warning(
                     f"Could not parse runtime version: {runtime_version}"

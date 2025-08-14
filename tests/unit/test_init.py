@@ -75,25 +75,18 @@ class TestRuntimeVersionCompatibility(unittest.TestCase):
                         mock_dataproc_config
                     )
 
-                min_version = (
-                    DataprocSparkSession._MIN_SUPPORTED_RUNTIME_VERSION
-                )
+                min_version = DataprocSparkSession._MIN_RUNTIME_VERSION
                 expected_message = (
-                    f"Runtime version {min_version}.0 client does not support older runtime versions. "
+                    f"Runtime version {min_version} client does not support older runtime versions. "
                     f"Detected server runtime version: {version}. "
-                    f"Please use a compatible client for runtime version {version} or upgrade your server to runtime version {min_version}.0+."
+                    f"Please use a compatible client for runtime version {version} or upgrade your server to runtime version {min_version}+."
                 )
                 self.assertEqual(str(context.exception), expected_message)
 
     def test_newer_runtimes_succeed(self):
-        """Test that runtime versions >= MIN_SUPPORTED_RUNTIME_VERSION succeed"""
+        """Test that runtime versions >= MIN_RUNTIME_VERSION succeed"""
         session_builder = DataprocSparkSession.Builder()
-        min_version = DataprocSparkSession._MIN_SUPPORTED_RUNTIME_VERSION
-        new_versions = [
-            f"{min_version}.0",
-            f"{min_version}.1",
-            f"{min_version + 1}.0",
-        ]
+        new_versions = ["3.0", "3.1", "4.0"]
 
         for version in new_versions:
             with self.subTest(version=version):
