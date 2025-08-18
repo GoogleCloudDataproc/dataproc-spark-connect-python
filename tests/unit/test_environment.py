@@ -13,10 +13,9 @@
 # limitations under the License.
 
 import os
-import json
+import importlib
 import unittest
 from unittest import mock
-import importlib
 
 from google.cloud.dataproc_spark_connect import environment
 
@@ -222,6 +221,44 @@ class TestEnvironment(unittest.TestCase):
             environment.get_client_environment_label(),
             "colab-enterprise",
         )
+
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_true(self, mock_sys):
+        # Simulate interactive environment by setting ps1
+        mock_sys.ps1 = ">>>"
+        self.assertTrue(environment.is_interactive())
+
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_false(self, mock_sys):
+        # Simulate non-interactive environment by removing ps1
+        if hasattr(mock_sys, "ps1"):
+            del mock_sys.ps1
+        self.assertFalse(environment.is_interactive())
+
+    @mock.patch("sys.stdin")
+    def test_is_terminal_true(self, mock_stdin):
+        mock_stdin.isatty.return_value = True
+        self.assertTrue(environment.is_terminal())
+
+    @mock.patch("sys.stdin")
+    def test_is_terminal_false(self, mock_stdin):
+        mock_stdin.isatty.return_value = False
+        self.assertFalse(environment.is_terminal())
+
+    @mock.patch("sys.stdin")
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_terminal_true(self, mock_sys, mock_stdin):
+        mock_sys.ps1 = ">>>"
+        mock_stdin.isatty.return_value = True
+        self.assertTrue(environment.is_interactive_terminal())
+
+    @mock.patch("sys.stdin")
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_terminal_true(self, mock_sys, mock_stdin):
+        if hasattr(mock_sys, "ps1"):
+            del mock_sys.ps1
+        mock_stdin.isatty.return_value = False
+        self.assertFalse(environment.is_interactive_terminal())
 
 
 if __name__ == "__main__":

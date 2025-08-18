@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0rc2](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc1...v1.0.0rc2) (2025-08-18)
+
+
+### Features
+
+* Per-operation execution progress bar ([#129](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/129)) ([ba68104](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/ba68104903c767f0499b51cac05db7142b362f64))
+
 ## [1.0.0rc1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v0.9.0...v1.0.0rc1) (2025-08-05)
 
 
