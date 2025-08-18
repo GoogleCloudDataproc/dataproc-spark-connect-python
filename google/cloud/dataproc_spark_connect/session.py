@@ -633,9 +633,8 @@ class DataprocSparkSession(SparkSession):
 
                 if server_version < min_version:
                     raise DataprocSparkConnectException(
-                        f"Runtime version {DataprocSparkSession._MIN_RUNTIME_VERSION} client does not support older runtime versions. "
-                        f"Detected server runtime version: {runtime_version}. "
-                        f"Please use a compatible client for runtime version {runtime_version} or upgrade your server to runtime version {DataprocSparkSession._MIN_RUNTIME_VERSION}+."
+                        f"Specified {runtime_version} Dataproc Runtime version is not supported, "
+                        f"use {DataprocSparkSession._MIN_RUNTIME_VERSION} version or higher."
                     )
             except version.InvalidVersion:
                 # If we can't parse the version, log a warning but continue
