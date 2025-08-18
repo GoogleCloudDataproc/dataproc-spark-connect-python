@@ -77,9 +77,8 @@ class TestRuntimeVersionCompatibility(unittest.TestCase):
 
                 min_version = DataprocSparkSession._MIN_RUNTIME_VERSION
                 expected_message = (
-                    f"Runtime version {min_version} client does not support older runtime versions. "
-                    f"Detected server runtime version: {version}. "
-                    f"Please use a compatible client for runtime version {version} or upgrade your server to runtime version {min_version}+."
+                    f"Specified {version} Dataproc Runtime version is not supported, "
+                    f"use {min_version} version or higher."
                 )
                 self.assertEqual(str(context.exception), expected_message)
 
