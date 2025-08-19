@@ -789,6 +789,11 @@ class DataprocSparkSession(SparkSession):
         """
 
     def _display_operation_link(self, operation_id: str):
+        # Don't print per-operation Spark UI link for non-interactive (despite
+        # Ipython or non-IPython)
+        if not environment.is_interactive():
+            return
+
         assert all(
             [
                 operation_id is not None,
@@ -804,12 +809,13 @@ class DataprocSparkSession(SparkSession):
             f"associatedSqlOperationId={operation_id}?project={self._project_id}"
         )
 
+        if environment.is_interactive_terminal():
+            print(f"Spark Query: {url}")
+            return
+
         try:
             from IPython.display import display, HTML
-            from IPython.core.interactiveshell import InteractiveShell
 
-            if not InteractiveShell.initialized():
-                return
             html_element = f"""
               <div>
                   <p><a href="{url}">Spark Query</a> (Operation: {operation_id})</p>
