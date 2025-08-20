@@ -45,6 +45,7 @@ from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
     CreateSessionRequest,
+    DeleteSessionRequest,
     GetSessionRequest,
     Session,
     SessionControllerClient,
@@ -86,6 +87,26 @@ def _is_valid_label_value(value: str) -> bool:
     return bool(re.match(pattern, value))
 
 
+def _is_valid_session_id(session_id: str) -> bool:
+    """
+    Validates if a string complies with Google Cloud session ID format.
+    - Must be 4-63 characters
+    - Only lowercase letters, numbers, and dashes are allowed
+    - Must start with a lowercase letter
+    - Cannot end with a dash
+    """
+    if not session_id:
+        return False
+
+    # Check length (4-63 characters for GCP session IDs)
+    if len(session_id) < 4 or len(session_id) > 63:
+        return False
+
+    # Check if the session ID matches the pattern
+    pattern = r"^[a-z][a-z0-9-]{2,61}[a-z0-9]$"
+    return bool(re.match(pattern, session_id))
+
+
 class DataprocSparkSession(SparkSession):
     """The entry point to programming Spark with the Dataset and DataFrame API.
 
@@ -120,6 +141,7 @@ class DataprocSparkSession(SparkSession):
             self._options: Dict[str, Any] = {}
             self._channel_builder: Optional[DataprocChannelBuilder] = None
             self._dataproc_config: Optional[Session] = None
+            self._custom_session_id: Optional[str] = None
             self._project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
             self._region = os.getenv("GOOGLE_CLOUD_REGION")
             self._client_options = ClientOptions(
@@ -139,6 +161,35 @@ class DataprocSparkSession(SparkSession):
                 "GOOGLE_CLOUD_DATAPROC_API_ENDPOINT",
                 f"{self._region}-dataproc.googleapis.com",
             )
+            return self
+
+        def sessionId(self, session_id: str):
+            """
+            Set a custom session ID for creating or reusing sessions.
+
+            The session ID must:
+            - Be 4-63 characters long
+            - Start with a lowercase letter
+            - Contain only lowercase letters, numbers, and hyphens
+            - Not end with a hyphen
+
+            Args:
+                session_id: The custom session ID to use
+
+            Returns:
+                This Builder instance for method chaining
+
+            Raises:
+                ValueError: If the session ID format is invalid
+            """
+            if not _is_valid_session_id(session_id):
+                raise ValueError(
+                    f"Invalid session ID: '{session_id}'. "
+                    "Session ID must be 4-63 characters, start with a lowercase letter, "
+                    "contain only lowercase letters, numbers, and hyphens, "
+                    "and not end with a hyphen."
+                )
+            self._custom_session_id = session_id
             return self
 
         def dataprocSessionConfig(self, dataproc_config: Session):
@@ -268,7 +319,12 @@ class DataprocSparkSession(SparkSession):
 
                 dataproc_config: Session = self._get_dataproc_config()
 
-                session_id = self.generate_dataproc_session_id()
+                # Use custom session ID if provided, otherwise generate one
+                session_id = (
+                    self._custom_session_id
+                    if self._custom_session_id
+                    else self.generate_dataproc_session_id()
+                )
                 dataproc_config.name = f"projects/{self._project_id}/locations/{self._region}/sessions/{session_id}"
                 logger.debug(
                     f"Dataproc Session configuration:\n{dataproc_config}"
@@ -437,6 +493,33 @@ class DataprocSparkSession(SparkSession):
         def _get_exiting_active_session(
             self,
         ) -> Optional["DataprocSparkSession"]:
+            # First check if a custom session ID was provided
+            if self._custom_session_id:
+                session_response = self._get_or_cleanup_session_by_id(
+                    self._custom_session_id
+                )
+                if session_response is not None:
+                    # Found an active session with the custom ID
+                    session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{self._custom_session_id}"
+                    print(
+                        f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._custom_session_id}?project={self._project_id}"
+                    )
+                    self._display_view_session_details_button(
+                        self._custom_session_id
+                    )
+
+                    # Set the active session ID so other parts of the code can use it
+                    DataprocSparkSession._active_s8s_session_id = (
+                        self._custom_session_id
+                    )
+
+                    return self.__create_spark_connect_session_from_s8s(
+                        session_response, session_name
+                    )
+                # If no active session found with custom ID, return None to create a new one
+                return None
+
+            # Original logic for when no custom session ID is provided
             s8s_session_id = DataprocSparkSession._active_s8s_session_id
             session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{s8s_session_id}"
             session_response = None
@@ -614,6 +697,110 @@ class DataprocSparkSession(SparkSession):
                 )
             except ImportError as e:
                 logger.debug(f"Import error: {e}")
+
+        def _delete_session(self, session_name: str):
+            """Delete a session to free up the session ID for reuse."""
+            try:
+                delete_request = DeleteSessionRequest(name=session_name)
+                SessionControllerClient(
+                    client_options=self._client_options
+                ).delete_session(delete_request)
+                logger.debug(f"Deleted session: {session_name}")
+            except NotFound:
+                logger.debug(f"Session already deleted: {session_name}")
+
+        def _wait_for_termination(self, session_name: str, timeout: int = 180):
+            """Wait for a session to finish terminating."""
+            start_time = time.time()
+            session_client = SessionControllerClient(
+                client_options=self._client_options
+            )
+
+            while time.time() - start_time < timeout:
+                try:
+                    get_request = GetSessionRequest(name=session_name)
+                    session = session_client.get_session(get_request)
+
+                    if session.state in [
+                        Session.State.TERMINATED,
+                        Session.State.FAILED,
+                    ]:
+                        return
+                    elif session.state != Session.State.TERMINATING:
+                        # Session is in unexpected state
+                        logger.warning(
+                            f"Session {session_name} in unexpected state while waiting for termination: {session.state}"
+                        )
+                        return
+
+                    time.sleep(2)
+                except NotFound:
+                    # Session was deleted
+                    return
+
+            logger.warning(
+                f"Timeout waiting for session {session_name} to terminate"
+            )
+
+        def _get_or_cleanup_session_by_id(
+            self, session_id: str
+        ) -> Optional[Session]:
+            """
+            Get existing session or cleanup terminated/failed sessions.
+
+            Returns:
+                Session if ACTIVE/CREATING, None if not found or cleaned up
+            """
+            session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{session_id}"
+
+            try:
+                session_client = SessionControllerClient(
+                    client_options=self._client_options
+                )
+                get_request = GetSessionRequest(name=session_name)
+                session = session_client.get_session(get_request)
+
+                logger.debug(
+                    f"Found existing session {session_id} in state: {session.state}"
+                )
+
+                if session.state in [
+                    Session.State.ACTIVE,
+                    Session.State.CREATING,
+                ]:
+                    # Reuse the active session
+                    logger.info(f"Reusing existing session: {session_id}")
+                    return session
+
+                elif session.state in [
+                    Session.State.TERMINATED,
+                    Session.State.FAILED,
+                ]:
+                    # Delete terminated/failed session to free up the ID
+                    logger.info(
+                        f"Cleaning up {session.state.name} session: {session_id}"
+                    )
+                    self._delete_session(session_name)
+                    return None
+
+                elif session.state == Session.State.TERMINATING:
+                    # Wait for termination, then delete
+                    logger.info(
+                        f"Waiting for session {session_id} to finish terminating"
+                    )
+                    self._wait_for_termination(session_name)
+                    self._delete_session(session_name)
+                    return None
+
+            except NotFound:
+                # Session doesn't exist, can create new one
+                logger.debug(
+                    f"Session {session_id} not found, can create new one"
+                )
+                return None
+            except Exception as e:
+                logger.error(f"Error checking session {session_id}: {e}")
+                return None
 
         @staticmethod
         def generate_dataproc_session_id():

@@ -435,3 +435,110 @@ def test_sql_udf(connect_session):
 
     # Clean up
     connect_session.sql("DROP VIEW IF EXISTS test_table")
+
+
+@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+def test_session_reuse_with_custom_id(
+    auth_type,
+    test_project,
+    test_region,
+    session_controller_client,
+    os_environment,
+):
+    """Test the real-world session reuse scenario: create → terminate → recreate with same ID."""
+    custom_session_id = "ml-pipeline-session"
+
+    # Stop any existing session first to ensure clean state
+    if DataprocSparkSession._active_s8s_session_id:
+        try:
+            existing_session = DataprocSparkSession.getActiveSession()
+            if existing_session:
+                existing_session.stop()
+        except:
+            pass
+
+    # PHASE 1: Create initial session with custom ID
+    spark1 = DataprocSparkSession.builder.sessionId(
+        custom_session_id
+    ).getOrCreate()
+
+    # Verify session is created with custom ID
+    assert DataprocSparkSession._active_s8s_session_id == custom_session_id
+    first_session_uuid = spark1._active_s8s_session_uuid
+
+    # Test basic functionality
+    df1 = spark1.createDataFrame([(1, "initial")], ["id", "stage"])
+    result1 = df1.count()
+    assert result1 == 1
+
+    # PHASE 2: Test session reuse while active
+    # Clear cache to force session lookup
+    DataprocSparkSession._default_session = None
+
+    spark2 = DataprocSparkSession.builder.sessionId(
+        custom_session_id
+    ).getOrCreate()
+
+    # Should reuse the same active session
+    assert DataprocSparkSession._active_s8s_session_id == custom_session_id
+    assert spark2._active_s8s_session_uuid == first_session_uuid
+
+    # Test functionality on reused session
+    df2 = spark2.createDataFrame([(2, "reused")], ["id", "stage"])
+    result2 = df2.count()
+    assert result2 == 1
+
+    # PHASE 3: Terminate session explicitly
+    spark2.stop()
+
+    # Wait a moment for termination to be registered
+    import time
+
+    time.sleep(5)
+
+    # PHASE 4: Recreate with same ID - this tests the cleanup and recreation logic
+    # Clear all session state to ensure fresh lookup
+    DataprocSparkSession._default_session = None
+    DataprocSparkSession._active_s8s_session_id = None
+    DataprocSparkSession._active_s8s_session_uuid = None
+
+    spark3 = DataprocSparkSession.builder.sessionId(
+        custom_session_id
+    ).getOrCreate()
+
+    # Should be a new session with same ID but different UUID
+    assert DataprocSparkSession._active_s8s_session_id == custom_session_id
+    third_session_uuid = spark3._active_s8s_session_uuid
+
+    # Should be different UUID (new session instance)
+    assert third_session_uuid != first_session_uuid
+
+    # Test functionality on recreated session
+    df3 = spark3.createDataFrame([(3, "recreated")], ["id", "stage"])
+    result3 = df3.count()
+    assert result3 == 1
+
+    # Clean up
+    spark3.stop()
+
+
+def test_session_id_validation_in_integration(
+    test_project, test_region, os_environment
+):
+    """Test session ID validation in integration environment."""
+
+    # Test invalid session ID raises ValueError
+    with pytest.raises(ValueError) as exc_info:
+        DataprocSparkSession.builder.sessionId("123-invalid-id")
+    assert "Invalid session ID" in str(exc_info.value)
+
+    # Test that valid session ID works
+    valid_id = "valid-session-id-123"
+    builder = (
+        DataprocSparkSession.builder.sessionId(valid_id)
+        .projectId(test_project)
+        .location(test_region)
+    )
+
+    # Should not raise an exception
+    assert builder._custom_session_id == valid_id
