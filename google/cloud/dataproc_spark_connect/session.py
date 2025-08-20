@@ -98,11 +98,7 @@ def _is_valid_session_id(session_id: str) -> bool:
     if not session_id:
         return False
 
-    # Check length (4-63 characters for GCP session IDs)
-    if len(session_id) < 4 or len(session_id) > 63:
-        return False
-
-    # Check if the session ID matches the pattern
+    # The pattern is sufficient for validation and already enforces length constraints.
     pattern = r"^[a-z][a-z0-9-]{2,61}[a-z0-9]$"
     return bool(re.match(pattern, session_id))
 
@@ -150,6 +146,18 @@ class DataprocSparkSession(SparkSession):
                     f"{self._region}-dataproc.googleapis.com",
                 )
             )
+            self._session_controller_client: Optional[
+                SessionControllerClient
+            ] = None
+
+        @property
+        def session_controller_client(self) -> SessionControllerClient:
+            """Get or create a SessionControllerClient instance."""
+            if self._session_controller_client is None:
+                self._session_controller_client = SessionControllerClient(
+                    client_options=self._client_options
+                )
+            return self._session_controller_client
 
         def projectId(self, project_id):
             self._project_id = project_id
@@ -702,9 +710,7 @@ class DataprocSparkSession(SparkSession):
             """Delete a session to free up the session ID for reuse."""
             try:
                 delete_request = DeleteSessionRequest(name=session_name)
-                SessionControllerClient(
-                    client_options=self._client_options
-                ).delete_session(delete_request)
+                self.session_controller_client.delete_session(delete_request)
                 logger.debug(f"Deleted session: {session_name}")
             except NotFound:
                 logger.debug(f"Session already deleted: {session_name}")
@@ -712,14 +718,13 @@ class DataprocSparkSession(SparkSession):
         def _wait_for_termination(self, session_name: str, timeout: int = 180):
             """Wait for a session to finish terminating."""
             start_time = time.time()
-            session_client = SessionControllerClient(
-                client_options=self._client_options
-            )
 
             while time.time() - start_time < timeout:
                 try:
                     get_request = GetSessionRequest(name=session_name)
-                    session = session_client.get_session(get_request)
+                    session = self.session_controller_client.get_session(
+                        get_request
+                    )
 
                     if session.state in [
                         Session.State.TERMINATED,
@@ -754,11 +759,10 @@ class DataprocSparkSession(SparkSession):
             session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{session_id}"
 
             try:
-                session_client = SessionControllerClient(
-                    client_options=self._client_options
-                )
                 get_request = GetSessionRequest(name=session_name)
-                session = session_client.get_session(get_request)
+                session = self.session_controller_client.get_session(
+                    get_request
+                )
 
                 logger.debug(
                     f"Found existing session {session_id} in state: {session.state}"

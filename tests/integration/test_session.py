@@ -454,7 +454,7 @@ def test_session_reuse_with_custom_id(
             existing_session = DataprocSparkSession.getActiveSession()
             if existing_session:
                 existing_session.stop()
-        except:
+        except Exception:
             pass
 
     # PHASE 1: Create initial session with custom ID
@@ -490,11 +490,6 @@ def test_session_reuse_with_custom_id(
 
     # PHASE 3: Terminate session explicitly
     spark2.stop()
-
-    # Wait a moment for termination to be registered
-    import time
-
-    time.sleep(5)
 
     # PHASE 4: Recreate with same ID - this tests the cleanup and recreation logic
     # Clear all session state to ensure fresh lookup
