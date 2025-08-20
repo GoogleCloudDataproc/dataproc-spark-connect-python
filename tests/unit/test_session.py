@@ -24,10 +24,11 @@ from google.api_core.exceptions import (
 )
 from google.cloud.dataproc_spark_connect import DataprocSparkSession
 from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
-from google.cloud.dataproc_spark_connect.session import _is_valid_label_value
+from google.cloud.dataproc_spark_connect.session import _is_valid_label_value, _is_valid_session_id
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
     CreateSessionRequest,
+    DeleteSessionRequest,
     GetSessionRequest,
     Session,
     SparkConnectConfig,
@@ -2312,6 +2313,111 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 mock.Mock()
             )
             self.stopSession(mock_session_controller_client_instance, session)
+
+
+class SessionIdValidationTests(unittest.TestCase):
+    """Test cases for session ID validation and custom session ID functionality."""
+
+    def test_valid_session_ids(self):
+        """Test that valid session IDs pass validation."""
+        valid_ids = [
+            "test-session",
+            "mysession123",
+            "a-b-c-d",
+            "session-2024-01-01",
+            "spark-session-1",
+            "a" * 63,  # Max length
+            "abcd",  # Min length (4 chars)
+        ]
+        for session_id in valid_ids:
+            self.assertTrue(
+                _is_valid_session_id(session_id),
+                f"Session ID '{session_id}' should be valid",
+            )
+
+    def test_invalid_session_ids(self):
+        """Test that invalid session IDs fail validation."""
+        invalid_ids = [
+            "",  # Empty
+            "123-session",  # Starts with number
+            "Session",  # Contains uppercase
+            "session_name",  # Contains underscore
+            "session-",  # Ends with hyphen
+            "-session",  # Starts with hyphen
+            "abc",  # Too short (< 4 chars)
+            "a" * 64,  # Too long (> 63 chars)
+            "session name",  # Contains space
+            "session.name",  # Contains period
+        ]
+        for session_id in invalid_ids:
+            self.assertFalse(
+                _is_valid_session_id(session_id),
+                f"Session ID '{session_id}' should be invalid",
+            )
+
+    def test_session_id_builder_method(self):
+        """Test the sessionId() builder method."""
+        builder = DataprocSparkSession.builder
+
+        # Test valid session ID
+        result = builder.sessionId("test-session")
+        self.assertEqual(builder._custom_session_id, "test-session")
+        self.assertEqual(result, builder)  # Check method chaining
+
+        # Test invalid session ID raises ValueError
+        with self.assertRaises(ValueError) as context:
+            builder.sessionId("123-invalid")
+        self.assertIn("Invalid session ID", str(context.exception))
+
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.SessionControllerClient"
+    )
+    def test_session_reuse_with_custom_id(self, mock_session_controller_client):
+        """Test that sessions are reused when custom ID is provided."""
+        mock_client = mock_session_controller_client.return_value
+
+        # Setup mock session in ACTIVE state
+        active_session = Session()
+        active_session.state = Session.State.ACTIVE
+        active_session.uuid = "test-uuid"
+        active_session.runtime_info.endpoints = {
+            "Spark Connect Server": "sc://example.com:443"
+        }
+        mock_client.get_session.return_value = active_session
+
+        builder = DataprocSparkSession.Builder()
+        builder._project_id = "test-project"
+        builder._region = "test-region"
+        builder._custom_session_id = "my-session"
+
+        # Test that _get_or_cleanup_session_by_id returns the active session
+        result = builder._get_or_cleanup_session_by_id("my-session")
+        self.assertEqual(result, active_session)
+        mock_client.get_session.assert_called_once()
+        mock_client.delete_session.assert_not_called()
+
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.SessionControllerClient"
+    )
+    def test_session_cleanup_terminated(self, mock_session_controller_client):
+        """Test that terminated sessions are cleaned up."""
+        mock_client = mock_session_controller_client.return_value
+
+        # Setup mock session in TERMINATED state
+        terminated_session = Session()
+        terminated_session.state = Session.State.TERMINATED
+        mock_client.get_session.return_value = terminated_session
+
+        builder = DataprocSparkSession.Builder()
+        builder._project_id = "test-project"
+        builder._region = "test-region"
+        builder._custom_session_id = "my-session"
+
+        # Test that _get_or_cleanup_session_by_id deletes terminated session
+        result = builder._get_or_cleanup_session_by_id("my-session")
+        self.assertIsNone(result)
+        mock_client.get_session.assert_called_once()
+        mock_client.delete_session.assert_called_once()
 
 
 if __name__ == "__main__":
