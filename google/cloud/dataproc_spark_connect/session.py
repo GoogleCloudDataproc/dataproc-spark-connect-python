@@ -428,16 +428,19 @@ class DataprocSparkSession(SparkSession):
             :param html_element: HTML element to display for interactive IPython
                 environment
             """
+            # Don't print any output (Rich or Plain) for non-interactive
+            if not environment.is_interactive():
+                return
+
+            if environment.is_interactive_terminal():
+                print(plain_message)
+                return
+
             try:
                 from IPython.display import display, HTML
-                from IPython.core.interactiveshell import InteractiveShell
 
-                if not InteractiveShell.initialized():
-                    raise DataprocSparkConnectException(
-                        "Not in an Interactive IPython Environment"
-                    )
                 display(HTML(html_element))
-            except (ImportError, DataprocSparkConnectException):
+            except (ImportError):
                 print(plain_message)
 
         def _get_exiting_active_session(
