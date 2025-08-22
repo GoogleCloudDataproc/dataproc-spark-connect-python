@@ -440,7 +440,7 @@ class DataprocSparkSession(SparkSession):
                 from IPython.display import display, HTML
 
                 display(HTML(html_element))
-            except (ImportError):
+            except ImportError:
                 print(plain_message)
 
         def _get_exiting_active_session(
