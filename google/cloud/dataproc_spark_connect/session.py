@@ -646,11 +646,11 @@ class DataprocSparkSession(SparkSession):
                 )
 
         def _display_view_session_details_button(self, session_id):
-            # Display button is supported in colab enterprise
+            # Display button is only supported in colab enterprise
             if not environment.is_colab_enterprise():
                 return
 
-            # Skip button display for colab enterprise Ipython terminals
+            # Skip button display for colab enterprise IPython terminals
             if environment.is_interactive_terminal():
                 return
 
