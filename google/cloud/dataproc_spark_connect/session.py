@@ -646,6 +646,9 @@ class DataprocSparkSession(SparkSession):
                 )
 
         def _display_view_session_details_button(self, session_id):
+            if not environment.is_colab_enterprise():
+                return
+
             try:
                 session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
                 from IPython.core.interactiveshell import InteractiveShell
