@@ -435,16 +435,19 @@ class DataprocSparkSession(SparkSession):
             :param html_element: HTML element to display for interactive IPython
                 environment
             """
+            # Don't print any output (Rich or Plain) for non-interactive
+            if not environment.is_interactive():
+                return
+
+            if environment.is_interactive_terminal():
+                print(plain_message)
+                return
+
             try:
                 from IPython.display import display, HTML
-                from IPython.core.interactiveshell import InteractiveShell
 
-                if not InteractiveShell.initialized():
-                    raise DataprocSparkConnectException(
-                        "Not in an Interactive IPython Environment"
-                    )
                 display(HTML(html_element))
-            except (ImportError, DataprocSparkConnectException):
+            except ImportError:
                 print(plain_message)
 
         def _get_exiting_active_session(
@@ -618,6 +621,14 @@ class DataprocSparkSession(SparkSession):
                     )
 
         def _display_view_session_details_button(self, session_id):
+            # Display button is only supported in colab enterprise
+            if not environment.is_colab_enterprise():
+                return
+
+            # Skip button display for colab enterprise IPython terminals
+            if environment.is_interactive_terminal():
+                return
+
             try:
                 session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
                 from IPython.core.interactiveshell import InteractiveShell

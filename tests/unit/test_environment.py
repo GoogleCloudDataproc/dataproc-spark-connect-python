@@ -13,10 +13,9 @@
 # limitations under the License.
 
 import os
-import json
+import importlib
 import unittest
 from unittest import mock
-import importlib
 
 from google.cloud.dataproc_spark_connect import environment
 
@@ -222,6 +221,73 @@ class TestEnvironment(unittest.TestCase):
             environment.get_client_environment_label(),
             "colab-enterprise",
         )
+
+    @mock.patch("IPython.get_ipython", return_value=mock.MagicMock())
+    def test_is_interactive_ipython_true(self, mock_get_ipython):
+        self.assertTrue(environment.is_interactive())
+
+    @mock.patch("IPython.get_ipython", return_value=None)
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_ipython_false(self, mock_sys, mock_get_ipython):
+        if hasattr(mock_sys, "ps1"):
+            del mock_sys.ps1
+        mock_sys.flags.interactive = 0
+        self.assertFalse(environment.is_interactive())
+
+    @mock.patch("IPython.get_ipython", side_effect=ImportError)
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_true_via_ps1(self, mock_sys, mock_get_ipython):
+        # Simulate interactive environment by setting ps1
+        mock_sys.ps1 = ">>>"
+        mock_sys.flags.interactive = 0
+        self.assertTrue(environment.is_interactive())
+
+    @mock.patch("IPython.get_ipython", side_effect=ImportError)
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_true_via_flags(self, mock_sys, mock_get_ipython):
+        # Simulate interactive environment via sys.flags.interactive
+        if hasattr(mock_sys, "ps1"):
+            del mock_sys.ps1
+        mock_sys.flags.interactive = 1
+        self.assertTrue(environment.is_interactive())
+
+    @mock.patch("IPython.get_ipython", side_effect=ImportError)
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_false(self, mock_sys, mock_get_ipython):
+        # Simulate non-interactive environment
+        if hasattr(mock_sys, "ps1"):
+            del mock_sys.ps1
+        mock_sys.flags.interactive = 0
+        self.assertFalse(environment.is_interactive())
+
+    @mock.patch("sys.stdin")
+    def test_is_terminal_true(self, mock_stdin):
+        mock_stdin.isatty.return_value = True
+        self.assertTrue(environment.is_terminal())
+
+    @mock.patch("sys.stdin")
+    def test_is_terminal_false(self, mock_stdin):
+        mock_stdin.isatty.return_value = False
+        self.assertFalse(environment.is_terminal())
+
+    @mock.patch("sys.stdin")
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    def test_is_interactive_terminal_true(self, mock_sys, mock_stdin):
+        mock_sys.ps1 = ">>>"
+        mock_stdin.isatty.return_value = True
+        self.assertTrue(environment.is_interactive_terminal())
+
+    @mock.patch("sys.stdin")
+    @mock.patch("google.cloud.dataproc_spark_connect.environment.sys")
+    @mock.patch("IPython.get_ipython", side_effect=ImportError)
+    def test_is_interactive_terminal_false(
+        self, mock_get_ipython, mock_sys, mock_stdin
+    ):
+        if hasattr(mock_sys, "ps1"):
+            del mock_sys.ps1
+        mock_sys.flags.interactive = 0
+        mock_stdin.isatty.return_value = False
+        self.assertFalse(environment.is_interactive_terminal())
 
 
 if __name__ == "__main__":
