@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0...v1.0.1) (2025-08-25)
+
+
+### Bug Fixes
+
+* Fix session creation display logic and session details button ([#134](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/134)) ([cd6f813](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/cd6f813e5055e67298210109c5407637a510b400))
+
 ## [1.0.0rc3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc2...v1.0.0rc3) (2025-08-21)
 
 
