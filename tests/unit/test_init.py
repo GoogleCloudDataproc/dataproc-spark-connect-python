@@ -15,6 +15,7 @@ import unittest
 from unittest import mock
 
 from google.cloud.dataproc_spark_connect.session import DataprocSparkSession
+from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 
 
 class TestPythonVersionCheck(unittest.TestCase):
@@ -53,6 +54,73 @@ class TestPythonVersionCheck(unittest.TestCase):
                 session_builder._check_python_version_compatibility("unknown")
 
                 mock_warn.assert_not_called()
+
+
+class TestRuntimeVersionCompatibility(unittest.TestCase):
+
+    def test_older_runtimes_raise_exception(self):
+        """Test that runtime versions < MIN_SUPPORTED_RUNTIME_VERSION raise DataprocSparkConnectException"""
+        session_builder = DataprocSparkSession.Builder()
+        old_versions = ["2.4", "2.2", "1.0"]
+
+        for version in old_versions:
+            with self.subTest(version=version):
+                mock_dataproc_config = mock.Mock()
+                mock_dataproc_config.runtime_config.version = version
+
+                with self.assertRaises(
+                    DataprocSparkConnectException
+                ) as context:
+                    session_builder._check_runtime_compatibility(
+                        mock_dataproc_config
+                    )
+
+                min_version = DataprocSparkSession._MIN_RUNTIME_VERSION
+                expected_message = (
+                    f"Specified {version} Dataproc Runtime version is not supported, "
+                    f"use {min_version} version or higher."
+                )
+                self.assertEqual(str(context.exception), expected_message)
+
+    def test_newer_runtimes_succeed(self):
+        """Test that runtime versions >= MIN_RUNTIME_VERSION succeed"""
+        session_builder = DataprocSparkSession.Builder()
+        new_versions = ["3.0", "3.1", "4.0"]
+
+        for version in new_versions:
+            with self.subTest(version=version):
+                mock_dataproc_config = mock.Mock()
+                mock_dataproc_config.runtime_config.version = version
+
+                try:
+                    session_builder._check_runtime_compatibility(
+                        mock_dataproc_config
+                    )
+                except DataprocSparkConnectException:
+                    self.fail(
+                        f"_check_runtime_compatibility raised DataprocSparkConnectException unexpectedly for version {version}"
+                    )
+
+    @mock.patch("google.cloud.dataproc_spark_connect.session.logger")
+    def test_invalid_runtime_version_logs_warning(self, mock_logger):
+        """Test that invalid runtime versions are logged as warnings but don't fail"""
+        session_builder = DataprocSparkSession.Builder()
+
+        # Mock dataproc config with invalid runtime version
+        mock_dataproc_config = mock.Mock()
+        mock_dataproc_config.runtime_config.version = "invalid.version"
+
+        # Should not raise any exception, but should log warning
+        try:
+            session_builder._check_runtime_compatibility(mock_dataproc_config)
+        except Exception:
+            self.fail(
+                "_check_runtime_compatibility raised exception unexpectedly"
+            )
+
+        mock_logger.warning.assert_called_once_with(
+            "Could not parse runtime version: invalid.version"
+        )
 
 
 if __name__ == "__main__":

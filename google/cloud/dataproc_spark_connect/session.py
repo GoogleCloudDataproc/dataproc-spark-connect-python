@@ -24,6 +24,7 @@ import threading
 import time
 import uuid
 import tqdm
+from packaging import version
 from tqdm import tqdm as cli_tqdm
 from tqdm.notebook import tqdm as notebook_tqdm
 from types import MethodType
@@ -123,6 +124,7 @@ class DataprocSparkSession(SparkSession):
     """
 
     _DEFAULT_RUNTIME_VERSION = "3.0"
+    _MIN_RUNTIME_VERSION = "3.0"
 
     _active_s8s_session_uuid: ClassVar[Optional[str]] = None
     _project_id = None
@@ -313,6 +315,7 @@ class DataprocSparkSession(SparkSession):
             session._register_progress_execution_handler()
 
             DataprocSparkSession._set_default_and_active_session(session)
+
             return session
 
         def __create(self) -> "DataprocSparkSession":
@@ -327,12 +330,16 @@ class DataprocSparkSession(SparkSession):
 
                 dataproc_config: Session = self._get_dataproc_config()
 
+                # Check runtime version compatibility before creating session
+                self._check_runtime_compatibility(dataproc_config)
+
                 # Use custom session ID if provided, otherwise generate one
                 session_id = (
                     self._custom_session_id
                     if self._custom_session_id
                     else self.generate_dataproc_session_id()
                 )
+
                 dataproc_config.name = f"projects/{self._project_id}/locations/{self._region}/sessions/{session_id}"
                 logger.debug(
                     f"Dataproc Session configuration:\n{dataproc_config}"
@@ -486,16 +493,19 @@ class DataprocSparkSession(SparkSession):
             :param html_element: HTML element to display for interactive IPython
                 environment
             """
+            # Don't print any output (Rich or Plain) for non-interactive
+            if not environment.is_interactive():
+                return
+
+            if environment.is_interactive_terminal():
+                print(plain_message)
+                return
+
             try:
                 from IPython.display import display, HTML
-                from IPython.core.interactiveshell import InteractiveShell
 
-                if not InteractiveShell.initialized():
-                    raise DataprocSparkConnectException(
-                        "Not in an Interactive IPython Environment"
-                    )
                 display(HTML(html_element))
-            except (ImportError, DataprocSparkConnectException):
+            except ImportError:
                 print(plain_message)
 
         def _get_exiting_active_session(
@@ -682,7 +692,52 @@ class DataprocSparkSession(SparkSession):
                         stacklevel=3,
                     )
 
+        def _check_runtime_compatibility(self, dataproc_config):
+            """Check if runtime version 3.0 client is compatible with older runtime versions.
+
+            Runtime version 3.0 clients do not support older runtime versions (pre-3.0).
+            There is no backward or forward compatibility between different runtime versions.
+
+            Args:
+                dataproc_config: The Session configuration containing runtime version
+
+            Raises:
+                DataprocSparkConnectException: If server is using pre-3.0 runtime version
+            """
+            runtime_version = dataproc_config.runtime_config.version
+
+            if not runtime_version:
+                return
+
+            logger.debug(f"Detected server runtime version: {runtime_version}")
+
+            # Parse runtime version to check if it's below minimum supported version
+            try:
+                server_version = version.parse(runtime_version)
+                min_version = version.parse(
+                    DataprocSparkSession._MIN_RUNTIME_VERSION
+                )
+
+                if server_version < min_version:
+                    raise DataprocSparkConnectException(
+                        f"Specified {runtime_version} Dataproc Runtime version is not supported, "
+                        f"use {DataprocSparkSession._MIN_RUNTIME_VERSION} version or higher."
+                    )
+            except version.InvalidVersion:
+                # If we can't parse the version, log a warning but continue
+                logger.warning(
+                    f"Could not parse runtime version: {runtime_version}"
+                )
+
         def _display_view_session_details_button(self, session_id):
+            # Display button is only supported in colab enterprise
+            if not environment.is_colab_enterprise():
+                return
+
+            # Skip button display for colab enterprise IPython terminals
+            if environment.is_interactive_terminal():
+                return
+
             try:
                 session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
                 from IPython.core.interactiveshell import InteractiveShell
@@ -972,6 +1027,11 @@ class DataprocSparkSession(SparkSession):
         """
 
     def _display_operation_link(self, operation_id: str):
+        # Don't print per-operation Spark UI link for non-interactive (despite
+        # Ipython or non-IPython)
+        if not environment.is_interactive():
+            return
+
         assert all(
             [
                 operation_id is not None,
@@ -987,12 +1047,13 @@ class DataprocSparkSession(SparkSession):
             f"associatedSqlOperationId={operation_id}?project={self._project_id}"
         )
 
+        if environment.is_interactive_terminal():
+            print(f"Spark Query: {url}")
+            return
+
         try:
             from IPython.display import display, HTML
-            from IPython.core.interactiveshell import InteractiveShell
 
-            if not InteractiveShell.initialized():
-                return
             html_element = f"""
               <div>
                   <p><a href="{url}">Spark Query</a> (Operation: {operation_id})</p>

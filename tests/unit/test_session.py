@@ -166,6 +166,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         ]._ipython_utils
         test_session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/test-region?project=test-project"
         mock_display_link = mock_ipython_utils.display_link
+        mock.patch.dict(
+            os.environ,
+            {
+                "VERTEX_PRODUCT": "COLAB_ENTERPRISE",
+            },
+        ).start()
 
         create_session_request = CreateSessionRequest()
         create_session_request.parent = (
@@ -1151,6 +1157,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     def test_display_button_with_aiplatform_not_installed(
         self, mock_logger, _mock_ipy
     ):
+        mock.patch.dict(
+            os.environ,
+            {
+                "VERTEX_PRODUCT": "COLAB_ENTERPRISE",
+            },
+        ).start()
         DataprocSparkSession.builder._display_view_session_details_button(
             "test_session"
         )
@@ -1173,6 +1185,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     def test_display_button_with_aiplatform_installed_ipython_interactive(
         self, _mock_ipy
     ):
+        mock.patch.dict(
+            os.environ,
+            {
+                "VERTEX_PRODUCT": "COLAB_ENTERPRISE",
+            },
+        ).start()
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
@@ -1201,6 +1219,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
     def test_display_button_with_aiplatform_installed_ipython_non_interactive(
         self, _mock_ipy
     ):
+        mock.patch.dict(
+            os.environ,
+            {
+                "VERTEX_PRODUCT": "COLAB_ENTERPRISE",
+            },
+        ).start()
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
@@ -1739,7 +1763,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
 
         try:
             session = (
-                DataprocSparkSession.builder.runtimeVersion("2.4")
+                DataprocSparkSession.builder.runtimeVersion("3.0")
                 .config(
                     "spark.executor.cores", "8"
                 )  # Use existing Spark config method
@@ -1755,7 +1779,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 0
             ]
             self.assertEqual(
-                create_session_request.session.runtime_config.version, "2.4"
+                create_session_request.session.runtime_config.version, "3.0"
             )
             # Note: Spark configs are handled through existing Spark mechanisms
             # The key is that runtimeVersion works correctly
@@ -2012,7 +2036,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         try:
             # Test combining dataprocSessionConfig with builder pattern methods
             base_config = Session()
-            base_config.runtime_config.version = "2.2"
+            base_config.runtime_config.version = "3.0"
             base_config.runtime_config.properties["spark.executor.cores"] = "4"
             base_config.labels["base-label"] = "base-value"
 
@@ -2035,7 +2059,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                 0
             ]
             self.assertEqual(
-                create_session_request.session.runtime_config.version, "2.2"
+                create_session_request.session.runtime_config.version, "3.0"
             )
             self.assertEqual(
                 create_session_request.session.labels["base-label"],

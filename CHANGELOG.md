@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0rc3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc2...v1.0.0rc3) (2025-08-21)
+
+
+### Features
+
+* Add server/client runtime version compatibility check ([#128](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/128)) ([065cb50](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/065cb509842ab97795965d70f0d6f989c0f12317))
+
+
+### Bug Fixes
+
+* Fix per-operation Spark UI link display logic ([#131](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/131)) ([547b2fe](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/547b2fe19a6505ad868b0bbde9b32d8e3fdb97ba))
+
 ## [1.0.0rc2](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc1...v1.0.0rc2) (2025-08-18)
 
 
