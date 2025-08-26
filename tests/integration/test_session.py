@@ -458,7 +458,7 @@ def test_session_reuse_with_custom_id(
             pass
 
     # PHASE 1: Create initial session with custom ID
-    spark1 = DataprocSparkSession.builder.sessionId(
+    spark1 = DataprocSparkSession.builder.dataprocSessionId(
         custom_session_id
     ).getOrCreate()
 
@@ -475,7 +475,7 @@ def test_session_reuse_with_custom_id(
     # Clear cache to force session lookup
     DataprocSparkSession._default_session = None
 
-    spark2 = DataprocSparkSession.builder.sessionId(
+    spark2 = DataprocSparkSession.builder.dataprocSessionId(
         custom_session_id
     ).getOrCreate()
 
@@ -497,7 +497,7 @@ def test_session_reuse_with_custom_id(
     DataprocSparkSession._active_s8s_session_id = None
     DataprocSparkSession._active_s8s_session_uuid = None
 
-    spark3 = DataprocSparkSession.builder.sessionId(
+    spark3 = DataprocSparkSession.builder.dataprocSessionId(
         custom_session_id
     ).getOrCreate()
 
@@ -524,13 +524,13 @@ def test_session_id_validation_in_integration(
 
     # Test invalid session ID raises ValueError
     with pytest.raises(ValueError) as exc_info:
-        DataprocSparkSession.builder.sessionId("123-invalid-id")
+        DataprocSparkSession.builder.dataprocSessionId("123-invalid-id")
     assert "Invalid session ID" in str(exc_info.value)
 
     # Test that valid session ID works
     valid_id = "valid-session-id-123"
     builder = (
-        DataprocSparkSession.builder.sessionId(valid_id)
+        DataprocSparkSession.builder.dataprocSessionId(valid_id)
         .projectId(test_project)
         .location(test_region)
     )

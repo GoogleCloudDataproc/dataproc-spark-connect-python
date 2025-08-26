@@ -171,7 +171,7 @@ class DataprocSparkSession(SparkSession):
             )
             return self
 
-        def sessionId(self, session_id: str):
+        def dataprocSessionId(self, session_id: str):
             """
             Set a custom session ID for creating or reusing sessions.
 
@@ -501,33 +501,6 @@ class DataprocSparkSession(SparkSession):
         def _get_exiting_active_session(
             self,
         ) -> Optional["DataprocSparkSession"]:
-            # First check if a custom session ID was provided
-            if self._custom_session_id:
-                session_response = self._get_or_cleanup_session_by_id(
-                    self._custom_session_id
-                )
-                if session_response is not None:
-                    # Found an active session with the custom ID
-                    session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{self._custom_session_id}"
-                    print(
-                        f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._custom_session_id}?project={self._project_id}"
-                    )
-                    self._display_view_session_details_button(
-                        self._custom_session_id
-                    )
-
-                    # Set the active session ID so other parts of the code can use it
-                    DataprocSparkSession._active_s8s_session_id = (
-                        self._custom_session_id
-                    )
-
-                    return self.__create_spark_connect_session_from_s8s(
-                        session_response, session_name
-                    )
-                # If no active session found with custom ID, return None to create a new one
-                return None
-
-            # Original logic for when no custom session ID is provided
             s8s_session_id = DataprocSparkSession._active_s8s_session_id
             session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{s8s_session_id}"
             session_response = None
@@ -562,10 +535,29 @@ class DataprocSparkSession(SparkSession):
 
         def getOrCreate(self) -> "DataprocSparkSession":
             with DataprocSparkSession._lock:
+                # Handle custom session ID by setting it early and letting existing logic handle it
+                if self._custom_session_id:
+                    self._handle_custom_session_id()
+
                 session = self._get_exiting_active_session()
                 if session is None:
                     session = self.__create()
                 return session
+
+        def _handle_custom_session_id(self):
+            """Handle custom session ID by checking if it exists and setting _active_s8s_session_id."""
+            session_response = self._get_or_cleanup_session_by_id(
+                self._custom_session_id
+            )
+            if session_response is not None:
+                # Found an active session with the custom ID, set it as the active session
+                DataprocSparkSession._active_s8s_session_id = (
+                    self._custom_session_id
+                )
+            else:
+                # No existing session found, clear any existing active session ID
+                # so we'll create a new one with the custom ID
+                DataprocSparkSession._active_s8s_session_id = None
 
         def _get_dataproc_config(self):
             # Use the property to ensure we always have a config

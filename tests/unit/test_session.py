@@ -2355,18 +2355,18 @@ class SessionIdValidationTests(unittest.TestCase):
                 f"Session ID '{session_id}' should be invalid",
             )
 
-    def test_session_id_builder_method(self):
-        """Test the sessionId() builder method."""
+    def test_dataproc_session_id_builder_method(self):
+        """Test the dataprocSessionId() builder method."""
         builder = DataprocSparkSession.builder
 
         # Test valid session ID
-        result = builder.sessionId("test-session")
+        result = builder.dataprocSessionId("test-session")
         self.assertEqual(builder._custom_session_id, "test-session")
         self.assertEqual(result, builder)  # Check method chaining
 
         # Test invalid session ID raises ValueError
         with self.assertRaises(ValueError) as context:
-            builder.sessionId("123-invalid")
+            builder.dataprocSessionId("123-invalid")
         self.assertIn("Invalid session ID", str(context.exception))
 
     @mock.patch(
