@@ -147,7 +147,12 @@ def test_create_spark_session_with_default_notebook_behavior(
     assert DataprocSparkSession._active_s8s_session_uuid is not None
     connect_session.sql("DROP TABLE IF EXISTS FOO")
     connect_session.stop()
+    session = session_controller_client.get_session(get_session_request)
 
+    assert session.state in [
+        Session.State.TERMINATING,
+        Session.State.TERMINATED,
+    ]
     assert DataprocSparkSession._active_s8s_session_uuid is None
 
 
@@ -328,7 +333,14 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
     assert DataprocSparkSession._active_s8s_session_uuid is not None
 
     connect_session.stop()
+    get_session_request = GetSessionRequest()
+    get_session_request.name = session_name
+    session = session_controller_client.get_session(get_session_request)
 
+    assert session.state in [
+        Session.State.TERMINATING,
+        Session.State.TERMINATED,
+    ]
     assert DataprocSparkSession._active_s8s_session_uuid is None
 
 

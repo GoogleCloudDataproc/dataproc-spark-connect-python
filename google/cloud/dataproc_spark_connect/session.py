@@ -46,6 +46,7 @@ from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
     CreateSessionRequest,
+    DeleteSessionRequest,
     GetSessionRequest,
     Session,
     SessionControllerClient,
@@ -130,6 +131,7 @@ class DataprocSparkSession(SparkSession):
     _region = None
     _client_options = None
     _active_s8s_session_id: ClassVar[Optional[str]] = None
+    _active_session_uses_custom_id: ClassVar[bool] = False
     _execution_progress_bar = dict()
 
     class Builder(SparkSession.Builder):
@@ -353,6 +355,10 @@ class DataprocSparkSession(SparkSession):
 
                 logger.debug("Creating Dataproc Session")
                 DataprocSparkSession._active_s8s_session_id = session_id
+                # Track whether this session uses a custom ID (unmanaged) or auto-generated ID (managed)
+                DataprocSparkSession._active_session_uses_custom_id = (
+                    self._custom_session_id is not None
+                )
                 s8s_creation_start_time = time.time()
 
                 stop_create_session_pbar_event = threading.Event()
@@ -443,6 +449,7 @@ class DataprocSparkSession(SparkSession):
                     if create_session_pbar_thread.is_alive():
                         create_session_pbar_thread.join()
                     DataprocSparkSession._active_s8s_session_id = None
+                    DataprocSparkSession._active_session_uses_custom_id = False
                     raise DataprocSparkConnectException(
                         f"Error while creating Dataproc Session: {e.message}"
                     )
@@ -451,6 +458,7 @@ class DataprocSparkSession(SparkSession):
                     if create_session_pbar_thread.is_alive():
                         create_session_pbar_thread.join()
                     DataprocSparkSession._active_s8s_session_id = None
+                    DataprocSparkSession._active_session_uses_custom_id = False
                     raise RuntimeError(
                         f"Error while creating Dataproc Session"
                     ) from e
@@ -561,6 +569,8 @@ class DataprocSparkSession(SparkSession):
                 DataprocSparkSession._active_s8s_session_id = (
                     self._custom_session_id
                 )
+                # Mark that this session uses a custom ID
+                DataprocSparkSession._active_session_uses_custom_id = True
             else:
                 # No existing session found, clear any existing active session ID
                 # so we'll create a new one with the custom ID
@@ -792,6 +802,47 @@ class DataprocSparkSession(SparkSession):
             except Exception as e:
                 logger.error(f"Error checking session {session_id}: {e}")
                 return None
+
+        def _delete_session(self, session_name: str):
+            """Delete a session to free up the session ID for reuse."""
+            try:
+                delete_request = DeleteSessionRequest(name=session_name)
+                self.session_controller_client.delete_session(delete_request)
+                logger.debug(f"Deleted session: {session_name}")
+            except NotFound:
+                logger.debug(f"Session already deleted: {session_name}")
+
+        def _wait_for_termination(self, session_name: str, timeout: int = 180):
+            """Wait for a session to finish terminating."""
+            start_time = time.time()
+
+            while time.time() - start_time < timeout:
+                try:
+                    get_request = GetSessionRequest(name=session_name)
+                    session = self.session_controller_client.get_session(
+                        get_request
+                    )
+
+                    if session.state in [
+                        Session.State.TERMINATED,
+                        Session.State.FAILED,
+                    ]:
+                        return
+                    elif session.state != Session.State.TERMINATING:
+                        # Session is in unexpected state
+                        logger.warning(
+                            f"Session {session_name} in unexpected state while waiting for termination: {session.state}"
+                        )
+                        return
+
+                    time.sleep(2)
+                except NotFound:
+                    # Session was deleted
+                    return
+
+            logger.warning(
+                f"Timeout waiting for session {session_name} to terminate"
+            )
 
         @staticmethod
         def generate_dataproc_session_id():
@@ -1076,12 +1127,30 @@ class DataprocSparkSession(SparkSession):
 
     def stop(self) -> None:
         with DataprocSparkSession._lock:
-            # Only clean up client-side state, don't terminate the session
-            # as it might be in use by other notebooks or clients
             if DataprocSparkSession._active_s8s_session_id is not None:
+                # Check if this is a managed session (auto-generated ID) or unmanaged session (custom ID)
+                if DataprocSparkSession._active_session_uses_custom_id:
+                    # Unmanaged session (custom ID): Only clean up client-side state
+                    # Don't terminate as it might be in use by other notebooks or clients
+                    logger.debug(
+                        f"Stopping unmanaged session {DataprocSparkSession._active_s8s_session_id} without termination"
+                    )
+                else:
+                    # Managed session (auto-generated ID): Use original behavior and terminate
+                    logger.debug(
+                        f"Terminating managed session {DataprocSparkSession._active_s8s_session_id}"
+                    )
+                    terminate_s8s_session(
+                        DataprocSparkSession._project_id,
+                        DataprocSparkSession._region,
+                        DataprocSparkSession._active_s8s_session_id,
+                        self._client_options,
+                    )
+
                 self._remove_stopped_session_from_file()
                 DataprocSparkSession._active_s8s_session_uuid = None
                 DataprocSparkSession._active_s8s_session_id = None
+                DataprocSparkSession._active_session_uses_custom_id = False
                 DataprocSparkSession._project_id = None
                 DataprocSparkSession._region = None
                 DataprocSparkSession._client_options = None

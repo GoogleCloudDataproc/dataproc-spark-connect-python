@@ -205,8 +205,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_not_called()
-            mock_session_controller_client_instance.get_session.assert_not_called()
+            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
+                terminate_session_request
+            )
+            mock_session_controller_client_instance.get_session.assert_called_once_with(
+                get_session_request
+            )
             mock_display_link.assert_called_once_with(
                 "View Session Details", test_session_url, "dashboard"
             )
@@ -355,8 +359,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_not_called()
-            mock_session_controller_client_instance.get_session.assert_not_called()
+            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
+                terminate_session_request
+            )
+            mock_session_controller_client_instance.get_session.assert_called_once_with(
+                get_session_request
+            )
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -453,8 +461,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_not_called()
-            mock_session_controller_client_instance.get_session.assert_not_called()
+            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
+                terminate_session_request
+            )
+            mock_session_controller_client_instance.get_session.assert_called_once_with(
+                get_session_request
+            )
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -531,8 +543,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_not_called()
-            mock_session_controller_client_instance.get_session.assert_not_called()
+            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
+                terminate_session_request
+            )
+            mock_session_controller_client_instance.get_session.assert_called_once_with(
+                get_session_request
+            )
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -615,8 +631,12 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_not_called()
-            mock_session_controller_client_instance.get_session.assert_not_called()
+            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
+                terminate_session_request
+            )
+            mock_session_controller_client_instance.get_session.assert_called_once_with(
+                get_session_request
+            )
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -906,14 +926,20 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             session = DataprocSparkSession.builder.getOrCreate()
 
         finally:
-            # With new behavior, stop() doesn't terminate sessions
-            # It only cleans up client-side state
-            if session is not None:
-                session.stop()
-            # Verify that terminate_session is NOT called (new behavior)
-            mock_session_controller_client_instance.terminate_session.assert_not_called()
-            # Verify that get_session is NOT called during stop (new behavior)
-            mock_session_controller_client_instance.get_session.assert_not_called()
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+            terminate_session_request = TerminateSessionRequest()
+            terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
+            get_session_request = GetSessionRequest()
+            get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
+            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
+                terminate_session_request
+            )
+            mock_session_controller_client_instance.get_session.assert_called_once_with(
+                get_session_request
+            )
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
