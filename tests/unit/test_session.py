@@ -28,7 +28,6 @@ from google.cloud.dataproc_spark_connect.session import _is_valid_label_value, _
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
     CreateSessionRequest,
-    DeleteSessionRequest,
     GetSessionRequest,
     Session,
     SparkConnectConfig,
@@ -206,12 +205,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
-                terminate_session_request
-            )
-            mock_session_controller_client_instance.get_session.assert_called_once_with(
-                get_session_request
-            )
+            mock_session_controller_client_instance.terminate_session.assert_not_called()
+            mock_session_controller_client_instance.get_session.assert_not_called()
             mock_display_link.assert_called_once_with(
                 "View Session Details", test_session_url, "dashboard"
             )
@@ -360,12 +355,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
-                terminate_session_request
-            )
-            mock_session_controller_client_instance.get_session.assert_called_once_with(
-                get_session_request
-            )
+            mock_session_controller_client_instance.terminate_session.assert_not_called()
+            mock_session_controller_client_instance.get_session.assert_not_called()
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -462,12 +453,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
-                terminate_session_request
-            )
-            mock_session_controller_client_instance.get_session.assert_called_once_with(
-                get_session_request
-            )
+            mock_session_controller_client_instance.terminate_session.assert_not_called()
+            mock_session_controller_client_instance.get_session.assert_not_called()
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -544,12 +531,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
-                terminate_session_request
-            )
-            mock_session_controller_client_instance.get_session.assert_called_once_with(
-                get_session_request
-            )
+            mock_session_controller_client_instance.terminate_session.assert_not_called()
+            mock_session_controller_client_instance.get_session.assert_not_called()
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -632,12 +615,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             terminate_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
             get_session_request = GetSessionRequest()
             get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.terminate_session.assert_called_once_with(
-                terminate_session_request
-            )
-            mock_session_controller_client_instance.get_session.assert_called_once_with(
-                get_session_request
-            )
+            mock_session_controller_client_instance.terminate_session.assert_not_called()
+            mock_session_controller_client_instance.get_session.assert_not_called()
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -927,24 +906,14 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             session = DataprocSparkSession.builder.getOrCreate()
 
         finally:
-            mock_session_controller_client_instance.terminate_session.return_value = (
-                mock.Mock()
-            )
-            session_response1 = Session()
-            session_response1.state = Session.State.ACTIVE
-            session_response2 = Session()
-            session_response2.state = Session.State.TERMINATING
-            mock_session_controller_client_instance.get_session.side_effect = [
-                session_response1,
-                session_response2,
-            ]
+            # With new behavior, stop() doesn't terminate sessions
+            # It only cleans up client-side state
             if session is not None:
                 session.stop()
-            get_session_request = GetSessionRequest()
-            get_session_request.name = "projects/test-project/locations/test-region/sessions/sc-20240702-103952-abcdef"
-            mock_session_controller_client_instance.get_session.assert_has_calls(
-                [mock.call(get_session_request), mock.call(get_session_request)]
-            )
+            # Verify that terminate_session is NOT called (new behavior)
+            mock_session_controller_client_instance.terminate_session.assert_not_called()
+            # Verify that get_session is NOT called during stop (new behavior)
+            mock_session_controller_client_instance.get_session.assert_not_called()
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -2414,17 +2383,16 @@ class SessionIdValidationTests(unittest.TestCase):
         builder._region = "test-region"
         builder._custom_session_id = "my-session"
 
-        # Test that _get_or_cleanup_session_by_id returns the active session
-        result = builder._get_or_cleanup_session_by_id("my-session")
+        # Test that _get_session_by_id returns the active session
+        result = builder._get_session_by_id("my-session")
         self.assertEqual(result, active_session)
         mock_client.get_session.assert_called_once()
-        mock_client.delete_session.assert_not_called()
 
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.SessionControllerClient"
     )
-    def test_session_cleanup_terminated(self, mock_session_controller_client):
-        """Test that terminated sessions are cleaned up."""
+    def test_session_skip_terminated(self, mock_session_controller_client):
+        """Test that terminated sessions are skipped, not cleaned up."""
         mock_client = mock_session_controller_client.return_value
 
         # Setup mock session in TERMINATED state
@@ -2437,11 +2405,10 @@ class SessionIdValidationTests(unittest.TestCase):
         builder._region = "test-region"
         builder._custom_session_id = "my-session"
 
-        # Test that _get_or_cleanup_session_by_id deletes terminated session
-        result = builder._get_or_cleanup_session_by_id("my-session")
+        # Test that _get_session_by_id returns None for terminated session
+        result = builder._get_session_by_id("my-session")
         self.assertIsNone(result)
         mock_client.get_session.assert_called_once()
-        mock_client.delete_session.assert_called_once()
 
 
 if __name__ == "__main__":

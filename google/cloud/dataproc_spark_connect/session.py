@@ -46,7 +46,6 @@ from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
 from google.cloud.dataproc_v1 import (
     AuthenticationConfig,
     CreateSessionRequest,
-    DeleteSessionRequest,
     GetSessionRequest,
     Session,
     SessionControllerClient,
@@ -556,9 +555,7 @@ class DataprocSparkSession(SparkSession):
 
         def _handle_custom_session_id(self):
             """Handle custom session ID by checking if it exists and setting _active_s8s_session_id."""
-            session_response = self._get_or_cleanup_session_by_id(
-                self._custom_session_id
-            )
+            session_response = self._get_session_by_id(self._custom_session_id)
             if session_response is not None:
                 # Found an active session with the custom ID, set it as the active session
                 DataprocSparkSession._active_s8s_session_id = (
@@ -753,55 +750,12 @@ class DataprocSparkSession(SparkSession):
             except ImportError as e:
                 logger.debug(f"Import error: {e}")
 
-        def _delete_session(self, session_name: str):
-            """Delete a session to free up the session ID for reuse."""
-            try:
-                delete_request = DeleteSessionRequest(name=session_name)
-                self.session_controller_client.delete_session(delete_request)
-                logger.debug(f"Deleted session: {session_name}")
-            except NotFound:
-                logger.debug(f"Session already deleted: {session_name}")
-
-        def _wait_for_termination(self, session_name: str, timeout: int = 180):
-            """Wait for a session to finish terminating."""
-            start_time = time.time()
-
-            while time.time() - start_time < timeout:
-                try:
-                    get_request = GetSessionRequest(name=session_name)
-                    session = self.session_controller_client.get_session(
-                        get_request
-                    )
-
-                    if session.state in [
-                        Session.State.TERMINATED,
-                        Session.State.FAILED,
-                    ]:
-                        return
-                    elif session.state != Session.State.TERMINATING:
-                        # Session is in unexpected state
-                        logger.warning(
-                            f"Session {session_name} in unexpected state while waiting for termination: {session.state}"
-                        )
-                        return
-
-                    time.sleep(2)
-                except NotFound:
-                    # Session was deleted
-                    return
-
-            logger.warning(
-                f"Timeout waiting for session {session_name} to terminate"
-            )
-
-        def _get_or_cleanup_session_by_id(
-            self, session_id: str
-        ) -> Optional[Session]:
+        def _get_session_by_id(self, session_id: str) -> Optional[Session]:
             """
-            Get existing session or cleanup terminated/failed sessions.
+            Get existing session by ID.
 
             Returns:
-                Session if ACTIVE/CREATING, None if not found or cleaned up
+                Session if ACTIVE/CREATING, None if not found or not usable
             """
             session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{session_id}"
 
@@ -822,25 +776,11 @@ class DataprocSparkSession(SparkSession):
                     # Reuse the active session
                     logger.info(f"Reusing existing session: {session_id}")
                     return session
-
-                elif session.state in [
-                    Session.State.TERMINATED,
-                    Session.State.FAILED,
-                ]:
-                    # Delete terminated/failed session to free up the ID
+                else:
+                    # Session exists but is not usable (terminated/failed/terminating)
                     logger.info(
-                        f"Cleaning up {session.state.name} session: {session_id}"
+                        f"Session {session_id} in {session.state.name} state, cannot reuse"
                     )
-                    self._delete_session(session_name)
-                    return None
-
-                elif session.state == Session.State.TERMINATING:
-                    # Wait for termination, then delete
-                    logger.info(
-                        f"Waiting for session {session_id} to finish terminating"
-                    )
-                    self._wait_for_termination(session_name)
-                    self._delete_session(session_name)
                     return None
 
             except NotFound:
@@ -1136,14 +1076,9 @@ class DataprocSparkSession(SparkSession):
 
     def stop(self) -> None:
         with DataprocSparkSession._lock:
+            # Only clean up client-side state, don't terminate the session
+            # as it might be in use by other notebooks or clients
             if DataprocSparkSession._active_s8s_session_id is not None:
-                terminate_s8s_session(
-                    DataprocSparkSession._project_id,
-                    DataprocSparkSession._region,
-                    DataprocSparkSession._active_s8s_session_id,
-                    self._client_options,
-                )
-
                 self._remove_stopped_session_from_file()
                 DataprocSparkSession._active_s8s_session_uuid = None
                 DataprocSparkSession._active_s8s_session_id = None
