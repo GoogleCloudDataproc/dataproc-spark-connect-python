@@ -412,15 +412,14 @@ class DataprocSparkSession(SparkSession):
             plain_message = f"Creating Dataproc Session: {session_url}"
             html_element = f"""
                 <div>
-                    <p>Creating Dataproc Spark Session<p>
-                    <p><a href="{session_url}">Dataproc Session</a></p>
+                    <p>Creating <a href="{session_url}">Dataproc Session</a></p>
                 </div>
             """
 
             self._output_element_or_message(plain_message, html_element)
 
         def _print_session_created_message(self):
-            plain_message = f"Dataproc Session was successfully created"
+            plain_message = f"Dataproc Session was successfully created."
             html_element = f"<div><p>{plain_message}</p></div>"
 
             self._output_element_or_message(plain_message, html_element)
@@ -739,7 +738,6 @@ class DataprocSparkSession(SparkSession):
         return f"""
         <div>
             <p><b>Spark Connect</b></p>
-
             <p><a href="{s8s_session}?project={self._project_id}">Dataproc Session</a></p>
             <p><a href="{ui}?project={self._project_id}">Spark UI</a></p>
         </div>
