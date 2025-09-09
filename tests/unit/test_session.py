@@ -668,7 +668,8 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 Session()
             ).getOrCreate()
         self.assertEqual(
-            "Error while creating Dataproc Session", e.exception.args[0]
+            "Error while creating Dataproc Session: Testing create session failure",
+            e.exception.args[0],
         )
 
     @mock.patch("google.auth.default")
