@@ -450,18 +450,32 @@ class DataprocSparkSession(SparkSession):
                         create_session_pbar_thread.join()
                     DataprocSparkSession._active_s8s_session_id = None
                     DataprocSparkSession._active_session_uses_custom_id = False
-                    raise DataprocSparkConnectException(
+
+                    error_msg = (
                         f"Error while creating Dataproc Session: {e.message}"
                     )
+
+                    # Only log in environments that don't auto-display exceptions
+                    if not environment.is_colab_enterprise():
+                        logger.error(error_msg)
+
+                    raise DataprocSparkConnectException(error_msg)
                 except Exception as e:
                     stop_create_session_pbar_event.set()
                     if create_session_pbar_thread.is_alive():
                         create_session_pbar_thread.join()
                     DataprocSparkSession._active_s8s_session_id = None
                     DataprocSparkSession._active_session_uses_custom_id = False
-                    raise RuntimeError(
-                        f"Error while creating Dataproc Session"
-                    ) from e
+
+                    error_msg = (
+                        f"Error while creating Dataproc Session: {str(e)}"
+                    )
+
+                    # Only log in environments that don't auto-display exceptions
+                    if not environment.is_colab_enterprise():
+                        logger.error(error_msg)
+
+                    raise RuntimeError(error_msg) from e
                 finally:
                     stop_create_session_pbar_event.set()
 
