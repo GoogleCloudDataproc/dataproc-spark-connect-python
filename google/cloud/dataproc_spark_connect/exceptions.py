@@ -24,4 +24,4 @@ class DataprocSparkConnectException(Exception):
         super().__init__(message)
 
     def _render_traceback_(self):
-        return self.message
+        return [self.message]
