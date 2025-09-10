@@ -451,12 +451,8 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._active_s8s_session_id = None
                     DataprocSparkSession._active_session_uses_custom_id = False
 
-                    logger.debug(f"DEBUG: Caught InvalidArgument/PermissionDenied: {type(e)}, message: {getattr(e, 'message', 'No message attr')}")
-                    
-                    # Try both .message and str(e) to be safe
-                    error_msg = getattr(e, 'message', str(e))
                     raise DataprocSparkConnectException(
-                        f"Error while creating Dataproc Session: {error_msg}"
+                        f"Error while creating Dataproc Session: {e.message}"
                     )
                 except Exception as e:
                     stop_create_session_pbar_event.set()
@@ -465,8 +461,6 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._active_s8s_session_id = None
                     DataprocSparkSession._active_session_uses_custom_id = False
 
-                    logger.debug(f"DEBUG: Caught other exception: {type(e)}, message: {str(e)}")
-                    
                     raise RuntimeError(
                         f"Error while creating Dataproc Session: {str(e)}"
                     ) from e
