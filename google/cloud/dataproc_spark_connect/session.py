@@ -451,9 +451,9 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._active_s8s_session_id = None
                     DataprocSparkSession._active_session_uses_custom_id = False
 
-                    raise DataprocSparkConnectException(
-                        f"Error while creating Dataproc Session: {e.message}"
-                    )
+                    error_msg = f"Error while creating Dataproc Session: {e.message}"
+                    print(f"ABOUT TO RAISE: {error_msg}")  # Debug
+                    raise DataprocSparkConnectException(error_msg)
                 except Exception as e:
                     stop_create_session_pbar_event.set()
                     if create_session_pbar_thread.is_alive():
