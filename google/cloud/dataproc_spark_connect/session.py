@@ -558,14 +558,22 @@ class DataprocSparkSession(SparkSession):
                 return None
 
         def getOrCreate(self) -> "DataprocSparkSession":
+            logger.error("DEBUG: Entering getOrCreate()")  # Debug
             with DataprocSparkSession._lock:
+                logger.error("DEBUG: Inside lock in getOrCreate()")  # Debug
                 # Handle custom session ID by setting it early and letting existing logic handle it
                 if self._custom_session_id:
+                    logger.error("DEBUG: Handling custom session ID")  # Debug
                     self._handle_custom_session_id()
 
+                logger.error("DEBUG: About to call _get_exiting_active_session()")  # Debug
                 session = self._get_exiting_active_session()
+                logger.error(f"DEBUG: _get_exiting_active_session() returned: {session is not None}")  # Debug
                 if session is None:
+                    logger.error("DEBUG: About to call __create()")  # Debug
                     session = self.__create()
+                    logger.error("DEBUG: __create() completed successfully")  # Debug
+                logger.error("DEBUG: About to return session from getOrCreate()")  # Debug
                 return session
 
         def _handle_custom_session_id(self):
