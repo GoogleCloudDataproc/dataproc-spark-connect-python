@@ -56,11 +56,11 @@ environment variables:
 
 ### Using Spark SQL Magic Commands (Jupyter Notebooks)
 
-The package includes IPython magic commands for executing Spark SQL queries directly in Jupyter notebooks.
+The package includes the [sparksql-magic](https://github.com/cryeo/sparksql-magic) library for executing Spark SQL queries directly in Jupyter notebooks.
 
 1. Load the magic extension:
    ```python
-   %load_ext google.cloud.dataproc_spark_connect.magic
+   %load_ext sparksql_magic
    ```
 
 2. Configure default settings (optional):
