@@ -461,9 +461,9 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._active_s8s_session_id = None
                     DataprocSparkSession._active_session_uses_custom_id = False
 
-                    raise RuntimeError(
-                        f"Error while creating Dataproc Session: {str(e)}"
-                    ) from e
+                    error_msg = f"Error while creating Dataproc Session: {str(e)}"
+                    print(f"SECOND HANDLER - ABOUT TO RAISE RuntimeError: {error_msg}")  # Debug
+                    raise RuntimeError(error_msg) from e
                 finally:
                     stop_create_session_pbar_event.set()
 
