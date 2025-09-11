@@ -320,7 +320,7 @@ class DataprocSparkSession(SparkSession):
             return session
 
         def __create(self) -> "DataprocSparkSession":
-            print("DEBUG: Entering __create() method")  # Debug
+            logger.error("DEBUG: Entering __create() method")  # Debug
             with self._lock:
 
                 if self._options.get("spark.remote", False):
@@ -330,10 +330,10 @@ class DataprocSparkSession(SparkSession):
 
                 from google.cloud.dataproc_v1 import SessionControllerClient
 
-                print("DEBUG: About to call _get_dataproc_config()")  # Debug
+                logger.error("DEBUG: About to call _get_dataproc_config()")  # Debug
                 dataproc_config: Session = self._get_dataproc_config()
 
-                print("DEBUG: About to call _check_runtime_compatibility()")  # Debug
+                logger.error("DEBUG: About to call _check_runtime_compatibility()")  # Debug
                 # Check runtime version compatibility before creating session
                 self._check_runtime_compatibility(dataproc_config)
 
@@ -396,7 +396,7 @@ class DataprocSparkSession(SparkSession):
                 os.environ["SPARK_CONNECT_MODE_ENABLED"] = "1"
 
                 try:
-                    print("DEBUG: Starting session creation try block")  # Debug
+                    logger.error("DEBUG: Starting session creation try block")  # Debug
                     if (
                         os.getenv(
                             "DATAPROC_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT",
@@ -418,7 +418,7 @@ class DataprocSparkSession(SparkSession):
                     self._display_session_link_on_creation(session_id)
                     self._display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
-                    print("DEBUG: About to call operation.result()")  # Debug
+                    logger.error("DEBUG: About to call operation.result()")  # Debug
                     session_response: Session = operation.result(
                         polling=retry.Retry(
                             predicate=POLLING_PREDICATE,
@@ -457,7 +457,7 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._active_session_uses_custom_id = False
 
                     error_msg = f"Error while creating Dataproc Session: {e.message}"
-                    print(f"ABOUT TO RAISE: {error_msg}")  # Debug
+                    logger.error(f"ABOUT TO RAISE: {error_msg}")  # Debug
                     raise DataprocSparkConnectException(error_msg)
                 except Exception as e:
                     stop_create_session_pbar_event.set()
@@ -467,7 +467,7 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._active_session_uses_custom_id = False
 
                     error_msg = f"Error while creating Dataproc Session: {str(e)}"
-                    print(f"SECOND HANDLER - ABOUT TO RAISE RuntimeError: {error_msg}")  # Debug
+                    logger.error(f"SECOND HANDLER - ABOUT TO RAISE RuntimeError: {error_msg}")  # Debug
                     raise RuntimeError(error_msg) from e
                 finally:
                     stop_create_session_pbar_event.set()
