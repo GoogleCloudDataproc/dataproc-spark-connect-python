@@ -54,6 +54,42 @@ environment variables:
    spark = DataprocSparkSession.builder.dataprocSessionConfig(session_config).getOrCreate()
    ```
 
+### Using Spark SQL Magic Commands (Jupyter Notebooks)
+
+The package includes IPython magic commands for executing Spark SQL queries directly in Jupyter notebooks.
+
+1. Load the magic extension:
+   ```python
+   %load_ext google.cloud.dataproc_spark_connect.magic
+   ```
+
+2. Configure default settings (optional):
+   ```python
+   %config SparkSql.limit=20
+   ```
+
+3. Execute SQL queries:
+   ```python
+   %%sparksql
+   SELECT * FROM your_table
+   ```
+
+4. Advanced usage with options:
+   ```python
+   # Cache results and create a view
+   %%sparksql --cache --view result_view df
+   SELECT * FROM your_table WHERE condition = true
+   ```
+
+Available options:
+- `--cache` / `-c`: Cache the DataFrame
+- `--eager` / `-e`: Cache with eager loading
+- `--view VIEW` / `-v VIEW`: Create a temporary view
+- `--limit N` / `-l N`: Override default row display limit
+- `variable_name`: Store result in a variable
+
+See `examples/sparksql_magic_demo.ipynb` for more examples.
+
 ## Developing
 
 For development instructions see [guide](DEVELOPING.md).

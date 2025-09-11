@@ -19,6 +19,7 @@ import certifi
 
 from google.api_core import client_options
 from google.cloud.dataproc_spark_connect import DataprocSparkSession
+# Magic module imports are done within test functions to avoid IPython dependency issues
 from google.cloud.dataproc_v1 import (
     CreateSessionTemplateRequest,
     DeleteSessionRequest,
@@ -79,7 +80,7 @@ def os_environment(auth_type, image_version, test_project, test_region):
         )
     os.environ["DATAPROC_SPARK_CONNECT_AUTH_TYPE"] = auth_type
     if auth_type == "END_USER_CREDENTIALS":
-        os.environ.pop("DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT")
+        os.environ.pop("DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT", None)
     # Add SSL certificate fix
     os.environ["SSL_CERT_FILE"] = certifi.where()
     os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
@@ -113,7 +114,11 @@ def session_template_controller_client(test_client_options):
 
 @pytest.fixture
 def connect_session(test_project, test_region, os_environment):
-    return DataprocSparkSession.builder.getOrCreate()
+    return (
+        DataprocSparkSession.builder.projectId(test_project)
+        .location(test_region)
+        .getOrCreate()
+    )
 
 
 @pytest.fixture
@@ -537,3 +542,129 @@ def test_session_id_validation_in_integration(
 
     # Should not raise an exception
     assert builder._custom_session_id == valid_id
+
+
+@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+def test_sparksql_magic_basic_query(connect_session):
+    """Test basic %%sparksql magic command usage."""
+    from google.cloud.dataproc_spark_connect.magic.sparksql import DataprocSparkSql
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+
+    # Create real IPython shell with DataprocSparkSession
+    shell = TerminalInteractiveShell.instance()
+    shell.user_ns = {"spark": connect_session}
+
+    # Create magic instance
+    magic = DataprocSparkSql(shell=shell)
+
+    # Test basic SQL query using magic
+    sql_code = """
+    SELECT 'test' as name, 'Engineering' as department, 85000 as salary
+    UNION ALL SELECT 'user', 'Marketing', 65000
+    """
+
+    # Execute magic command with variable capture
+    result = magic.sparksql("result_df", sql_code)
+
+    # Verify result is a DataFrame and captured in shell namespace
+    assert result is not None
+    assert "result_df" in shell.user_ns
+    assert shell.user_ns["result_df"] is result
+
+    # Verify the actual data
+    data = result.collect()
+    assert len(data) == 2
+    assert data[0]["name"] in ["test", "user"]
+
+
+@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+def test_sparksql_magic_with_variable_capture(connect_session):
+    """Test %%sparksql magic with variable capture."""
+    from google.cloud.dataproc_spark_connect.magic.sparksql import DataprocSparkSql
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+
+    # Create real IPython shell
+    shell = TerminalInteractiveShell.instance()
+    shell.user_ns = {"spark": connect_session}
+
+    # Create magic instance
+    magic = DataprocSparkSql(shell=shell)
+
+    # Test magic with variable capture
+    sql_code = """
+    SELECT 'Engineering' as department, 80000 as avg_salary
+    UNION ALL SELECT 'Marketing', 67500
+    """
+
+    # Execute magic command with variable capture
+    result = magic.sparksql("result_df", sql_code)
+
+    # Verify result is captured in shell namespace
+    assert "result_df" in shell.user_ns
+    assert shell.user_ns["result_df"] is result
+
+    # Verify the actual data
+    data = result.collect()
+    assert len(data) == 2
+
+
+@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+def test_sparksql_magic_with_variable_interpolation(connect_session):
+    """Test %%sparksql magic with variable interpolation."""
+    from google.cloud.dataproc_spark_connect.magic.sparksql import DataprocSparkSql
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+
+    # Create real IPython shell with variables
+    shell = TerminalInteractiveShell.instance()
+    shell.user_ns = {
+        "spark": connect_session,
+        "min_salary": 70000,
+        "dept_name": "Engineering",
+    }
+
+    # Create magic instance
+    magic = DataprocSparkSql(shell=shell)
+
+    # Test magic with variable interpolation
+    sql_code = """
+    SELECT '{dept_name}' as department, {min_salary} as threshold
+    UNION ALL SELECT 'Marketing', {min_salary} - 5000
+    """
+
+    # Execute magic command with variable capture
+    result = magic.sparksql("result_df", sql_code)
+
+    # Verify interpolation worked
+    data = result.collect()
+    assert len(data) == 2
+    eng_row = next(r for r in data if r["department"] == "Engineering")
+    assert eng_row["threshold"] == 70000
+
+
+@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+def test_sparksql_magic_error_handling(connect_session):
+    """Test %%sparksql magic error handling with invalid SQL."""
+    from google.cloud.dataproc_spark_connect.magic.sparksql import DataprocSparkSql
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+
+    # Create real IPython shell
+    shell = TerminalInteractiveShell.instance()
+    shell.user_ns = {"spark": connect_session}
+
+    # Create magic instance
+    magic = DataprocSparkSql(shell=shell)
+
+    # Test magic with invalid SQL
+    sql_code = "SELECT * FROM non_existent_table_xyz"
+
+    # Execute magic command - should handle error gracefully
+    try:
+        result = magic.sparksql("", sql_code)
+        # If it doesn't raise an exception, the error was handled gracefully
+        assert result is None  # Magic should return None on error
+    except Exception as e:
+        # If it raises an exception, it should be a meaningful SQL error
+        assert (
+            "non_existent_table_xyz" in str(e).lower()
+            or "table" in str(e).lower()
+        )

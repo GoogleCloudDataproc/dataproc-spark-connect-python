@@ -30,6 +30,8 @@ setup(
     install_requires=[
         "google-api-core>=2.19",
         "google-cloud-dataproc>=5.18",
+        "IPython>=7.4.0",
+        "ipywidgets>=8.0.0",
         "packaging>=20.0",
         "pyspark[connect]~=4.0.0",
         "tqdm>=4.67",
