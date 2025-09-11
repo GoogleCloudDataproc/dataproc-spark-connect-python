@@ -88,7 +88,7 @@ Available options:
 - `--limit N` / `-l N`: Override default row display limit
 - `variable_name`: Store result in a variable
 
-See `examples/sparksql_magic_demo.ipynb` for more examples.
+See [sparksql-magic](https://github.com/cryeo/sparksql-magic) for more examples.
 
 ## Developing
 
