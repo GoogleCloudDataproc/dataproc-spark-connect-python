@@ -562,9 +562,9 @@ class DataprocSparkSession(SparkSession):
 
                 # Register this session as the instantiated SparkSession for compatibility
                 # with tools and libraries that expect SparkSession._instantiatedSession
-                from pyspark.sql import SparkSession
+                from pyspark.sql import SparkSession as PySparkSQLSession
 
-                SparkSession._instantiatedSession = session
+                PySparkSQLSession._instantiatedSession = session
 
                 return session
 
