@@ -393,6 +393,7 @@ class DataprocSparkSession(SparkSession):
                 os.environ["SPARK_CONNECT_MODE_ENABLED"] = "1"
 
                 try:
+                    print("DEBUG: Starting session creation try block")  # Debug
                     if (
                         os.getenv(
                             "DATAPROC_SPARK_CONNECT_SESSION_TERMINATE_AT_EXIT",
@@ -414,6 +415,7 @@ class DataprocSparkSession(SparkSession):
                     self._display_session_link_on_creation(session_id)
                     self._display_view_session_details_button(session_id)
                     create_session_pbar_thread.start()
+                    print("DEBUG: About to call operation.result()")  # Debug
                     session_response: Session = operation.result(
                         polling=retry.Retry(
                             predicate=POLLING_PREDICATE,
