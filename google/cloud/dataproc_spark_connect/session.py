@@ -320,6 +320,7 @@ class DataprocSparkSession(SparkSession):
             return session
 
         def __create(self) -> "DataprocSparkSession":
+            print("DEBUG: Entering __create() method")  # Debug
             with self._lock:
 
                 if self._options.get("spark.remote", False):
@@ -329,8 +330,10 @@ class DataprocSparkSession(SparkSession):
 
                 from google.cloud.dataproc_v1 import SessionControllerClient
 
+                print("DEBUG: About to call _get_dataproc_config()")  # Debug
                 dataproc_config: Session = self._get_dataproc_config()
 
+                print("DEBUG: About to call _check_runtime_compatibility()")  # Debug
                 # Check runtime version compatibility before creating session
                 self._check_runtime_compatibility(dataproc_config)
 
