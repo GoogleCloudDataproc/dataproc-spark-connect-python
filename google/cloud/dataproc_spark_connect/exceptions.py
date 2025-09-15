@@ -19,10 +19,13 @@ class DataprocSparkConnectException(Exception):
     doesn't provide any additional information.
     """
 
+    _ipython_handler_patched = False
+
     def __init__(self, message):
         self.message = message
         super().__init__(message)
-        self._setup_ipython_exception_handler()
+        if not DataprocSparkConnectException._ipython_handler_patched:
+            self._setup_ipython_exception_handler()
 
     def _render_traceback_(self):
         return [self.message]
@@ -40,6 +43,7 @@ class DataprocSparkConnectException(Exception):
                     ipython._original_showtraceback = ipython.showtraceback
 
                 def custom_showtraceback(
+                    shell,
                     exc_tuple=None,
                     filename=None,
                     tb_offset=None,
@@ -56,7 +60,7 @@ class DataprocSparkConnectException(Exception):
                         print(f"Error: {value.message}", file=sys.stderr)
                     else:
                         # Use original behavior for other exceptions
-                        ipython._original_showtraceback(
+                        shell._original_showtraceback(
                             exc_tuple,
                             filename,
                             tb_offset,
@@ -66,6 +70,8 @@ class DataprocSparkConnectException(Exception):
 
                 # Override the method
                 ipython.showtraceback = custom_showtraceback
+                # Mark as patched to avoid redundant setup
+                DataprocSparkConnectException._ipython_handler_patched = True
 
         except ImportError:
             # Not in IPython environment, no action needed
