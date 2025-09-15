@@ -19,7 +19,60 @@ class DataprocSparkConnectException(Exception):
     doesn't provide any additional information.
     """
 
+    _ipython_handler_patched = False
+
     def __init__(self, message):
         self.message = message
         super().__init__(message)
+        if not DataprocSparkConnectException._ipython_handler_patched:
+            self._setup_ipython_exception_handler()
 
+    def _render_traceback_(self):
+        return [self.message]
+
+    def _setup_ipython_exception_handler(self):
+        """Setup custom exception handler for IPython environments to ensure minimal traceback display."""
+        try:
+            from IPython import get_ipython
+            import sys
+
+            ipython = get_ipython()
+            if ipython is not None:
+                # Store original method if not already stored
+                if not hasattr(ipython, "_original_showtraceback"):
+                    ipython._original_showtraceback = ipython.showtraceback
+
+                def custom_showtraceback(
+                    shell,
+                    exc_tuple=None,
+                    filename=None,
+                    tb_offset=None,
+                    exception_only=False,
+                    running_compiled_code=False,
+                ):
+                    # Get the current exception info
+                    _, value, _ = (
+                        sys.exc_info() if exc_tuple is None else exc_tuple
+                    )
+
+                    # If it's our custom exception, show only the message
+                    if isinstance(value, DataprocSparkConnectException):
+                        print(f"Error: {value.message}", file=sys.stderr)
+                    else:
+                        # Use original behavior for other exceptions
+                        shell._original_showtraceback(
+                            exc_tuple,
+                            filename,
+                            tb_offset,
+                            exception_only,
+                            running_compiled_code,
+                        )
+
+                # Override the method
+                ipython.showtraceback = custom_showtraceback
+                # Mark as patched to avoid redundant setup
+                DataprocSparkConnectException._ipython_handler_patched = True
+
+        except ImportError:
+            # Not in IPython environment, no action needed
+            pass
