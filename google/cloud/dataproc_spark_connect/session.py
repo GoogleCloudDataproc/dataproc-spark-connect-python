@@ -1155,6 +1155,20 @@ class DataprocSparkSession(SparkSession):
                     )
 
                 self._remove_stopped_session_from_file()
+
+                # Clean up SparkSession._instantiatedSession if it points to this session
+                try:
+                    from pyspark.sql import SparkSession as PySparkSQLSession
+
+                    if PySparkSQLSession._instantiatedSession is self:
+                        PySparkSQLSession._instantiatedSession = None
+                        logger.debug(
+                            "Cleared SparkSession._instantiatedSession reference"
+                        )
+                except (ImportError, AttributeError):
+                    # PySpark not available or _instantiatedSession doesn't exist
+                    pass
+
                 DataprocSparkSession._active_s8s_session_uuid = None
                 DataprocSparkSession._active_s8s_session_id = None
                 DataprocSparkSession._active_session_uses_custom_id = False

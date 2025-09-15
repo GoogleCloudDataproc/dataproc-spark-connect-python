@@ -546,6 +546,14 @@ def test_session_id_validation_in_integration(
 @pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
 def test_sparksql_magic_library_available(connect_session):
     """Test that sparksql-magic library can be imported and loaded."""
+    pytest.importorskip(
+        "IPython", reason="IPython not available (install with magic extra)"
+    )
+    pytest.importorskip(
+        "sparksql_magic",
+        reason="sparksql-magic not available (install with magic extra)",
+    )
+
     from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
     # Create real IPython shell
@@ -572,6 +580,14 @@ def test_sparksql_magic_library_available(connect_session):
 @pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
 def test_sparksql_magic_with_dataproc_session(connect_session):
     """Test that sparksql-magic works with registered DataprocSparkSession."""
+    pytest.importorskip(
+        "IPython", reason="IPython not available (install with magic extra)"
+    )
+    pytest.importorskip(
+        "sparksql_magic",
+        reason="sparksql-magic not available (install with magic extra)",
+    )
+
     from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
     # Create real IPython shell (DataprocSparkSession is already registered globally)
