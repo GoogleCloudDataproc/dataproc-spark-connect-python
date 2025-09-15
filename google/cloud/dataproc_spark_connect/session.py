@@ -560,12 +560,6 @@ class DataprocSparkSession(SparkSession):
                 if session is None:
                     session = self.__create()
 
-                # Register this session as the instantiated SparkSession for compatibility
-                # with tools and libraries that expect SparkSession._instantiatedSession
-                from pyspark.sql import SparkSession as PySparkSQLSession
-
-                PySparkSQLSession._instantiatedSession = session
-
                 return session
 
         def _handle_custom_session_id(self):
