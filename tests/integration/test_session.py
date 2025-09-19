@@ -79,7 +79,7 @@ def os_environment(auth_type, image_version, test_project, test_region):
         )
     os.environ["DATAPROC_SPARK_CONNECT_AUTH_TYPE"] = auth_type
     if auth_type == "END_USER_CREDENTIALS":
-        os.environ.pop("DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT")
+        os.environ.pop("DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT", None)
     # Add SSL certificate fix
     os.environ["SSL_CERT_FILE"] = certifi.where()
     os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
@@ -113,7 +113,11 @@ def session_template_controller_client(test_client_options):
 
 @pytest.fixture
 def connect_session(test_project, test_region, os_environment):
-    return DataprocSparkSession.builder.getOrCreate()
+    return (
+        DataprocSparkSession.builder.projectId(test_project)
+        .location(test_region)
+        .getOrCreate()
+    )
 
 
 @pytest.fixture
@@ -537,3 +541,83 @@ def test_session_id_validation_in_integration(
 
     # Should not raise an exception
     assert builder._custom_session_id == valid_id
+
+
+@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+def test_sparksql_magic_library_available(connect_session):
+    """Test that sparksql-magic library can be imported and loaded."""
+    pytest.importorskip(
+        "IPython", reason="IPython not available (install with magic extra)"
+    )
+    pytest.importorskip(
+        "sparksql_magic",
+        reason="sparksql-magic not available (install with magic extra)",
+    )
+
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+
+    # Create real IPython shell
+    shell = TerminalInteractiveShell.instance()
+    shell.user_ns = {"spark": connect_session}
+
+    # Test that sparksql_magic can be loaded (this verifies the dependency works)
+    try:
+        shell.run_line_magic("load_ext", "sparksql_magic")
+        magic_loaded = True
+    except Exception as e:
+        magic_loaded = False
+        print(f"Failed to load sparksql_magic: {e}")
+
+    assert magic_loaded, "sparksql_magic should be available as a dependency"
+
+    # Test that DataprocSparkSession can execute SQL (ensuring basic compatibility)
+    result = connect_session.sql("SELECT 'integration_test' as test_column")
+    data = result.collect()
+    assert len(data) == 1
+    assert data[0]["test_column"] == "integration_test"
+
+
+@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
+def test_sparksql_magic_with_dataproc_session(connect_session):
+    """Test that sparksql-magic works with registered DataprocSparkSession."""
+    pytest.importorskip(
+        "IPython", reason="IPython not available (install with magic extra)"
+    )
+    pytest.importorskip(
+        "sparksql_magic",
+        reason="sparksql-magic not available (install with magic extra)",
+    )
+
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+
+    # Create real IPython shell (DataprocSparkSession is already registered globally)
+    shell = TerminalInteractiveShell.instance()
+
+    # Load the sparksql_magic extension
+    shell.run_line_magic("load_ext", "sparksql_magic")
+
+    # Test sparksql magic with SQL expressions (no variable capture to avoid namespace issues)
+    shell.run_cell_magic(
+        "sparksql",
+        "result_df",
+        """
+        SELECT 
+            10 * 5 as multiplication,
+            SQRT(16) as square_root,
+            CONCAT('Dataproc', '-', 'Spark') as joined_string
+        """,
+    )
+
+    # Verify the result is captured in the namespace
+    assert "result_df" in shell.user_ns
+    df = shell.user_ns["result_df"]
+    assert df is not None
+
+    # Verify the computed values
+    data = df.collect()
+    assert len(data) == 1
+    row = data[0]
+
+    assert row["multiplication"] == 50
+    assert row["square_root"] == 4.0
+    assert row["joined_string"] == "Dataproc-Spark"

@@ -54,6 +54,52 @@ environment variables:
    spark = DataprocSparkSession.builder.dataprocSessionConfig(session_config).getOrCreate()
    ```
 
+### Using Spark SQL Magic Commands (Jupyter Notebooks)
+
+The package supports the [sparksql-magic](https://github.com/cryeo/sparksql-magic) library for executing Spark SQL queries directly in Jupyter notebooks.
+
+**Installation**: To use magic commands, install with the `magic` extra:
+```bash
+pip install dataproc-spark-connect[magic]
+```
+
+1. Load the magic extension:
+   ```python
+   %load_ext sparksql_magic
+   ```
+
+2. Configure default settings (optional):
+   ```python
+   %config SparkSql.limit=20
+   ```
+
+3. Execute SQL queries:
+   ```python
+   %%sparksql
+   SELECT * FROM your_table
+   ```
+
+4. Advanced usage with options:
+   ```python
+   # Cache results and create a view
+   %%sparksql --cache --view result_view df
+   SELECT * FROM your_table WHERE condition = true
+   ```
+
+Available options:
+- `--cache` / `-c`: Cache the DataFrame
+- `--eager` / `-e`: Cache with eager loading
+- `--view VIEW` / `-v VIEW`: Create a temporary view
+- `--limit N` / `-l N`: Override default row display limit
+- `variable_name`: Store result in a variable
+
+See [sparksql-magic](https://github.com/cryeo/sparksql-magic) for more examples.
+
+**Note**: Magic commands are optional. If you only need basic DataprocSparkSession functionality without Jupyter magic support, install the base package:
+```bash
+pip install dataproc-spark-connect
+```
+
 ## Developing
 
 For development instructions see [guide](DEVELOPING.md).

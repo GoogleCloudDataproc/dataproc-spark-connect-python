@@ -35,4 +35,10 @@ setup(
         "tqdm>=4.67",
         "websockets>=14.0",
     ],
+    extras_require={
+        "magic": [
+            "IPython>=7.4.0",
+            "sparksql-magic>=0.0.3",
+        ],
+    },
 )
