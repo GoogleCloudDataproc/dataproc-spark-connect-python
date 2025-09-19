@@ -1872,6 +1872,62 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
     @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
+    def test_service_account_sets_auth_type_automatically(
+        self,
+        mock_is_s8s_session_active,
+        mock_dataproc_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        """Test that setting a service account automatically sets auth type to SERVICE_ACCOUNT."""
+        session = None
+        mock_session_controller_client_instance = (
+            self._setup_session_creation_mocks(
+                mock_is_s8s_session_active,
+                mock_dataproc_session_id,
+                mock_client_config,
+                mock_session_controller_client,
+                mock_credentials,
+            )
+        )
+
+        try:
+            session = DataprocSparkSession.builder.serviceAccount(
+                "test-service@project.iam.gserviceaccount.com"
+            ).getOrCreate()
+
+            # Verify the session was created with the correct authentication config
+            create_session_request = mock_session_controller_client_instance.create_session.call_args[
+                0
+            ][
+                0
+            ]
+            self.assertEqual(
+                create_session_request.session.environment_config.execution_config.service_account,
+                "test-service@project.iam.gserviceaccount.com",
+            )
+            # Verify that authentication type is automatically set to SERVICE_ACCOUNT
+            self.assertEqual(
+                create_session_request.session.environment_config.execution_config.authentication_config.user_workload_authentication_type,
+                AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT,
+            )
+
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
+    )
     def test_builder_pattern_ttl_with_timedelta(
         self,
         mock_is_s8s_session_active,

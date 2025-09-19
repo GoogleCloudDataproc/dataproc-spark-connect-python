@@ -593,7 +593,15 @@ class DataprocSparkSession(SparkSession):
             self._check_python_version_compatibility(
                 dataproc_config.runtime_config.version
             )
+
+            # Set authentication type to SERVICE_ACCOUNT when service account is provided
             if (
+                dataproc_config.environment_config.execution_config.service_account
+            ):
+                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                    AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
+                )
+            elif (
                 not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
                 and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
             ):
