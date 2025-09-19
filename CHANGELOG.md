@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0rc5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0...v1.0.0rc5) (2025-09-19)
+## [1.0.0rc5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc4...v1.0.0rc5) (2025-09-19)
 
 
 ### Bug Fixes
