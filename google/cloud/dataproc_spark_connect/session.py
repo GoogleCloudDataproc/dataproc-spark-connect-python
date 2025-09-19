@@ -603,59 +603,23 @@ class DataprocSparkSession(SparkSession):
                     "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT"
                 )
 
-            # When a service account is provided, let the API handle authentication automatically
-            # Do NOT set authentication type - let Dataproc API infer it from the service account
+            # Auto-set authentication type to SERVICE_ACCOUNT when service account is provided
             service_account = (
                 dataproc_config.environment_config.execution_config.service_account
             )
 
-            # AGGRESSIVE DEBUG: Always log the current state
-            current_auth_type = (
-                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
-            )
-            print(
-                f"🔧 [DATAPROC AUTH DEBUG] Service account: {service_account}"
-            )
-            print(
-                f"🔧 [DATAPROC AUTH DEBUG] Current auth type BEFORE fix: {current_auth_type}"
-            )
-            logger.warning(
-                f"🔧 [DATAPROC AUTH DEBUG] Service account: {service_account}"
-            )
-            logger.warning(
-                f"🔧 [DATAPROC AUTH DEBUG] Current auth type BEFORE fix: {current_auth_type}"
-            )
-
             if service_account:
-                print(
-                    f"🔧 [DATAPROC AUTH DEBUG] Service account detected, setting auth type to SERVICE_ACCOUNT"
-                )
-                logger.warning(
-                    f"🔧 [DATAPROC AUTH DEBUG] Service account detected, setting auth type to SERVICE_ACCOUNT"
-                )
                 # When service account is provided, explicitly set auth type to SERVICE_ACCOUNT
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
                     AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
-                )
-                final_auth_type = (
-                    dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
-                )
-                print(
-                    f"🔧 [DATAPROC AUTH DEBUG] Final auth type AFTER fix: {final_auth_type}"
-                )
-                logger.warning(
-                    f"🔧 [DATAPROC AUTH DEBUG] Final auth type AFTER fix: {final_auth_type}"
                 )
             elif (
                 not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
                 and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
             ):
                 # Only set auth type from environment if no service account is present
-                env_auth_type = os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
-                print(f"🔧 [DATAPROC AUTH DEBUG] Setting auth type from environment: {env_auth_type}")
-                logger.warning(f"🔧 [DATAPROC AUTH DEBUG] Setting auth type from environment: {env_auth_type}")
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
-                    env_auth_type
+                    os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
                 ]
             if (
                 not dataproc_config.environment_config.execution_config.subnetwork_uri
@@ -723,14 +687,6 @@ class DataprocSparkSession(SparkSession):
                             f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value:"
                             f" {default_datasource}. Supported value is 'bigquery'."
                         )
-
-            # FINAL DEBUG: Log the final auth type before returning
-            final_service_account = dataproc_config.environment_config.execution_config.service_account
-            final_auth_type = dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
-            print(f"🔧 [DATAPROC AUTH DEBUG] FINAL - Service account: {final_service_account}")
-            print(f"🔧 [DATAPROC AUTH DEBUG] FINAL - Auth type: {final_auth_type}")
-            logger.warning(f"🔧 [DATAPROC AUTH DEBUG] FINAL - Service account: {final_service_account}")
-            logger.warning(f"🔧 [DATAPROC AUTH DEBUG] FINAL - Auth type: {final_auth_type}")
 
             return dataproc_config
 
