@@ -614,9 +614,21 @@ class DataprocSparkSession(SparkSession):
 
             # Auto-set authentication type to SERVICE_ACCOUNT when service account is provided
             # This should run AFTER environment variables are processed
-            if (
+            service_account = (
                 dataproc_config.environment_config.execution_config.service_account
-            ):
+            )
+            current_auth_type = (
+                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+            )
+
+            logger.debug(f"Service account: {service_account}")
+            logger.debug(f"Current auth type: {current_auth_type}")
+
+            if service_account:
+                logger.info(
+                    f"Service account detected: {service_account}. "
+                    f"Automatically setting authentication type to SERVICE_ACCOUNT (was: {current_auth_type})"
+                )
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
                     AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
                 )
