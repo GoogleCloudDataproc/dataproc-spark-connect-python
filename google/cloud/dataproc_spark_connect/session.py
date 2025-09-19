@@ -628,14 +628,14 @@ class DataprocSparkSession(SparkSession):
 
             if service_account:
                 print(
-                    f"🔧 [DATAPROC AUTH DEBUG] Service account detected, clearing auth type to UNSPECIFIED"
+                    f"🔧 [DATAPROC AUTH DEBUG] Service account detected, setting auth type to SERVICE_ACCOUNT"
                 )
                 logger.warning(
-                    f"🔧 [DATAPROC AUTH DEBUG] Service account detected, clearing auth type to UNSPECIFIED"
+                    f"🔧 [DATAPROC AUTH DEBUG] Service account detected, setting auth type to SERVICE_ACCOUNT"
                 )
-                # Clear any explicitly set authentication type to let API infer it
+                # When service account is provided, explicitly set auth type to SERVICE_ACCOUNT
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
-                    AuthenticationConfig.AuthenticationType.AUTHENTICATION_TYPE_UNSPECIFIED
+                    AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
                 )
                 final_auth_type = (
                     dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
