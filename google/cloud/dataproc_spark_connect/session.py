@@ -609,14 +609,42 @@ class DataprocSparkSession(SparkSession):
                 dataproc_config.environment_config.execution_config.service_account
             )
 
+            # AGGRESSIVE DEBUG: Always log the current state
+            current_auth_type = (
+                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+            )
+            print(
+                f"🔧 [DATAPROC AUTH DEBUG] Service account: {service_account}"
+            )
+            print(
+                f"🔧 [DATAPROC AUTH DEBUG] Current auth type BEFORE fix: {current_auth_type}"
+            )
+            logger.warning(
+                f"🔧 [DATAPROC AUTH DEBUG] Service account: {service_account}"
+            )
+            logger.warning(
+                f"🔧 [DATAPROC AUTH DEBUG] Current auth type BEFORE fix: {current_auth_type}"
+            )
+
             if service_account:
-                logger.debug(
-                    f"Service account detected: {service_account}. "
-                    "Letting Dataproc API handle authentication type automatically."
+                print(
+                    f"🔧 [DATAPROC AUTH DEBUG] Service account detected, clearing auth type to UNSPECIFIED"
+                )
+                logger.warning(
+                    f"🔧 [DATAPROC AUTH DEBUG] Service account detected, clearing auth type to UNSPECIFIED"
                 )
                 # Clear any explicitly set authentication type to let API infer it
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
                     AuthenticationConfig.AuthenticationType.AUTHENTICATION_TYPE_UNSPECIFIED
+                )
+                final_auth_type = (
+                    dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+                )
+                print(
+                    f"🔧 [DATAPROC AUTH DEBUG] Final auth type AFTER fix: {final_auth_type}"
+                )
+                logger.warning(
+                    f"🔧 [DATAPROC AUTH DEBUG] Final auth type AFTER fix: {final_auth_type}"
                 )
             elif (
                 not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
