@@ -594,26 +594,31 @@ class DataprocSparkSession(SparkSession):
                 dataproc_config.runtime_config.version
             )
 
-            # Set authentication type to SERVICE_ACCOUNT when service account is provided
+            # Set authentication type from environment if specified and not already set
             if (
-                dataproc_config.environment_config.execution_config.service_account
-            ):
-                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
-                    AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
-                )
-            elif (
                 not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
                 and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
             ):
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
                     os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
                 ]
+
+            # Set service account from environment if not already set
             if (
                 not dataproc_config.environment_config.execution_config.service_account
                 and "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT" in os.environ
             ):
                 dataproc_config.environment_config.execution_config.service_account = os.getenv(
                     "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT"
+                )
+
+            # Auto-set authentication type to SERVICE_ACCOUNT when service account is provided
+            # This should run AFTER environment variables are processed
+            if (
+                dataproc_config.environment_config.execution_config.service_account
+            ):
+                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                    AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
                 )
             if (
                 not dataproc_config.environment_config.execution_config.subnetwork_uri
