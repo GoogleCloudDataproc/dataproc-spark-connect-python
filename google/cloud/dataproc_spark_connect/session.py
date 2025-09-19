@@ -594,31 +594,30 @@ class DataprocSparkSession(SparkSession):
                 dataproc_config.runtime_config.version
             )
 
+            # Use local variable to improve readability of deeply nested attribute access
+            exec_config = dataproc_config.environment_config.execution_config
+
             # Set service account from environment if not already set
             if (
-                not dataproc_config.environment_config.execution_config.service_account
+                not exec_config.service_account
                 and "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT" in os.environ
             ):
-                dataproc_config.environment_config.execution_config.service_account = os.getenv(
+                exec_config.service_account = os.getenv(
                     "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT"
                 )
 
             # Auto-set authentication type to SERVICE_ACCOUNT when service account is provided
-            service_account = (
-                dataproc_config.environment_config.execution_config.service_account
-            )
-
-            if service_account:
+            if exec_config.service_account:
                 # When service account is provided, explicitly set auth type to SERVICE_ACCOUNT
-                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
+                exec_config.authentication_config.user_workload_authentication_type = (
                     AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
                 )
             elif (
-                not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+                not exec_config.authentication_config.user_workload_authentication_type
                 and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
             ):
                 # Only set auth type from environment if no service account is present
-                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
+                exec_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
                     os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
                 ]
             if (

@@ -1903,13 +1903,16 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             ][
                 0
             ]
+            exec_config = (
+                create_session_request.session.environment_config.execution_config
+            )
             self.assertEqual(
-                create_session_request.session.environment_config.execution_config.service_account,
+                exec_config.service_account,
                 "test-service@project.iam.gserviceaccount.com",
             )
             # Verify that authentication type is automatically set to SERVICE_ACCOUNT
             self.assertEqual(
-                create_session_request.session.environment_config.execution_config.authentication_config.user_workload_authentication_type,
+                exec_config.authentication_config.user_workload_authentication_type,
                 AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT,
             )
 
