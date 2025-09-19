@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0...v1.0.1) (2025-09-19)
+
+
+### Bug Fixes
+
+* Automatically set authentication type to SERVICE_ACCOUNT when a service account is provided ([#139](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/139)) ([ee1d237](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/ee1d2374daf2edac6cc9b0596f51e86a25ed18ef))
+
 ## [1.0.0rc4](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc3...v1.0.0rc4) (2025-08-28)
 
 
