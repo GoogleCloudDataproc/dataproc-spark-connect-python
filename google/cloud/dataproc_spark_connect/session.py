@@ -594,15 +594,6 @@ class DataprocSparkSession(SparkSession):
                 dataproc_config.runtime_config.version
             )
 
-            # Set authentication type from environment if specified and not already set
-            if (
-                not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
-                and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
-            ):
-                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
-                    os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
-                ]
-
             # Set service account from environment if not already set
             if (
                 not dataproc_config.environment_config.execution_config.service_account
@@ -612,26 +603,29 @@ class DataprocSparkSession(SparkSession):
                     "DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT"
                 )
 
-            # Auto-set authentication type to SERVICE_ACCOUNT when service account is provided
-            # This should run AFTER environment variables are processed
+            # When a service account is provided, let the API handle authentication automatically
+            # Do NOT set authentication type - let Dataproc API infer it from the service account
             service_account = (
                 dataproc_config.environment_config.execution_config.service_account
             )
-            current_auth_type = (
-                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
-            )
-
-            logger.debug(f"Service account: {service_account}")
-            logger.debug(f"Current auth type: {current_auth_type}")
 
             if service_account:
-                logger.info(
+                logger.debug(
                     f"Service account detected: {service_account}. "
-                    f"Automatically setting authentication type to SERVICE_ACCOUNT (was: {current_auth_type})"
+                    "Letting Dataproc API handle authentication type automatically."
                 )
+                # Clear any explicitly set authentication type to let API infer it
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = (
-                    AuthenticationConfig.AuthenticationType.SERVICE_ACCOUNT
+                    AuthenticationConfig.AuthenticationType.AUTHENTICATION_TYPE_UNSPECIFIED
                 )
+            elif (
+                not dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+                and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
+            ):
+                # Only set auth type from environment if no service account is present
+                dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
+                    os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
+                ]
             if (
                 not dataproc_config.environment_config.execution_config.subnetwork_uri
                 and "DATAPROC_SPARK_CONNECT_SUBNET" in os.environ
