@@ -651,8 +651,11 @@ class DataprocSparkSession(SparkSession):
                 and "DATAPROC_SPARK_CONNECT_AUTH_TYPE" in os.environ
             ):
                 # Only set auth type from environment if no service account is present
+                env_auth_type = os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
+                print(f"🔧 [DATAPROC AUTH DEBUG] Setting auth type from environment: {env_auth_type}")
+                logger.warning(f"🔧 [DATAPROC AUTH DEBUG] Setting auth type from environment: {env_auth_type}")
                 dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type = AuthenticationConfig.AuthenticationType[
-                    os.getenv("DATAPROC_SPARK_CONNECT_AUTH_TYPE")
+                    env_auth_type
                 ]
             if (
                 not dataproc_config.environment_config.execution_config.subnetwork_uri
@@ -720,6 +723,15 @@ class DataprocSparkSession(SparkSession):
                             f"DATAPROC_SPARK_CONNECT_DEFAULT_DATASOURCE is set to an invalid value:"
                             f" {default_datasource}. Supported value is 'bigquery'."
                         )
+
+            # FINAL DEBUG: Log the final auth type before returning
+            final_service_account = dataproc_config.environment_config.execution_config.service_account
+            final_auth_type = dataproc_config.environment_config.execution_config.authentication_config.user_workload_authentication_type
+            print(f"🔧 [DATAPROC AUTH DEBUG] FINAL - Service account: {final_service_account}")
+            print(f"🔧 [DATAPROC AUTH DEBUG] FINAL - Auth type: {final_auth_type}")
+            logger.warning(f"🔧 [DATAPROC AUTH DEBUG] FINAL - Service account: {final_service_account}")
+            logger.warning(f"🔧 [DATAPROC AUTH DEBUG] FINAL - Auth type: {final_auth_type}")
+
             return dataproc_config
 
         def _check_python_version_compatibility(self, runtime_version):
