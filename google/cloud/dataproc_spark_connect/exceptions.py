@@ -14,16 +14,12 @@
 
 import sys
 
-# Setup IPython exception handler at module level for efficiency
-try:
-    from IPython import get_ipython
-except ImportError:
-    get_ipython = None
-
 
 def _setup_ipython_exception_handler():
     """Setup custom exception handler for IPython environments to ensure minimal traceback display."""
-    if get_ipython is None:
+    try:
+        from IPython import get_ipython
+    except ImportError:
         return
 
     ipython = get_ipython()
