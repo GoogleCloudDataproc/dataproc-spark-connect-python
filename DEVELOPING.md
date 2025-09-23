@@ -39,6 +39,35 @@ env \
   pytest --tb=auto -v
 ```
 
+## Testing with Magic Extra
+
+To run tests with the optional magic extra, install the package with magic dependencies:
+
+```sh
+pip install .[magic]
+```
+
+Then run tests as normal, or specifically target magic-related tests:
+
+```sh
+# Run all tests
+pytest
+
+# Run only magic-related tests
+pytest tests/integration/test_session.py -v -k 'magic'
+```
+
+## Testing without Magic Extra
+
+To run tests without the magic dependencies:
+
+```sh
+pip install .
+
+# Run tests, skipping magic-dependent tests
+pytest -m 'not magic'
+```
+
 The integration tests in particular can take a while to run. To speed up the
 testing cycle, you can run them in parallel. You can do so using the `xdist`
 plugin by setting the `-n` flag to the number of parallel runners you want to
