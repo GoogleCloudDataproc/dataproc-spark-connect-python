@@ -559,7 +559,6 @@ class DataprocSparkSession(SparkSession):
                 session = self._get_exiting_active_session()
                 if session is None:
                     session = self.__create()
-
                 return session
 
         def _handle_custom_session_id(self):
