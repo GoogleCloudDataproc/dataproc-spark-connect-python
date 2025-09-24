@@ -27,10 +27,12 @@ def _setup_ipython_exception_handler():
         return
 
     # Store original method if not already stored
-    if hasattr(ipython, "_original_showtraceback"):
+    if hasattr(ipython, "_dataproc_spark_connect_original_showtraceback"):
         return  # Already patched
 
-    ipython._original_showtraceback = ipython.showtraceback
+    ipython._dataproc_spark_connect_original_showtraceback = (
+        ipython.showtraceback
+    )
 
     def custom_showtraceback(
         shell,
@@ -48,7 +50,7 @@ def _setup_ipython_exception_handler():
             print(f"Error: {value.message}", file=sys.stderr)
         else:
             # Use original behavior for other exceptions
-            shell._original_showtraceback(
+            shell._dataproc_spark_connect_original_showtraceback(
                 exc_tuple,
                 filename,
                 tb_offset,
