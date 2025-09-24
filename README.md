@@ -58,9 +58,10 @@ environment variables:
 
 The package supports the [sparksql-magic](https://github.com/cryeo/sparksql-magic) library for executing Spark SQL queries directly in Jupyter notebooks.
 
-**Installation**: To use magic commands, install with the `magic` extra:
+**Installation**: To use magic commands, install the required dependencies manually:
 ```bash
-pip install dataproc-spark-connect[magic]
+pip install dataproc-spark-connect
+pip install IPython sparksql-magic
 ```
 
 1. Load the magic extension:
@@ -95,7 +96,7 @@ Available options:
 
 See [sparksql-magic](https://github.com/cryeo/sparksql-magic) for more examples.
 
-**Note**: Magic commands are optional. If you only need basic DataprocSparkSession functionality without Jupyter magic support, install the base package:
+**Note**: Magic commands are optional. If you only need basic DataprocSparkSession functionality without Jupyter magic support, install only the base package:
 ```bash
 pip install dataproc-spark-connect
 ```

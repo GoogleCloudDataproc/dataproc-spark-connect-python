@@ -39,34 +39,27 @@ env \
   pytest --tb=auto -v
 ```
 
-## Testing with Magic Extra
+## Testing with Magic Support
 
-To run tests with the optional magic extra, install the package with magic dependencies:
-
-```sh
-pip install .[magic]
-```
-
-Then run tests as normal, or specifically target magic-related tests:
-
-```sh
-# Run all tests
-pytest
-
-# Run only magic-related tests
-pytest tests/integration/test_session.py -v -k 'magic'
-```
-
-## Testing without Magic Extra
-
-To run tests without the magic dependencies:
+To run tests with magic functionality, install the required dependencies manually:
 
 ```sh
 pip install .
-
-# Run tests, skipping magic-dependent tests
-pytest -m 'not magic'
+pip install IPython sparksql-magic
 ```
+
+Then run tests as normal. Any magic-related tests will automatically detect and use the available dependencies.
+
+## Testing without Magic Support
+
+To run tests without the magic dependencies, simply install the base package:
+
+```sh
+pip install .
+pytest
+```
+
+Tests that require magic functionality will be automatically skipped if the dependencies are not available.
 
 The integration tests in particular can take a while to run. To speed up the
 testing cycle, you can run them in parallel. You can do so using the `xdist`
