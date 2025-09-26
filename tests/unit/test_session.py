@@ -2313,6 +2313,13 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
                     env_label
                 )
 
+                # If the environment has a subnet configured, add it to the expected request.
+                subnet = os.getenv("DATAPROC_SPARK_CONNECT_SUBNET")
+                if subnet:
+                    expected_request.session.environment_config.execution_config.subnetwork_uri = (
+                        subnet
+                    )
+
                 try:
                     # Reset singleton state before each subtest run
                     DataprocSparkSession._active_s8s_session_id = None

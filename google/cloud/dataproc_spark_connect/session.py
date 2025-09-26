@@ -519,7 +519,7 @@ class DataprocSparkSession(SparkSession):
             self,
         ) -> Optional["DataprocSparkSession"]:
             s8s_session_id = DataprocSparkSession._active_s8s_session_id
-            session_name = f"projects/{self._project_id}/locations/{self._region}/sessions/{s8s_session_id}"
+            session_name = f"sc://projects/{self._project_id}/locations/{self._region}/sessions/{s8s_session_id}"
             session_response = None
             session = None
             if s8s_session_id is not None:
