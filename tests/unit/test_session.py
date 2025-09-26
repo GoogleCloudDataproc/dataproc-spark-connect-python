@@ -2229,6 +2229,7 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             )
             self.stopSession(mock_session_controller_client_instance, session)
 
+    @mock.patch.dict(os.environ, {}, clear=True)
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
