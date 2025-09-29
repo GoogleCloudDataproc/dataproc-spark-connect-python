@@ -1368,6 +1368,47 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
     )
     @mock.patch(
+        "google.cloud.dataproc_spark_connect.session.terminate_s8s_session"
+    )  # Mock terminate
+    def test_create_session_keyboard_interrupt(
+        self,
+        mock_terminate,
+        mock_dataproc_session_id,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        """Test that KeyboardInterrupt during session creation terminates the session."""
+        mock_dataproc_session_id.return_value = "sc-interrupt-test"
+        mock_session_controller_client_instance = (
+            mock_session_controller_client.return_value
+        )
+        mock_operation = mock.Mock()
+        # Simulate KeyboardInterrupt during operation.result()
+        mock_operation.result.side_effect = KeyboardInterrupt
+        mock_session_controller_client_instance.create_session.return_value = (
+            mock_operation
+        )
+        cred = mock.MagicMock()
+        cred.token = "token"
+        mock_credentials.return_value = (cred, "")
+
+        with self.assertRaises(KeyboardInterrupt):
+            DataprocSparkSession.builder.getOrCreate()
+
+        # Verify that terminate_s8s_session was called
+        mock_terminate.assert_called_once()
+        # Check the arguments passed to terminate_s8s_session
+        args, _ = mock_terminate.call_args
+        self.assertEqual(args[0], "test-project")  # project_id
+        self.assertEqual(args[1], "test-region")  # region
+        self.assertEqual(args[2], "sc-interrupt-test")  # session_id
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch(
+        "google.cloud.dataproc_spark_connect.DataprocSparkSession.Builder.generate_dataproc_session_id"
+    )
+    @mock.patch(
         "google.cloud.dataproc_spark_connect.session.is_s8s_session_active"
     )
     @mock.patch("google.cloud.dataproc_spark_connect.session.logger")

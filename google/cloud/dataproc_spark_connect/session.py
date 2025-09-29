@@ -444,6 +444,24 @@ class DataprocSparkSession(SparkSession):
                             logger.error(
                                 f"Exception while writing active session to file {file_path}, {e}"
                             )
+                except KeyboardInterrupt:
+                    # Handle user interruption during session creation
+                    stop_create_session_pbar_event.set()
+                    if create_session_pbar_thread.is_alive():
+                        create_session_pbar_thread.join()
+
+                    logger.warning(
+                        "Session creation interrupted by user. Terminating session..."
+                    )
+                    terminate_s8s_session(
+                        self._project_id,
+                        self._region,
+                        session_id,
+                        self._client_options,
+                    )
+                    DataprocSparkSession._active_s8s_session_id = None
+                    DataprocSparkSession._active_session_uses_custom_id = False
+                    raise
                 except (InvalidArgument, PermissionDenied) as e:
                     stop_create_session_pbar_event.set()
                     if create_session_pbar_thread.is_alive():
