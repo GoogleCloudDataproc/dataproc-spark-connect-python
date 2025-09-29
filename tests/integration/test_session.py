@@ -49,9 +49,28 @@ def test_project():
     return os.getenv("GOOGLE_CLOUD_PROJECT")
 
 
+def is_ci_environment():
+    """Detect if running in CI environment."""
+    return os.getenv("CI") == "true" or os.getenv("GITHUB_ACTIONS") == "true"
+
+
 @pytest.fixture
 def auth_type(request):
-    return getattr(request, "param", "SERVICE_ACCOUNT")
+    """Auto-detect authentication type based on environment.
+
+    CI environment (CI=true or GITHUB_ACTIONS=true): Uses SERVICE_ACCOUNT
+    Local environment: Uses END_USER_CREDENTIALS
+    Test parametrization can still override this default.
+    """
+    # Allow test parametrization to override
+    if hasattr(request, "param"):
+        return request.param
+
+    # Auto-detect based on environment
+    if is_ci_environment():
+        return "SERVICE_ACCOUNT"
+    else:
+        return "END_USER_CREDENTIALS"
 
 
 @pytest.fixture
@@ -125,11 +144,10 @@ def session_name(test_project, test_region, connect_session):
     return f"projects/{test_project}/locations/{test_region}/sessions/{DataprocSparkSession._active_s8s_session_id}"
 
 
-@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
 def test_create_spark_session_with_default_notebook_behavior(
     auth_type, connect_session, session_name, session_controller_client
 ):
-    """Test creating a Spark session with default notebook behavior using end user credentials."""
+    """Test creating a Spark session with default notebook behavior using auto-detected authentication."""
     get_session_request = GetSessionRequest()
     get_session_request.name = session_name
     session = session_controller_client.get_session(get_session_request)
@@ -441,7 +459,6 @@ def test_sql_udf(connect_session):
     connect_session.sql("DROP VIEW IF EXISTS test_table")
 
 
-@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
 def test_session_reuse_with_custom_id(
     auth_type,
     test_project,
@@ -543,7 +560,6 @@ def test_session_id_validation_in_integration(
     assert builder._custom_session_id == valid_id
 
 
-@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
 def test_sparksql_magic_library_available(connect_session):
     """Test that sparksql-magic library can be imported and loaded."""
     pytest.importorskip(
@@ -577,7 +593,6 @@ def test_sparksql_magic_library_available(connect_session):
     assert data[0]["test_column"] == "integration_test"
 
 
-@pytest.mark.parametrize("auth_type", ["END_USER_CREDENTIALS"], indirect=True)
 def test_sparksql_magic_with_dataproc_session(connect_session):
     """Test that sparksql-magic works with registered DataprocSparkSession."""
     pytest.importorskip(
