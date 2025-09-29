@@ -70,9 +70,6 @@ jobs:
     - name: Run integration tests
       env:
         CI: "true"
-        GOOGLE_CLOUD_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
-        GOOGLE_CLOUD_REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
-        DATAPROC_SPARK_CONNECT_SUBNET: ${{ secrets.GCP_SUBNET }}
         DATAPROC_SPARK_CONNECT_AUTH_TYPE: "SERVICE_ACCOUNT"
       run: |
         python -m pytest tests/integration/ -v --tb=short -x
