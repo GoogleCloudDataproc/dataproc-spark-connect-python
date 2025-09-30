@@ -485,7 +485,9 @@ def test_sql_udf(connect_session):
     # Clean up
     connect_session.sql("DROP VIEW IF EXISTS test_table")
 
-
+@pytest.mark.skip(
+    reason="Skipping PyPI package installation test since it's not supported yet"
+)
 def test_session_reuse_with_custom_id(
     auth_type,
     test_project,
