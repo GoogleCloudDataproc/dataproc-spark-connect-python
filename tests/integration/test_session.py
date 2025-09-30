@@ -32,7 +32,6 @@ from google.cloud.dataproc_v1 import (
     TerminateSessionRequest,
 )
 from pyspark.errors.exceptions import connect as connect_exceptions
-from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 
 
@@ -443,6 +442,9 @@ def test_sql_functions(connect_session):
 
 def test_sql_udf(connect_session):
     """Test SQL UDF registration and usage."""
+    # Import SparkConnect-compatible functions
+    from pyspark.sql.connect.functions import col, udf
+
     # Create a test DataFrame
     df = connect_session.createDataFrame(
         [(1, "hello"), (2, "world"), (3, "spark")], ["id", "text"]
@@ -456,9 +458,9 @@ def test_sql_udf(connect_session):
         return text.upper() if text else None
 
     # Test UDF with DataFrame API
-    uppercase_udf = F.udf(uppercase_func, StringType())
+    uppercase_udf = udf(uppercase_func, StringType())
     df_with_udf = df.select(
-        "id", "text", uppercase_udf(F.col("text")).alias("upper_text")
+        "id", "text", uppercase_udf(col("text")).alias("upper_text")
     )
     df_result = df_with_udf.collect()
 
