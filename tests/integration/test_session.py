@@ -131,16 +131,24 @@ def session_template_controller_client(test_client_options):
 
 @pytest.fixture
 def connect_session(test_project, test_region, os_environment):
-    return (
+    session = (
         DataprocSparkSession.builder.projectId(test_project)
         .location(test_region)
         .getOrCreate()
     )
+    yield session
+    # Clean up the session after each test to prevent resource conflicts
+    try:
+        session.stop()
+    except Exception:
+        # Ignore cleanup errors to avoid masking the actual test failure
+        pass
 
 
 @pytest.fixture
 def session_name(test_project, test_region, connect_session):
     return f"projects/{test_project}/locations/{test_region}/sessions/{DataprocSparkSession._active_s8s_session_id}"
+
 
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
@@ -178,6 +186,7 @@ def test_create_spark_session_with_default_notebook_behavior(
     ]
     assert DataprocSparkSession._active_s8s_session_uuid is None
 
+
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
 )
@@ -201,6 +210,7 @@ def test_reuse_s8s_spark_session(
 
     connect_session.stop()
 
+
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
 )
@@ -218,6 +228,7 @@ def test_stop_spark_session_with_deleted_serverless_session(
 
     assert DataprocSparkSession._active_s8s_session_uuid is None
     assert DataprocSparkSession._active_s8s_session_id is None
+
 
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
@@ -238,6 +249,7 @@ def test_stop_spark_session_with_terminated_serverless_session(
 
     assert DataprocSparkSession._active_s8s_session_uuid is None
     assert DataprocSparkSession._active_s8s_session_id is None
+
 
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
@@ -328,6 +340,7 @@ def session_template_name(
         delete_session_template_request
     )
 
+
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
 )
@@ -409,6 +422,7 @@ def test_add_artifacts_pypi_package():
     assert isinstance(sum_random, int), "Result is not of type int"
     connect_session.stop()
 
+
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
 )
@@ -452,6 +466,7 @@ def test_sql_functions(connect_session):
     assert tax_results[1]["tax"] == 20.0
     assert tax_results[2]["tax"] == 15.0
 
+
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
 )
@@ -484,6 +499,7 @@ def test_sql_udf(connect_session):
 
     # Clean up
     connect_session.sql("DROP VIEW IF EXISTS test_table")
+
 
 @pytest.mark.skip(
     reason="Skipping PyPI package installation test since it's not supported yet"
