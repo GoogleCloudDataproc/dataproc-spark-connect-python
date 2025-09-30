@@ -477,9 +477,7 @@ def test_sql_udf(connect_session):
     connect_session.sql("DROP VIEW IF EXISTS test_table")
 
 
-@pytest.mark.skip(
-    reason="pending for verfication or fixing"
-)
+@pytest.mark.skip(reason="pending for verfication or fixing")
 def test_session_reuse_with_custom_id(
     auth_type,
     test_project,
