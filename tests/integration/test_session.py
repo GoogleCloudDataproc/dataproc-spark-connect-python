@@ -478,7 +478,8 @@ def test_session_reuse_with_custom_id(
     os_environment,
 ):
     """Test the real-world session reuse scenario: create → terminate → recreate with same ID."""
-    custom_session_id = "ml-pipeline-session"
+    # Use a randomized session ID to avoid conflicts between test runs
+    custom_session_id = f"ml-pipeline-session-{uuid.uuid4().hex[:8]}"
 
     # Stop any existing session first to ensure clean state
     if DataprocSparkSession._active_s8s_session_id:
