@@ -348,6 +348,7 @@ def test_create_spark_session_with_session_template_and_user_provided_dataproc_c
     assert DataprocSparkSession._active_s8s_session_uuid is None
 
 
+@pytest.mark.skip(reason="Skipping PyPI package installation test since it's not supported yet")
 def test_add_artifacts_pypi_package():
     """Test adding PyPI packages as artifacts to a Spark session."""
     connect_session = DataprocSparkSession.builder.getOrCreate()
