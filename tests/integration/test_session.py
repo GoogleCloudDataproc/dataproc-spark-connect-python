@@ -150,9 +150,6 @@ def session_name(test_project, test_region, connect_session):
     return f"projects/{test_project}/locations/{test_region}/sessions/{DataprocSparkSession._active_s8s_session_id}"
 
 
-@pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
-)
 def test_create_spark_session_with_default_notebook_behavior(
     auth_type, connect_session, session_name, session_controller_client
 ):
@@ -187,9 +184,6 @@ def test_create_spark_session_with_default_notebook_behavior(
     assert DataprocSparkSession._active_s8s_session_uuid is None
 
 
-@pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
-)
 def test_reuse_s8s_spark_session(
     connect_session, session_name, session_controller_client
 ):
@@ -211,9 +205,6 @@ def test_reuse_s8s_spark_session(
     connect_session.stop()
 
 
-@pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
-)
 def test_stop_spark_session_with_deleted_serverless_session(
     connect_session, session_name, session_controller_client
 ):
@@ -230,9 +221,6 @@ def test_stop_spark_session_with_deleted_serverless_session(
     assert DataprocSparkSession._active_s8s_session_id is None
 
 
-@pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
-)
 def test_stop_spark_session_with_terminated_serverless_session(
     connect_session, session_name, session_controller_client
 ):
@@ -251,9 +239,6 @@ def test_stop_spark_session_with_terminated_serverless_session(
     assert DataprocSparkSession._active_s8s_session_id is None
 
 
-@pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
-)
 def test_get_or_create_spark_session_with_terminated_serverless_session(
     test_project,
     test_region,
@@ -341,9 +326,6 @@ def session_template_name(
     )
 
 
-@pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
-)
 def test_create_spark_session_with_session_template_and_user_provided_dataproc_config(
     image_version,
     test_project,
@@ -423,9 +405,6 @@ def test_add_artifacts_pypi_package():
     connect_session.stop()
 
 
-@pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
-)
 def test_sql_functions(connect_session):
     """Test basic SQL functions like col(), sum(), count(), etc."""
     # Import SparkConnect-compatible functions
@@ -467,9 +446,6 @@ def test_sql_functions(connect_session):
     assert tax_results[2]["tax"] == 15.0
 
 
-@pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
-)
 def test_sql_udf(connect_session):
     """Test SQL UDF registration and usage."""
     # Import SparkConnect-compatible functions
@@ -502,7 +478,7 @@ def test_sql_udf(connect_session):
 
 
 @pytest.mark.skip(
-    reason="Skipping PyPI package installation test since it's not supported yet"
+    reason="pending for verfication or fixing"
 )
 def test_session_reuse_with_custom_id(
     auth_type,
