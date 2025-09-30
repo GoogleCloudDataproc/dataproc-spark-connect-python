@@ -402,6 +402,9 @@ def test_add_artifacts_pypi_package():
 
 def test_sql_functions(connect_session):
     """Test basic SQL functions like col(), sum(), count(), etc."""
+    # Import SparkConnect-compatible functions
+    from pyspark.sql.connect.functions import col, sum, count
+
     # Create a test DataFrame
     df = connect_session.createDataFrame(
         [(1, "Alice", 100), (2, "Bob", 200), (3, "Charlie", 150)],
@@ -409,28 +412,28 @@ def test_sql_functions(connect_session):
     )
 
     # Test col() function
-    result_col = df.select(F.col("name")).collect()
+    result_col = df.select(col("name")).collect()
     assert len(result_col) == 3
     assert result_col[0]["name"] == "Alice"
 
     # Test aggregation functions
-    sum_result = df.select(F.sum("amount")).collect()[0][0]
+    sum_result = df.select(sum("amount")).collect()[0][0]
     assert sum_result == 450
 
-    count_result = df.select(F.count("id")).collect()[0][0]
+    count_result = df.select(count("id")).collect()[0][0]
     assert count_result == 3
 
     # Test with where clause using col()
-    filtered_df = df.where(F.col("amount") > 150)
+    filtered_df = df.where(col("amount") > 150)
     filtered_count = filtered_df.count()
     assert filtered_count == 1
 
     # Test multiple column operations
     df_with_calc = df.select(
-        F.col("id"),
-        F.col("name"),
-        F.col("amount"),
-        (F.col("amount") * 0.1).alias("tax"),
+        col("id"),
+        col("name"),
+        col("amount"),
+        (col("amount") * 0.1).alias("tax"),
     )
     tax_results = df_with_calc.collect()
     assert tax_results[0]["tax"] == 10.0
