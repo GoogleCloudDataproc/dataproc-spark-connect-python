@@ -1,0 +1,80 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Integration Tests with Service Account Authentication
+#
+# Required GitHub Secrets:
+#   - GCP_SA_KEY: Service account JSON key (project_id and client_email extracted automatically)
+#   - GCP_REGION: Google Cloud Region (optional, defaults to us-central1)
+#   - GCP_SUBNET: Dataproc subnet URI
+#
+# See INTEGRATION_TESTS.md for setup instructions.
+
+name: Integration Tests
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  integration-test:
+    name: Run integration tests
+    runs-on: ubuntu-latest
+
+    # Only run integration tests if secrets are available
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-integration-${{ hashFiles('requirements-dev.txt', 'requirements-test.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-integration-
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements-dev.txt
+        pip install -r requirements-test.txt
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Run integration tests
+      env:
+        CI: "true"
+        # Extract from service account JSON automatically
+        GOOGLE_CLOUD_PROJECT: ${{ fromJson(secrets.GCP_SA_KEY).project_id }}
+        DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT: ${{ fromJson(secrets.GCP_SA_KEY).client_email }}
+        # Infrastructure-specific secrets
+        GOOGLE_CLOUD_REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
+        DATAPROC_SPARK_CONNECT_SUBNET: ${{ secrets.GCP_SUBNET }}
+        DATAPROC_SPARK_CONNECT_AUTH_TYPE: "SERVICE_ACCOUNT"
+      run: |
+        python -m pytest tests/integration/ -v --tb=short -x
