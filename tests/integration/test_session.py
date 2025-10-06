@@ -477,7 +477,6 @@ def test_sql_udf(connect_session):
     connect_session.sql("DROP VIEW IF EXISTS test_table")
 
 
-@pytest.mark.skip(reason="pending for verfication or fixing")
 def test_session_reuse_with_custom_id(
     auth_type,
     test_project,
@@ -499,9 +498,12 @@ def test_session_reuse_with_custom_id(
             pass
 
     # PHASE 1: Create initial session with custom ID
-    spark1 = DataprocSparkSession.builder.dataprocSessionId(
-        custom_session_id
-    ).getOrCreate()
+    spark1 = (
+        DataprocSparkSession.builder.dataprocSessionId(custom_session_id)
+        .projectId(test_project)
+        .location(test_region)
+        .getOrCreate()
+    )
 
     # Verify session is created with custom ID
     assert DataprocSparkSession._active_s8s_session_id == custom_session_id
@@ -516,9 +518,12 @@ def test_session_reuse_with_custom_id(
     # Clear cache to force session lookup
     DataprocSparkSession._default_session = None
 
-    spark2 = DataprocSparkSession.builder.dataprocSessionId(
-        custom_session_id
-    ).getOrCreate()
+    spark2 = (
+        DataprocSparkSession.builder.dataprocSessionId(custom_session_id)
+        .projectId(test_project)
+        .location(test_region)
+        .getOrCreate()
+    )
 
     # Should reuse the same active session
     assert DataprocSparkSession._active_s8s_session_id == custom_session_id
@@ -529,7 +534,7 @@ def test_session_reuse_with_custom_id(
     result2 = df2.count()
     assert result2 == 1
 
-    # PHASE 3: Terminate session explicitly
+    # PHASE 3: Stop should not terminate named session
     spark2.stop()
 
     # PHASE 4: Recreate with same ID - this tests the cleanup and recreation logic
@@ -538,16 +543,19 @@ def test_session_reuse_with_custom_id(
     DataprocSparkSession._active_s8s_session_id = None
     DataprocSparkSession._active_s8s_session_uuid = None
 
-    spark3 = DataprocSparkSession.builder.dataprocSessionId(
-        custom_session_id
-    ).getOrCreate()
+    spark3 = (
+        DataprocSparkSession.builder.dataprocSessionId(custom_session_id)
+        .projectId(test_project)
+        .location(test_region)
+        .getOrCreate()
+    )
 
-    # Should be a new session with same ID but different UUID
+    # Should be a same session and same ID
     assert DataprocSparkSession._active_s8s_session_id == custom_session_id
     third_session_uuid = spark3._active_s8s_session_uuid
 
-    # Should be different UUID (new session instance)
-    assert third_session_uuid != first_session_uuid
+    # Should be same UUID
+    assert third_session_uuid == first_session_uuid
 
     # Test functionality on recreated session
     df3 = spark3.createDataFrame([(3, "recreated")], ["id", "stage"])
