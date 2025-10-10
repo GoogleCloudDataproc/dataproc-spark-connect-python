@@ -581,7 +581,7 @@ class DataprocSparkSession(SparkSession):
                     from pyspark.sql import SparkSession as PySparkSQLSession
 
                     session = PySparkSQLSession.builder.getOrCreate()
-                    return session # type: ignore
+                    return session  # type: ignore
 
                 # Handle custom session ID by setting it early and letting existing logic handle it
                 if self._custom_session_id:
