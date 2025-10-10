@@ -67,6 +67,10 @@ def is_interactive_terminal():
     return is_interactive() and is_terminal()
 
 
+def is_dataproc_batch() -> bool:
+    return os.getenv("DATAPROC_WORKLOAD_TYPE") == "batch"
+
+
 def get_client_environment_label() -> str:
     """
     Map current environment to a standardized client label.

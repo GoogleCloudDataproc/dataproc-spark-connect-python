@@ -664,3 +664,40 @@ def test_sparksql_magic_with_dataproc_session(connect_session):
     assert row["multiplication"] == 50
     assert row["square_root"] == 4.0
     assert row["joined_string"] == "Dataproc-Spark"
+
+
+@pytest.fixture
+def batch_workload_env(monkeypatch):
+    """Sets DATAPROC_WORKLOAD_TYPE to 'batch' for a test."""
+    monkeypatch.setenv("DATAPROC_WORKLOAD_TYPE", "batch")
+
+
+@pytest.fixture
+def local_spark_session():
+    """Provides a standard local PySpark session for comparison."""
+    from pyspark.sql import SparkSession as PySparkSession
+
+    # Stop any existing session to ensure a clean environment for creating a local session.
+    # This prevents test isolation failures where a Dataproc session from a previous
+    # test might be picked up by getOrCreate().
+    if DataprocSparkSession.getActiveSession():
+        DataprocSparkSession.getActiveSession().stop()
+
+    session = PySparkSession.builder.master("local").getOrCreate()
+    yield session
+    session.stop()
+
+
+def test_create_local_spark_session(batch_workload_env, local_spark_session):
+    """Test creating a local Spark session."""
+    from pyspark.sql import SparkSession as PySparkSession
+
+    dataproc_spark_session = DataprocSparkSession.builder.getOrCreate()
+    try:
+        assert isinstance(dataproc_spark_session, PySparkSession)
+        assert not isinstance(dataproc_spark_session, DataprocSparkSession)
+
+        # Compare configurations to ensure they are both local sessions
+        assert dataproc_spark_session == local_spark_session
+    finally:
+        dataproc_spark_session.stop()
