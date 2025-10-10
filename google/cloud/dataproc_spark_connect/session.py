@@ -577,11 +577,11 @@ class DataprocSparkSession(SparkSession):
         def getOrCreate(self) -> "DataprocSparkSession":
             with DataprocSparkSession._lock:
                 if environment.is_dataproc_batch():
-                    # For Dataproc batch workloads, connect to the initial Spark session
+                    # For Dataproc batch workloads, connect to the already initialized local SparkSession
                     from pyspark.sql import SparkSession as PySparkSQLSession
 
                     session = PySparkSQLSession.builder.getOrCreate()
-                    return session
+                    return session # type: ignore
 
                 # Handle custom session ID by setting it early and letting existing logic handle it
                 if self._custom_session_id:
