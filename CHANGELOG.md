@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.0rc6](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc5...v1.0.0rc6) (2025-10-10)
+
+
+### Features
+
+* Add support for running Spark Connect client inside the Dataproc s8s batch ([#150](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/150)) ([e5b1708](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/e5b17086d1fbd37a91b50fe4c725df0e5eb5fcd8))
+* add support for sparksql magic ([#137](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/137)) ([274f013](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/274f0135d2f6b0fe65511eb79ca0f4154377cd4c))
+
+
+### Bug Fixes
+
+* Ensure DataprocSparkConnectException displays error messages in all Jupyter environments ([#136](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/136)) ([1fc26f5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/1fc26f597a67542a562b1c2d0a57e4276827802b))
+* pysparkvalue error ([#144](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/144)) ([436d97e](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/436d97e798bd26661871c6cad3673d913d10377f))
+* Revert the exception message fix in SC 1.0 ([#147](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/147)) ([21b6239](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/21b6239c500bd45447b2c07d404082dbd2fa7169))
+
 ## [1.0.0rc5](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc4...v1.0.0rc5) (2025-09-19)
 
 

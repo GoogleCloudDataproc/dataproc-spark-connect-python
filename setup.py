@@ -20,7 +20,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="dataproc-spark-connect",
-    version="1.0.0rc5",
+    version="1.0.0rc6",
     description="Dataproc client library for Spark Connect",
     long_description=long_description,
     author="Google LLC",
