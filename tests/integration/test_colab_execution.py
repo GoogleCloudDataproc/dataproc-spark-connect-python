@@ -23,72 +23,94 @@ TEMPLATE_ID = "6409629422399258624"
 # The enum value evaluates to 4 for a successful notebook execution
 JOB_SUCCESS_STATE = 4
 
+
 @pytest.fixture
 def test_project():
     return os.getenv("GOOGLE_CLOUD_PROJECT")
+
 
 @pytest.fixture
 def test_region():
     return os.getenv("GOOGLE_CLOUD_REGION")
 
+
 @pytest.fixture
 def test_service_account():
     return os.getenv("SERVICE_ACCOUNT")
+
 
 @pytest.fixture
 def test_template():
     return TEMPLATE_ID
 
+
 @pytest.fixture
 def test_repository():
     return REPOSITORY_ID
 
-def test_executing_colab_notebook(test_project, test_region, test_service_account, test_template, test_repository):
+
+def test_executing_colab_notebook(
+    test_project,
+    test_region,
+    test_service_account,
+    test_template,
+    test_repository,
+):
     """Test executing a Colab notebook that uses Spark Connect."""
     test_api_endpoint = f"{test_region}-aiplatform.googleapis.com"
     test_parent = f"projects/{test_project}/locations/{test_region}"
-    test_execution_display_name = f"spark-connect-e2e-notebook-test-{uuid.uuid4().hex}"
+    test_execution_display_name = (
+        f"spark-connect-e2e-notebook-test-{uuid.uuid4().hex}"
+    )
 
-    print(f"Starting notebook execution job with display name: {test_execution_display_name}")
+    print(
+        f"Starting notebook execution job with display name: {test_execution_display_name}"
+    )
 
-    notebook_service_client = aiplatform_v1.NotebookServiceClient(client_options = {
-        "api_endpoint": test_api_endpoint,
-    })
+    notebook_service_client = aiplatform_v1.NotebookServiceClient(
+        client_options={
+            "api_endpoint": test_api_endpoint,
+        }
+    )
 
-    operation = notebook_service_client.create_notebook_execution_job(parent=test_parent, notebook_execution_job={
-        "display_name": test_execution_display_name,
-
-        # Specify a NotebookRuntimeTemplate to source compute configuration from
-        "notebook_runtime_template_resource_name": f"projects/{test_project}/locations/{test_region}/notebookRuntimeTemplates/{test_template}",
-
-        # Specify a Colab Enterprise notebook to run
-        "dataform_repository_source": {
-            "dataform_repository_resource_name": f"projects/{test_project}/locations/{test_region}/repositories/{test_repository}",
+    operation = notebook_service_client.create_notebook_execution_job(
+        parent=test_parent,
+        notebook_execution_job={
+            "display_name": test_execution_display_name,
+            # Specify a NotebookRuntimeTemplate to source compute configuration from
+            "notebook_runtime_template_resource_name": f"projects/{test_project}/locations/{test_region}/notebookRuntimeTemplates/{test_template}",
+            # Specify a Colab Enterprise notebook to run
+            "dataform_repository_source": {
+                "dataform_repository_resource_name": f"projects/{test_project}/locations/{test_region}/repositories/{test_repository}",
+            },
+            "gcs_notebook_source": {
+                "uri": "gs://e2e-testing-bucket/input/notebooks/spark_connect_e2e_notebook_test.ipynb",
+            },
+            # Specify a Cloud Storage bucket to store output artifacts
+            "gcs_output_uri": "gs://e2e-testing-bucket/output",
+            # Run as the service account instead
+            "service_account": f"{test_service_account}",
         },
-
-        "gcs_notebook_source": {
-            "uri": "gs://e2e-testing-bucket/input/notebooks/spark_connect_e2e_notebook_test.ipynb",
-        },
-
-        # Specify a Cloud Storage bucket to store output artifacts
-        "gcs_output_uri": "gs://e2e-testing-bucket/output",
-
-        # Run as the service account instead
-        "service_account": f"{test_service_account}",
-        
-    })
+    )
     print("Waiting for operation to complete...")
 
     result = operation.result()
     print(f"Notebook execution uri: {result}")
 
-    notebook_execution_jobs = notebook_service_client.list_notebook_execution_jobs(parent=test_parent)
-    executed_job = list(filter(lambda job: job.display_name == test_execution_display_name, notebook_execution_jobs))
+    notebook_execution_jobs = (
+        notebook_service_client.list_notebook_execution_jobs(parent=test_parent)
+    )
+    executed_job = list(
+        filter(
+            lambda job: job.display_name == test_execution_display_name,
+            notebook_execution_jobs,
+        )
+    )
 
-    assert(len(executed_job) == 1)
+    assert len(executed_job) == 1
     executed_job = executed_job[0]
 
     print(executed_job)
 
     print(f"Job status: {executed_job.job_state}")
-    assert(executed_job.job_state == JOB_SUCCESS_STATE)
+    assert executed_job.job_state == JOB_SUCCESS_STATE
