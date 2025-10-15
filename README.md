@@ -47,12 +47,50 @@ environment variables:
 
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
-   from google.cloud.dataproc_v1 import Session
-   session_config = Session()
-   session_config.environment_config.execution_config.subnetwork_uri = '<subnet>'
-   session_config.runtime_config.version = '2.2'
-   spark = DataprocSparkSession.builder.dataprocSessionConfig(session_config).getOrCreate()
+
+   spark = DataprocSparkSession.builder.runtimeVersion("3.0").getOrCreate()
    ```
+
+### Reusing Named Sessions Across Notebooks
+
+Named sessions allow you to share a single Spark session across multiple BigQuery notebooks, improving efficiency and reducing costs. Instead of creating a new session for each notebook, you can reuse an existing session by specifying a custom session ID.
+
+**Benefits:**
+- **Reduced startup time**: Avoid waiting for a new session to initialize in each notebook
+- **Cost optimization**: Reuse sessions instead of maintaining multiple active sessions
+- **Better quota management**: Share infrastructure resources across notebooks
+- **Workflow continuity**: Seamlessly connect multiple notebooks in a ML pipeline
+
+**Example Usage:**
+
+```python
+from google.cloud.dataproc_spark_connect import DataprocSparkSession
+
+# Create or connect to a named session
+custom_session_id = "my-ml-pipeline-session"
+spark = (
+    DataprocSparkSession.builder
+    .dataprocSessionId(custom_session_id)
+    .projectId("my-project")
+    .location("us-central1")
+    .getOrCreate()
+)
+
+# Use the session normally
+df = spark.createDataFrame([(1, "data")], ["id", "value"])
+df.show()
+
+# When done, stop the session (it remains available for reuse)
+spark.stop()
+```
+
+**Important Notes:**
+- Session IDs must start with a lowercase letter and contain only lowercase letters, numbers, and hyphens
+- Named sessions persist until explicitly terminated or reach their configured TTL
+- Calling `.stop()` on a named session does not terminate it - it remains available for reuse
+- Sessions are user-scoped: you can only reuse sessions that you created
+- If a session with the specified ID doesn't exist, a new one will be created automatically
+- If an existing session has been terminated, calling `getOrCreate()` will recreate it with the same ID
 
 ### Using Spark SQL Magic Commands (Jupyter Notebooks)
 
