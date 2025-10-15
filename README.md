@@ -47,50 +47,33 @@ environment variables:
 
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
-
-   spark = DataprocSparkSession.builder.runtimeVersion("3.0").getOrCreate()
+   from google.cloud.dataproc_v1 import Session
+   session_config = Session()
+   session_config.environment_config.execution_config.subnetwork_uri = '<subnet>'
+   session_config.runtime_config.version = '3.0'
+   spark = DataprocSparkSession.builder.dataprocSessionConfig(session_config).getOrCreate()
    ```
 
 ### Reusing Named Sessions Across Notebooks
 
-Named sessions allow you to share a single Spark session across multiple BigQuery notebooks, improving efficiency and reducing costs. Instead of creating a new session for each notebook, you can reuse an existing session by specifying a custom session ID.
+Named sessions allow you to share a single Spark session across multiple notebooks, improving efficiency by avoiding repeated session startup times and reducing costs.
 
-**Benefits:**
-- **Reduced startup time**: Avoid waiting for a new session to initialize in each notebook
-- **Cost optimization**: Reuse sessions instead of maintaining multiple active sessions
-- **Better quota management**: Share infrastructure resources across notebooks
-- **Workflow continuity**: Seamlessly connect multiple notebooks in a ML pipeline
+To create or connect to a named session:
 
-**Example Usage:**
+1. Specify a custom session ID when creating the session:
 
-```python
-from google.cloud.dataproc_spark_connect import DataprocSparkSession
+   ```python
+   from google.cloud.dataproc_spark_connect import DataprocSparkSession
+   from google.cloud.dataproc_v1 import Session
+   session_config = Session()
+   session_config.runtime_config.version = '3.0'
+   session_id = 'my-ml-pipeline-session'
+   spark = DataprocSparkSession.builder.dataprocSessionId(session_id).dataprocSessionConfig(session_config).getOrCreate()
+   ```
 
-# Create or connect to a named session
-custom_session_id = "my-ml-pipeline-session"
-spark = (
-    DataprocSparkSession.builder
-    .dataprocSessionId(custom_session_id)
-    .projectId("my-project")
-    .location("us-central1")
-    .getOrCreate()
-)
+2. Session IDs must start with a lowercase letter and contain only lowercase letters, numbers, and hyphens.
 
-# Use the session normally
-df = spark.createDataFrame([(1, "data")], ["id", "value"])
-df.show()
-
-# When done, stop the session (it remains available for reuse)
-spark.stop()
-```
-
-**Important Notes:**
-- Session IDs must start with a lowercase letter and contain only lowercase letters, numbers, and hyphens
-- Named sessions persist until explicitly terminated or reach their configured TTL
-- Calling `.stop()` on a named session does not terminate it - it remains available for reuse
-- Sessions are user-scoped: you can only reuse sessions that you created
-- If a session with the specified ID doesn't exist, a new one will be created automatically
-- If an existing session has been terminated, calling `getOrCreate()` will recreate it with the same ID
+3. Named sessions persist until explicitly terminated or reach their configured TTL.
 
 ### Using Spark SQL Magic Commands (Jupyter Notebooks)
 
