@@ -71,9 +71,11 @@ To create or connect to a named session:
    spark = DataprocSparkSession.builder.dataprocSessionId(session_id).dataprocSessionConfig(session_config).getOrCreate()
    ```
 
-2. Session IDs must start with a lowercase letter and contain only lowercase letters, numbers, and hyphens.
+2. Session IDs must be 4-63 characters long, start with a lowercase letter, contain only lowercase letters, numbers, and hyphens, and not end with a hyphen.
 
 3. Named sessions persist until explicitly terminated or reach their configured TTL.
+
+4. A session with a given ID that is in a TERMINATED state cannot be reused. It must be deleted before a new session with the same ID can be created.
 
 ### Using Spark SQL Magic Commands (Jupyter Notebooks)
 
