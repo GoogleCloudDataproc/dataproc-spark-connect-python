@@ -13,16 +13,17 @@
 # limitations under the License.
 
 from google.cloud import aiplatform_v1
+from google.cloud.aiplatform_v1.types import JobState
+
 import os
 import uuid
 import pytest
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 REPOSITORY_ID = "97193e1e-c5d1-4ce8-bc6f-cf206c701624"
 TEMPLATE_ID = "6409629422399258624"
-
-# The enum value evaluates to 4 for a successful notebook execution
-JOB_SUCCESS_STATE = 4
-
 
 @pytest.fixture
 def test_project():
@@ -63,7 +64,7 @@ def test_executing_colab_notebook(
         f"spark-connect-e2e-notebook-test-{uuid.uuid4().hex}"
     )
 
-    print(
+    LOGGER.info(
         f"Starting notebook execution job with display name: {test_execution_display_name}"
     )
 
@@ -92,10 +93,10 @@ def test_executing_colab_notebook(
             "service_account": f"{test_service_account}",
         },
     )
-    print("Waiting for operation to complete...")
+    LOGGER.info("Waiting for operation to complete...")
 
     result = operation.result()
-    print(f"Notebook execution uri: {result}")
+    LOGGER.info(f"Notebook execution uri: {result}")
 
     notebook_execution_jobs = (
         notebook_service_client.list_notebook_execution_jobs(parent=test_parent)
@@ -110,7 +111,7 @@ def test_executing_colab_notebook(
     assert len(executed_job) == 1
     executed_job = executed_job[0]
 
-    print(executed_job)
+    LOGGER.info(executed_job)
 
-    print(f"Job status: {executed_job.job_state}")
-    assert executed_job.job_state == JOB_SUCCESS_STATE
+    LOGGER.info(f"Job status: {executed_job.job_state}")
+    assert executed_job.job_state == JobState.JOB_STATE_SUCCEEDED
