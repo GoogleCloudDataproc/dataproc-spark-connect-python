@@ -25,6 +25,7 @@ LOGGER = logging.getLogger(__name__)
 REPOSITORY_ID = "97193e1e-c5d1-4ce8-bc6f-cf206c701624"
 TEMPLATE_ID = "6409629422399258624"
 
+
 @pytest.fixture
 def test_project():
     return os.getenv("GOOGLE_CLOUD_PROJECT")
