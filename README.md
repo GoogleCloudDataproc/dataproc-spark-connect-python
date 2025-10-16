@@ -39,7 +39,7 @@ in your code using the builder API:
 1. Install the latest version of Dataproc Spark Connect:
 
    ```sh
-   pip install -U dataproc_spark_connect
+   !pip install -U --pre dataproc-spark-connect
    ```
 
 2. Add the required imports into your PySpark application or notebook and start
@@ -75,19 +75,31 @@ Named sessions allow you to share a single Spark session across multiple noteboo
 
 To create or connect to a named session:
 
-1. Specify a custom session ID when creating the session:
+1. Create a session with a custom ID in your first notebook:
 
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
    session_id = 'my-ml-pipeline-session'
    spark = DataprocSparkSession.builder.dataprocSessionId(session_id).runtimeVersion('3.0').getOrCreate()
+   df = spark.createDataFrame([(1, 'data')], ['id', 'value'])
+   df.show()
    ```
 
-2. Session IDs must be 4-63 characters long, start with a lowercase letter, contain only lowercase letters, numbers, and hyphens, and not end with a hyphen.
+2. Reuse the same session in another notebook by specifying the same session ID:
 
-3. Named sessions persist until explicitly terminated or reach their configured TTL.
+   ```python
+   from google.cloud.dataproc_spark_connect import DataprocSparkSession
+   session_id = 'my-ml-pipeline-session'
+   spark = DataprocSparkSession.builder.dataprocSessionId(session_id).runtimeVersion('3.0').getOrCreate()
+   df = spark.createDataFrame([(2, 'more-data')], ['id', 'value'])
+   df.show()
+   ```
 
-4. A session with a given ID that is in a TERMINATED state cannot be reused. It must be deleted before a new session with the same ID can be created.
+3. Session IDs must be 4-63 characters long, start with a lowercase letter, contain only lowercase letters, numbers, and hyphens, and not end with a hyphen.
+
+4. Named sessions persist until explicitly terminated or reach their configured TTL.
+
+5. A session with a given ID that is in a TERMINATED state cannot be reused. It must be deleted before a new session with the same ID can be created.
 
 ### Using Spark SQL Magic Commands (Jupyter Notebooks)
 
