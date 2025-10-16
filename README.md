@@ -21,29 +21,44 @@ pip uninstall dataproc_spark_connect
 
 This client requires permissions to
 manage [Dataproc Sessions and Session Templates](https://cloud.google.com/dataproc-serverless/docs/concepts/iam).
-If you are running the client outside of Google Cloud, you must set following
-environment variables:
 
-* `GOOGLE_CLOUD_PROJECT` - The Google Cloud project you use to run Spark
-  workloads
-* `GOOGLE_CLOUD_REGION` - The Compute
-  Engine [region](https://cloud.google.com/compute/docs/regions-zones#available)
-  where you run the Spark workload.
-* `GOOGLE_APPLICATION_CREDENTIALS` -
-  Your [Application Credentials](https://cloud.google.com/docs/authentication/provide-credentials-adc)
+If you are running the client outside of Google Cloud, you need to provide
+authentication credentials. Set the `GOOGLE_APPLICATION_CREDENTIALS` environment
+variable to point to
+your [Application Credentials](https://cloud.google.com/docs/authentication/provide-credentials-adc)
+file.
+
+You can specify the project and region either via environment variables or directly
+in your code using the builder API:
+
+* Environment variables: `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_REGION`
+* Builder API: `.projectId()` and `.location()` methods (recommended)
 
 ## Usage
 
-1. Install the latest version of Dataproc Python client and Dataproc Spark
-   Connect modules:
+1. Install the latest version of Dataproc Spark Connect:
 
    ```sh
-   pip install google_cloud_dataproc dataproc_spark_connect --force-reinstall
+   pip install -U dataproc_spark_connect
    ```
 
 2. Add the required imports into your PySpark application or notebook and start
-   a Spark session with the following code instead of using
-   environment variables:
+   a Spark session using the fluent API:
+
+   ```python
+   from google.cloud.dataproc_spark_connect import DataprocSparkSession
+   spark = DataprocSparkSession.builder.runtimeVersion('3.0').getOrCreate()
+   ```
+
+3. You can configure Spark properties using the `.config()` method:
+
+   ```python
+   from google.cloud.dataproc_spark_connect import DataprocSparkSession
+   spark = DataprocSparkSession.builder.runtimeVersion('3.0').config('spark.executor.memory', '4g').config('spark.executor.cores', '2').getOrCreate()
+   ```
+
+4. For advanced configuration, you can use the `Session` class to customize
+   settings like subnetwork or other environment configurations:
 
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
@@ -51,7 +66,7 @@ environment variables:
    session_config = Session()
    session_config.environment_config.execution_config.subnetwork_uri = '<subnet>'
    session_config.runtime_config.version = '3.0'
-   spark = DataprocSparkSession.builder.dataprocSessionConfig(session_config).getOrCreate()
+   spark = DataprocSparkSession.builder.projectId('my-project').location('us-central1').dataprocSessionConfig(session_config).getOrCreate()
    ```
 
 ### Reusing Named Sessions Across Notebooks
@@ -64,11 +79,8 @@ To create or connect to a named session:
 
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
-   from google.cloud.dataproc_v1 import Session
-   session_config = Session()
-   session_config.runtime_config.version = '3.0'
    session_id = 'my-ml-pipeline-session'
-   spark = DataprocSparkSession.builder.dataprocSessionId(session_id).dataprocSessionConfig(session_config).getOrCreate()
+   spark = DataprocSparkSession.builder.dataprocSessionId(session_id).runtimeVersion('3.0').getOrCreate()
    ```
 
 2. Session IDs must be 4-63 characters long, start with a lowercase letter, contain only lowercase letters, numbers, and hyphens, and not end with a hyphen.
