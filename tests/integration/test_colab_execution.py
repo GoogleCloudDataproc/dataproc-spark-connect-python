@@ -38,7 +38,7 @@ def test_region():
 
 @pytest.fixture
 def test_service_account():
-    return os.getenv("SERVICE_ACCOUNT")
+    return os.getenv("DATAPROC_SPARK_CONNECT_SERVICE_ACCOUNT")
 
 
 @pytest.fixture
