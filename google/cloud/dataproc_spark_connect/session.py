@@ -734,7 +734,7 @@ class DataprocSparkSession(SparkSession):
 
             # Runtime version to server Python version mapping
             RUNTIME_PYTHON_MAP = {
-                "3.0": (3, 11),
+                "3.0": (3, 12),
             }
 
             client_python = sys.version_info[:2]  # (major, minor)
