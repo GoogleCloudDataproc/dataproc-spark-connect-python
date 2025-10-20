@@ -12,54 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-
-from google.cloud.dataproc_spark_connect.environment import is_workbench
-
-
-def _setup_ipython_exception_handler():
-    """Setup custom exception handler for IPython environments to ensure minimal traceback display."""
-    # Only apply this patch in Jupyter Workbench
-    if not is_workbench():
-        return
-
-    try:
-        from IPython import get_ipython
-    except ImportError:
-        return
-
-    ipython = get_ipython()
-    if ipython is None:
-        return
-
-    # Store original method if not already stored
-    if hasattr(ipython, "_dataproc_spark_connect_original_showtraceback"):
-        return  # Already patched
-
-    ipython._dataproc_spark_connect_original_showtraceback = (
-        ipython.showtraceback
-    )
-
-    def custom_showtraceback(shell, *args, **kwargs):
-        # Get the exception value from arguments if available.
-        exc_tuple = args[0] if args else kwargs.get("exc_tuple")
-        _, value, _ = sys.exc_info() if exc_tuple is None else exc_tuple
-
-        # If it's our custom exception, show only the message
-        if isinstance(value, DataprocSparkConnectException):
-            print(f"Error: {value.message}", file=sys.stderr)
-        else:
-            # Use original behavior for other exceptions
-            shell._dataproc_spark_connect_original_showtraceback(
-                *args, **kwargs
-            )
-
-    # Override the method
-    ipython.showtraceback = custom_showtraceback
-
-
-# Setup the handler once at module import time
-_setup_ipython_exception_handler()
+from google.cloud.dataproc_spark_connect.environment import is_colab, is_colab_enterprise
 
 
 class DataprocSparkConnectException(Exception):
@@ -73,4 +26,4 @@ class DataprocSparkConnectException(Exception):
         super().__init__(message)
 
     def _render_traceback_(self):
-        return [self.message]
+        return self.message if is_colab or is_colab_enterprise else self.render_traceback()
