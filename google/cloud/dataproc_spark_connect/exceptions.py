@@ -26,4 +26,8 @@ class DataprocSparkConnectException(Exception):
         super().__init__(message)
 
     def _render_traceback_(self):
-        return self.message if is_colab or is_colab_enterprise else self.render_traceback()
+        return (
+            self.message
+            if is_colab or is_colab_enterprise
+            else self.render_traceback()
+        )
