@@ -22,16 +22,24 @@ class TestPythonVersionCheck(unittest.TestCase):
 
     def test_python_version_mismatch_warning_for_runtime_30(self):
         """Test that warning is shown when client Python doesn't match runtime 3.0 (Python 3.12)"""
-        with mock.patch("sys.version_info", (3, 11, 0)):
+        runtime_version = "3.0"
+        server_py_major, server_py_minor = 3, 12
+        client_py_major, client_py_minor = 3, 11
+
+        with mock.patch(
+            "sys.version_info", (client_py_major, client_py_minor, 0)
+        ):
             with mock.patch("warnings.warn") as mock_warn:
                 session_builder = DataprocSparkSession.Builder()
-                session_builder._check_python_version_compatibility("3.0")
+                session_builder._check_python_version_compatibility(
+                    runtime_version
+                )
 
                 expected_warning = (
-                    "Python version mismatch detected: Client is using Python 3.11, "
-                    "but Dataproc runtime 3.0 uses Python 3.12. "
+                    f"Python version mismatch detected: Client is using Python {client_py_major}.{client_py_minor}, "
+                    f"but Dataproc runtime {runtime_version} uses Python {server_py_major}.{server_py_minor}. "
                     "This mismatch may cause issues with Python UDF (User Defined Function) compatibility. "
-                    "Consider using Python 3.12 for optimal UDF execution."
+                    f"Consider using Python {server_py_major}.{server_py_minor} for optimal UDF execution."
                 )
                 mock_warn.assert_called_once_with(
                     expected_warning, stacklevel=3
@@ -39,10 +47,16 @@ class TestPythonVersionCheck(unittest.TestCase):
 
     def test_no_warning_when_python_versions_match_runtime_30(self):
         """Test that no warning is shown when client Python matches runtime 3.0 (Python 3.12)"""
-        with mock.patch("sys.version_info", (3, 12, 0)):
+        runtime_version = "3.0"
+        client_py_major, client_py_minor = 3, 12
+        with mock.patch(
+            "sys.version_info", (client_py_major, client_py_minor, 0)
+        ):
             with mock.patch("warnings.warn") as mock_warn:
                 session_builder = DataprocSparkSession.Builder()
-                session_builder._check_python_version_compatibility("3.0")
+                session_builder._check_python_version_compatibility(
+                    runtime_version
+                )
 
                 mock_warn.assert_not_called()
 
