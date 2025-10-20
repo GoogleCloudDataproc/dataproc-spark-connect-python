@@ -24,4 +24,10 @@ class DataprocSparkConnectException(Exception):
         super().__init__(message)
 
     def _render_traceback_(self):
-        return [self.message]
+        """Special method for custom tracebacks within IPython.
+
+        This will be called by IPython instead of displaying the local traceback.
+
+        It should return a traceback rendered as a list of lines.
+        """
+        return self.render_traceback()
