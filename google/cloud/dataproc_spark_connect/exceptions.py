@@ -40,15 +40,9 @@ def _setup_ipython_exception_handler():
         ipython.showtraceback
     )
 
-    def custom_showtraceback(
-        shell,
-        exc_tuple=None,
-        filename=None,
-        tb_offset=None,
-        exception_only=False,
-        running_compiled_code=False,
-    ):
-        # Get the current exception info
+    def custom_showtraceback(shell, *args, **kwargs):
+        # Get the exception value from arguments if available.
+        exc_tuple = args[0] if args else kwargs.get("exc_tuple")
         _, value, _ = sys.exc_info() if exc_tuple is None else exc_tuple
 
         # If it's our custom exception, show only the message
@@ -57,11 +51,7 @@ def _setup_ipython_exception_handler():
         else:
             # Use original behavior for other exceptions
             shell._dataproc_spark_connect_original_showtraceback(
-                exc_tuple,
-                filename,
-                tb_offset,
-                exception_only,
-                running_compiled_code,
+                *args, **kwargs
             )
 
     # Override the method
