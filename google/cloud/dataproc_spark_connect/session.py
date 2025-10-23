@@ -1005,6 +1005,10 @@ class DataprocSparkSession(SparkSession):
                 total_tasks += stage.num_tasks
                 completed_tasks += stage.num_completed_tasks
 
+            # Don't show progress bar till we receive some tasks
+            if total_tasks == 0:
+                return
+
             tqdm_pbar = notebook_tqdm
             if environment.is_interactive_terminal():
                 tqdm_pbar = cli_tqdm
@@ -1044,13 +1048,11 @@ class DataprocSparkSession(SparkSession):
     @staticmethod
     def _sql_lazy_transformation(req):
         # Select SQL command
-        if req.plan and req.plan.command and req.plan.command.sql_command:
-            return (
-                "select"
-                in req.plan.command.sql_command.sql.strip().lower().split()
-            )
-
-        return False
+        try:
+            query = req.plan.command.sql_command.input.sql.query
+            return "select" in query.strip().lower().split()
+        except AttributeError:
+            return False
 
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:

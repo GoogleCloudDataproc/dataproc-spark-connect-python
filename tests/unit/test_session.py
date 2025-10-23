@@ -35,7 +35,7 @@ from google.cloud.dataproc_v1 import (
 )
 
 from pyspark.sql.connect.client.core import ConfigResult
-from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, SqlCommand, UserContext
+from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, Relation, SQL, SqlCommand, UserContext
 from unittest import mock
 
 
@@ -1680,7 +1680,13 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
         test_execute_plan_request_1: ExecutePlanRequest = ExecutePlanRequest(
             session_id="mock-session_id-from-super",
             client_type="mock-client_type-from-super",
-            plan=Plan(command=Command(sql_command=SqlCommand(sql="SELECT 1"))),
+            plan=Plan(
+                command=Command(
+                    sql_command=SqlCommand(
+                        input=Relation(sql=SQL(query="SELECT 1"))
+                    )
+                )
+            ),
             tags=["mock-tag-from-super"],
             user_context=UserContext(user_id="mock-user-from-super"),
             operation_id=test_uuid,
@@ -1690,7 +1696,11 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             client_type="mock-client_type-from-super",
             plan=Plan(
                 command=Command(
-                    sql_command=SqlCommand(sql="INSERT INTO test_table_2 ...")
+                    sql_command=SqlCommand(
+                        input=Relation(
+                            sql=SQL(query="INSERT INTO test_table_2 ...")
+                        )
+                    )
                 )
             ),
             tags=["mock-tag-from-super"],
@@ -1703,7 +1713,9 @@ class DataprocSparkConnectClientTest(unittest.TestCase):
             plan=Plan(
                 command=Command(
                     sql_command=SqlCommand(
-                        sql="DROP TABLE IF EXISTS selections"
+                        input=Relation(
+                            sql=SQL(query="DROP TABLE IF EXISTS selections")
+                        )
                     )
                 )
             ),
