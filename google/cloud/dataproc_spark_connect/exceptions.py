@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from google.cloud.dataproc_spark_connect.environment import is_colab, is_colab_enterprise
+
 
 class DataprocSparkConnectException(Exception):
     """A custom exception class to only print the error messages.
@@ -24,4 +26,8 @@ class DataprocSparkConnectException(Exception):
         super().__init__(message)
 
     def _render_traceback_(self):
-        return [self.message]
+        return (
+            self.message
+            if is_colab or is_colab_enterprise
+            else self.render_traceback()
+        )
