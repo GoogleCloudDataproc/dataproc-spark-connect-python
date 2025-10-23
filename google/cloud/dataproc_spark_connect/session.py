@@ -1048,21 +1048,11 @@ class DataprocSparkSession(SparkSession):
     @staticmethod
     def _sql_lazy_transformation(req):
         # Select SQL command
-        if (
-            req.plan
-            and req.plan.command
-            and req.plan.command.sql_command
-            and req.plan.command.sql_command.input
-            and req.plan.command.sql_command.input.sql
-        ):
-            return (
-                "select"
-                in req.plan.command.sql_command.input.sql.query.strip()
-                .lower()
-                .split()
-            )
-
-        return False
+        try:
+            query = req.plan.command.sql_command.input.sql.query
+            return "select" in query.strip().lower().split()
+        except AttributeError:
+            return False
 
     def _repr_html_(self) -> str:
         if not self._active_s8s_session_id:
