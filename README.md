@@ -39,7 +39,7 @@ in your code using the builder API:
 1. Install the latest version of Dataproc Spark Connect:
 
    ```sh
-   !pip install -U --pre dataproc-spark-connect
+   pip install -U dataproc-spark-connect
    ```
 
 2. Add the required imports into your PySpark application or notebook and start
@@ -47,14 +47,14 @@ in your code using the builder API:
 
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
-   spark = DataprocSparkSession.builder.runtimeVersion('3.0').getOrCreate()
+   spark = DataprocSparkSession.builder.getOrCreate()
    ```
 
 3. You can configure Spark properties using the `.config()` method:
 
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
-   spark = DataprocSparkSession.builder.runtimeVersion('3.0').config('spark.executor.memory', '4g').config('spark.executor.cores', '2').getOrCreate()
+   spark = DataprocSparkSession.builder.config('spark.executor.memory', '4g').config('spark.executor.cores', '2').getOrCreate()
    ```
 
 4. For advanced configuration, you can use the `Session` class to customize
@@ -80,7 +80,7 @@ To create or connect to a named session:
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
    session_id = 'my-ml-pipeline-session'
-   spark = DataprocSparkSession.builder.dataprocSessionId(session_id).runtimeVersion('3.0').getOrCreate()
+   spark = DataprocSparkSession.builder.dataprocSessionId(session_id).getOrCreate()
    df = spark.createDataFrame([(1, 'data')], ['id', 'value'])
    df.show()
    ```
@@ -90,7 +90,7 @@ To create or connect to a named session:
    ```python
    from google.cloud.dataproc_spark_connect import DataprocSparkSession
    session_id = 'my-ml-pipeline-session'
-   spark = DataprocSparkSession.builder.dataprocSessionId(session_id).runtimeVersion('3.0').getOrCreate()
+   spark = DataprocSparkSession.builder.dataprocSessionId(session_id).getOrCreate()
    df = spark.createDataFrame([(2, 'more-data')], ['id', 'value'])
    df.show()
    ```
