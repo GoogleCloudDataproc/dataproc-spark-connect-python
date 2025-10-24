@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from google.cloud.dataproc_spark_connect.environment import is_colab, is_colab_enterprise
-
 
 class DataprocSparkConnectException(Exception):
     """A custom exception class to only print the error messages.
