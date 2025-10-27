@@ -1179,26 +1179,63 @@ class DataprocSparkSession(SparkSession):
     def _get_active_session_file_path():
         return os.getenv("DATAPROC_SPARK_CONNECT_ACTIVE_SESSION_FILE_PATH")
 
-    def stop(self) -> None:
+    def stop(self, terminate: Optional[bool] = None) -> None:
+        """
+        Stop the Spark session and optionally terminate the server-side session.
+
+        Parameters
+        ----------
+        terminate : bool, optional
+            Control server-side termination behavior.
+
+            - None (default): Auto-detect based on session type
+
+              - Managed sessions (auto-generated ID): terminate server
+              - Named sessions (custom ID): client-side cleanup only
+
+            - True: Always terminate the server-side session
+            - False: Never terminate the server-side session (client cleanup only)
+
+        Examples
+        --------
+        Auto-detect termination behavior (existing behavior):
+
+        >>> spark.stop()
+
+        Force terminate a named session:
+
+        >>> spark.stop(terminate=True)
+
+        Prevent termination of a managed session:
+
+        >>> spark.stop(terminate=False)
+        """
         with DataprocSparkSession._lock:
             if DataprocSparkSession._active_s8s_session_id is not None:
-                # Check if this is a managed session (auto-generated ID) or unmanaged session (custom ID)
-                if DataprocSparkSession._active_session_uses_custom_id:
-                    # Unmanaged session (custom ID): Only clean up client-side state
-                    # Don't terminate as it might be in use by other notebooks or clients
-                    logger.debug(
-                        f"Stopping unmanaged session {DataprocSparkSession._active_s8s_session_id} without termination"
+                # Determine if we should terminate the server-side session
+                if terminate is None:
+                    # Auto-detect: managed sessions terminate, named sessions don't
+                    should_terminate = (
+                        not DataprocSparkSession._active_session_uses_custom_id
                     )
                 else:
-                    # Managed session (auto-generated ID): Use original behavior and terminate
+                    should_terminate = terminate
+
+                if should_terminate:
+                    # Terminate the server-side session
                     logger.debug(
-                        f"Terminating managed session {DataprocSparkSession._active_s8s_session_id}"
+                        f"Terminating session {DataprocSparkSession._active_s8s_session_id}"
                     )
                     terminate_s8s_session(
                         DataprocSparkSession._project_id,
                         DataprocSparkSession._region,
                         DataprocSparkSession._active_s8s_session_id,
                         self._client_options,
+                    )
+                else:
+                    # Client-side cleanup only
+                    logger.debug(
+                        f"Stopping session {DataprocSparkSession._active_s8s_session_id} without termination"
                     )
 
                 self._remove_stopped_session_from_file()

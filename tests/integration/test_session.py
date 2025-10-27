@@ -666,6 +666,96 @@ def test_sparksql_magic_with_dataproc_session(connect_session):
     assert row["joined_string"] == "Dataproc-Spark"
 
 
+def test_stop_named_session_with_terminate_true(
+    auth_type,
+    test_project,
+    test_region,
+    session_controller_client,
+    os_environment,
+):
+    """Test that stop(terminate=True) terminates a named session on the server."""
+    # Use a randomized session ID to avoid conflicts
+    custom_session_id = f"test-terminate-true-{uuid.uuid4().hex[:8]}"
+
+    # Create a session with custom ID
+    spark = (
+        DataprocSparkSession.builder.dataprocSessionId(custom_session_id)
+        .projectId(test_project)
+        .location(test_region)
+        .getOrCreate()
+    )
+
+    # Verify session is created
+    assert DataprocSparkSession._active_s8s_session_id == custom_session_id
+    session_name = f"projects/{test_project}/locations/{test_region}/sessions/{custom_session_id}"
+
+    # Test basic functionality
+    df = spark.createDataFrame([(1, "test")], ["id", "value"])
+    assert df.count() == 1
+
+    # Stop with terminate=True
+    spark.stop(terminate=True)
+
+    # Verify client-side cleanup
+    assert DataprocSparkSession._active_s8s_session_id is None
+
+    # Verify server-side session is terminating or terminated
+    get_session_request = GetSessionRequest()
+    get_session_request.name = session_name
+    session = session_controller_client.get_session(get_session_request)
+
+    assert session.state in [
+        Session.State.TERMINATING,
+        Session.State.TERMINATED,
+    ]
+
+
+def test_stop_managed_session_with_terminate_false(
+    auth_type,
+    test_project,
+    test_region,
+    session_controller_client,
+    os_environment,
+):
+    """Test that stop(terminate=False) does NOT terminate a managed session on the server."""
+    # Create a managed session (auto-generated ID)
+    spark = (
+        DataprocSparkSession.builder.projectId(test_project)
+        .location(test_region)
+        .getOrCreate()
+    )
+
+    # Verify it's a managed session (auto-generated ID)
+    assert DataprocSparkSession._active_s8s_session_id is not None
+    assert DataprocSparkSession._active_session_uses_custom_id is False
+    session_id = DataprocSparkSession._active_s8s_session_id
+    session_name = (
+        f"projects/{test_project}/locations/{test_region}/sessions/{session_id}"
+    )
+
+    # Test basic functionality
+    df = spark.createDataFrame([(1, "test")], ["id", "value"])
+    assert df.count() == 1
+
+    # Stop with terminate=False (prevent server-side termination)
+    spark.stop(terminate=False)
+
+    # Verify client-side cleanup
+    assert DataprocSparkSession._active_s8s_session_id is None
+
+    # Verify server-side session is still ACTIVE (not terminated)
+    get_session_request = GetSessionRequest()
+    get_session_request.name = session_name
+    session = session_controller_client.get_session(get_session_request)
+
+    assert session.state == Session.State.ACTIVE
+
+    # Clean up: terminate the session manually
+    terminate_session_request = TerminateSessionRequest()
+    terminate_session_request.name = session_name
+    session_controller_client.terminate_session(terminate_session_request)
+
+
 @pytest.fixture
 def batch_workload_env(monkeypatch):
     """Sets DATAPROC_WORKLOAD_TYPE to 'batch' for a test."""
