@@ -1213,12 +1213,13 @@ class DataprocSparkSession(SparkSession):
         with DataprocSparkSession._lock:
             if DataprocSparkSession._active_s8s_session_id is not None:
                 # Determine if we should terminate the server-side session
-                should_terminate = terminate
-                if should_terminate is None:
+                if terminate is None:
                     # Auto-detect: managed sessions terminate, named sessions don't
                     should_terminate = (
                         not DataprocSparkSession._active_session_uses_custom_id
                     )
+                else:
+                    should_terminate = terminate
 
                 if should_terminate:
                     # Terminate the server-side session
