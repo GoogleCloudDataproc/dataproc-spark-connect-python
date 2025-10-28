@@ -38,7 +38,10 @@ from pyspark.sql.connect.client.core import ConfigResult
 from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, Relation, SQL, SqlCommand, UserContext
 from unittest import mock
 
-_DATAPROC_SESSIONS_BASE_URL = "https://console.cloud.google.com/dataproc/interactive"
+_DATAPROC_SESSIONS_BASE_URL = (
+    "https://console.cloud.google.com/dataproc/interactive"
+)
+
 
 class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
 
