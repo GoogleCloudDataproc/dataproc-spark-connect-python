@@ -499,7 +499,6 @@ class DataprocSparkSession(SparkSession):
             html_element = f"""
                 <div>
                     <p>Creating Dataproc Spark Session<p>
-                    <p><a href="{session_url}">Dataproc Session</a></p>
                 </div>
             """
 
@@ -798,7 +797,7 @@ class DataprocSparkSession(SparkSession):
                 return
 
             try:
-                session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/{self._region}?project={self._project_id}"
+                session_url = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
                 from IPython.core.interactiveshell import InteractiveShell
 
                 if not InteractiveShell.initialized():

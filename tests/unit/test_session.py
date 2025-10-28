@@ -163,7 +163,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
-        test_session_url = f"https://console.cloud.google.com/dataproc/interactive/sessions/{session_id}/locations/test-region?project=test-project"
+        test_session_url = f"https://console.cloud.google.com/dataproc/interactive/test-region/{session_id}?project=test-project"
         mock_display_link = mock_ipython_utils.display_link
         mock.patch.dict(
             os.environ,
@@ -1189,7 +1189,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
-        test_session_url = "https://console.cloud.google.com/dataproc/interactive/sessions/test_session/locations/test-region?project=test-project"
+        test_session_url = "https://console.cloud.google.com/dataproc/interactive/test-region/test_session?project=test-project"
 
         mock_display_link = mock_ipython_utils.display_link
         DataprocSparkSession.builder._display_view_session_details_button(
