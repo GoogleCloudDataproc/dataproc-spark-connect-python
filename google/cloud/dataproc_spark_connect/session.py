@@ -67,7 +67,10 @@ SYSTEM_LABELS = {
     "goog-colab-notebook-id",
 }
 
-_DATAPROC_SESSIONS_BASE_URL = "https://console.cloud.google.com/dataproc/interactive"
+_DATAPROC_SESSIONS_BASE_URL = (
+    "https://console.cloud.google.com/dataproc/interactive"
+)
+
 
 def _is_valid_label_value(value: str) -> bool:
     """
