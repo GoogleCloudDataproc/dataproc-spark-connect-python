@@ -38,6 +38,7 @@ from pyspark.sql.connect.client.core import ConfigResult
 from pyspark.sql.connect.proto import Command, ConfigResponse, ExecutePlanRequest, Plan, Relation, SQL, SqlCommand, UserContext
 from unittest import mock
 
+_DATAPROC_SESSIONS_BASE_URL = "https://console.cloud.google.com/dataproc/interactive"
 
 class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
 
@@ -163,7 +164,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
-        test_session_url = f"https://console.cloud.google.com/dataproc/interactive/test-region/{session_id}?project=test-project"
+        test_session_url = f"{_DATAPROC_SESSIONS_BASE_URL}/test-region/{session_id}?project=test-project"
         mock_display_link = mock_ipython_utils.display_link
         mock.patch.dict(
             os.environ,
@@ -1189,7 +1190,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         mock_ipython_utils = mock.sys.modules[
             "google.cloud.aiplatform.utils"
         ]._ipython_utils
-        test_session_url = "https://console.cloud.google.com/dataproc/interactive/test-region/test_session?project=test-project"
+        test_session_url = f"{_DATAPROC_SESSIONS_BASE_URL}/test-region/test_session?project=test-project"
 
         mock_display_link = mock_ipython_utils.display_link
         DataprocSparkSession.builder._display_view_session_details_button(

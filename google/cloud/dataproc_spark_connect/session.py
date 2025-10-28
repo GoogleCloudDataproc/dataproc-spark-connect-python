@@ -67,6 +67,7 @@ SYSTEM_LABELS = {
     "goog-colab-notebook-id",
 }
 
+_DATAPROC_SESSIONS_BASE_URL = "https://console.cloud.google.com/dataproc/interactive"
 
 def _is_valid_label_value(value: str) -> bool:
     """
@@ -494,7 +495,7 @@ class DataprocSparkSession(SparkSession):
             )
 
         def _display_session_link_on_creation(self, session_id):
-            session_url = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
+            session_url = f"{_DATAPROC_SESSIONS_BASE_URL}/{self._region}/{session_id}?project={self._project_id}"
             plain_message = f"Creating Dataproc Session: {session_url}"
             html_element = f"""
                 <div>
@@ -553,7 +554,7 @@ class DataprocSparkSession(SparkSession):
 
             if session_response is not None:
                 print(
-                    f"Using existing Dataproc Session (configuration changes may not be applied): https://console.cloud.google.com/dataproc/interactive/{self._region}/{s8s_session_id}?project={self._project_id}"
+                    f"Using existing Dataproc Session (configuration changes may not be applied): {_DATAPROC_SESSIONS_BASE_URL}/{self._region}/{s8s_session_id}?project={self._project_id}"
                 )
                 self._display_view_session_details_button(s8s_session_id)
                 if session is None:
@@ -797,7 +798,7 @@ class DataprocSparkSession(SparkSession):
                 return
 
             try:
-                session_url = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{session_id}?project={self._project_id}"
+                session_url = f"{_DATAPROC_SESSIONS_BASE_URL}/{self._region}/{session_id}?project={self._project_id}"
                 from IPython.core.interactiveshell import InteractiveShell
 
                 if not InteractiveShell.initialized():
@@ -1059,7 +1060,7 @@ class DataprocSparkSession(SparkSession):
             <div>No Active Dataproc Session</div>
             """
 
-        s8s_session = f"https://console.cloud.google.com/dataproc/interactive/{self._region}/{self._active_s8s_session_id}"
+        s8s_session = f"{_DATAPROC_SESSIONS_BASE_URL}/{self._region}/{self._active_s8s_session_id}"
         ui = f"{s8s_session}/sparkApplications/applications"
         return f"""
         <div>
@@ -1086,7 +1087,7 @@ class DataprocSparkSession(SparkSession):
         )
 
         url = (
-            f"https://console.cloud.google.com/dataproc/interactive/{self._region}/"
+            f"{_DATAPROC_SESSIONS_BASE_URL}/{self._region}/"
             f"{self._active_s8s_session_id}/sparkApplications/application;"
             f"associatedSqlOperationId={operation_id}?project={self._project_id}"
         )
