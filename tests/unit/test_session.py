@@ -1496,36 +1496,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             self.stopSession(mock_session_controller_client_instance, session)
 
 
-    # @mock.patch("google.cloud.dataproc_spark_connect.environment.is_interactive")
-    # @mock.patch("google.cloud.dataproc_spark_connect.environment.is_interactive_terminal")
-    # @mock.patch("google.cloud.dataproc_spark_connect.environment.is_colab_enterprise")
-    # @mock.patch("IPython.display.display")
-    # @mock.patch("builtins.print")
-    # def test_display_link_not_colab_enterprise(
-    #     self,
-    #     mock_print,
-    #     mock_display,
-    #     mock_is_colab_enterprise,
-    #     mock_is_interactive_terminal,
-    #     mock_is_interactive,
-    # ):
-    #     mock_is_interactive.return_value = True
-    #     mock_is_interactive_terminal.return_value = False
-    #     mock_is_colab_enterprise.return_value = False
-    #
-    #     builder = DataprocSparkSession.builder
-    #     builder._project_id = "test-project"
-    #     builder._region = "test-region"
-    #     builder._display_session_link_on_creation("test-session-id")
-    #
-    #     mock_display.assert_called_once()
-    #     args, _ = mock_display.call_args
-    #     html_output = args[0].data
-    #     self.assertIn("Creating Dataproc Spark Session", html_output)
-    #     self.assertIn("test-session-id", html_output)
-    #     self.assertIn("Dataproc Session", html_output)
-    #     mock_print.assert_not_called()
-
 class DataprocSparkConnectClientTest(unittest.TestCase):
 
     @staticmethod
