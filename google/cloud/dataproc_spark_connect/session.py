@@ -500,12 +500,19 @@ class DataprocSparkSession(SparkSession):
         def _display_session_link_on_creation(self, session_id):
             session_url = f"{_DATAPROC_SESSIONS_BASE_URL}/{self._region}/{session_id}?project={self._project_id}"
             plain_message = f"Creating Dataproc Session: {session_url}"
-            html_element = f"""
+            if environment.is_colab_enterprise():
+                html_element = f"""
                 <div>
                     <p>Creating Dataproc Spark Session<p>
                 </div>
-            """
-
+                """
+            else:
+                html_element = f"""
+                    <div>
+                        <p>Creating Dataproc Spark Session<p>
+                        <p><a href="{session_url}">Dataproc Session</a></p>
+                    </div>
+                """
             self._output_element_or_message(plain_message, html_element)
 
         def _print_session_created_message(self):
