@@ -720,8 +720,6 @@ class DataprocSparkSession(SparkSession):
                     # Merge default configs with existing properties,
                     # user configs take precedence
                     for k, v in {
-                        "spark.datasource.bigquery.viewsEnabled": "true",
-                        "spark.datasource.bigquery.writeMethod": "direct",
                         "spark.sql.catalog.spark_catalog": "com.google.cloud.spark.bigquery.BigQuerySparkSessionCatalog",
                         "spark.sql.sources.default": "bigquery",
                     }.items():
