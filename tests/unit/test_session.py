@@ -1011,7 +1011,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 0
             ]
             self.assertNotIn(
-                "spark.datasource.bigquery.writeMethod",
+                "spark.sql.sources.default",
                 create_session_request.session.runtime_config.properties,
             )
             mock_logger.warning.assert_not_called()
@@ -1034,18 +1034,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 0
             ]
             # BigQuery properties should be set
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.datasource.bigquery.writeMethod"
-                ),
-                "direct",
-            )
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.datasource.bigquery.viewsEnabled"
-                ),
-                "true",
-            )
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
                     "spark.sql.sources.default"
@@ -1078,7 +1066,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
                 0
             ]
             self.assertNotIn(
-                "spark.datasource.bigquery.writeMethod",
+                "spark.sql.sources.default",
                 create_session_request.session.runtime_config.properties,
             )
             mock_logger.warning.assert_called_once_with(
@@ -1099,7 +1087,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             dataproc_config = Session()
             dataproc_config.runtime_config.version = "3.0"
             dataproc_config.runtime_config.properties = {
-                "spark.datasource.bigquery.writeMethod": "override_method",
+                "spark.sql.sources.default": "override_source",
                 "spark.some.other.property": "some_value",
             }
             session = DataprocSparkSession.builder.dataprocSessionConfig(
@@ -1114,22 +1102,10 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             # but pre-existing properties should override defaults.
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
-                    "spark.datasource.bigquery.writeMethod"
-                ),
-                "override_method",
-            )  # Pre-existing property remains
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
-                    "spark.datasource.bigquery.viewsEnabled"
-                ),
-                "true",
-            )  # Default should still be set
-            self.assertEqual(
-                create_session_request.session.runtime_config.properties.get(
                     "spark.sql.sources.default"
                 ),
-                "bigquery",
-            )  # Default should still be set
+                "override_source",
+            )  # Pre-existing property remains
             self.assertEqual(
                 create_session_request.session.runtime_config.properties.get(
                     "spark.sql.catalog.spark_catalog"
