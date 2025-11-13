@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.1.0](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0...v1.1.0) (2025-11-13)
+
+
+### Features
+
+* Depend on the lightweight Spark Connect client ([#166](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/166)) ([89d77af](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/89d77af5b179b0d4cff83c218f5f59c54a8662f4))
+* support sharable session termination by adding `terminate` option to `stop()` function ([#162](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/162)) ([3beb0fc](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/3beb0fccc93fbc0e7013d0cb67ee60074884b7ca))
+
+
+### Bug Fixes
+
+* address the error display issue on workbench only ([#154](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/154)) ([538b7ca](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/538b7cab4ee260e2f73188e043c92c989545d13c))
+* Do not manually set already pre-defined Spark BQ Connector configs ([#165](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/165)) ([3403ce7](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/3403ce79bebd381055dc164163dc2d419f16fa50))
+* Do not print stacktrace for known errors in all IPython envs ([#159](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/159)) ([c693b63](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/c693b632ab95aabe11127185748c07a9581748d6))
+* error (stack trace) propagation in non-Colab IPython environments ([#158](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/158)) ([1988c42](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/1988c42e037cb1b7fd0e0fbaf94f7b8bb2fe2d15))
+* Remove 'Dataproc Session' link from the cell output and update 'View Session Details' button url. ([#163](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/163)) ([43b696c](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/43b696c09dfe68b3bcaef6a4fd08ff03cbf13be9))
+* Remove redundant empty/non-actionable per-operation Spark UI link and progress bar ([#157](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/157)) ([7059ecc](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/7059eccbfb8b0d0da831817c3cc825a27aa49374))
+* Update Python version mapping for Dataproc runtime 3.0 to Python 3.12 ([#155](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/155)) ([16e98e3](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/16e98e3ca7a495e5e25d5b79b1d06d7cc81941ec))
+* Use CLI tqdm if ipywidgets not installed ([#167](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/167)) ([a0d2551](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/a0d25513cce22ca8079eb995c9ded2fed28af01a))
+
 ## [1.0.0rc6](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc5...v1.0.0rc6) (2025-10-10)
 
 
