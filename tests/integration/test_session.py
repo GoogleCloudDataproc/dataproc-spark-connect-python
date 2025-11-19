@@ -791,3 +791,19 @@ def test_create_local_spark_session(batch_workload_env, local_spark_session):
         assert dataproc_spark_session == local_spark_session
     finally:
         dataproc_spark_session.stop()
+
+def test_create_session_without_project_id(test_region):
+    """Tests that an exception is raised when project ID is not provided."""
+    with pytest.raises(ValueError, match="Project ID must be specified"):
+        (
+            DataprocSparkSession.builder.location(test_region)
+            .getOrCreate()
+        )
+
+def test_create_session_without_location(test_project):
+    """Tests that an exception is raised when location is not provided."""
+    with pytest.raises(ValueError, match="Location must be specified"):
+        (
+            DataprocSparkSession.builder.projectId(test_project)
+            .getOrCreate()
+        )
