@@ -1471,8 +1471,30 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             )
             self.stopSession(mock_session_controller_client_instance, session)
 
+    def test_create_session_without_project_id(self):
+        """Tests that an exception is raised when project ID is not provided."""
+        os.environ.clear()
+        try:
+            DataprocSparkSession.builder.location("test-region").getOrCreate()
+        except DataprocSparkConnectException as e:
+            self.assertIn("project ID is not set", str(e))
+
+    def test_create_session_without_location(self):
+        """Tests that an exception is raised when location is not provided."""
+        os.environ.clear()
+        try:
+            DataprocSparkSession.builder.projectId("test-project").getOrCreate()
+        except DataprocSparkConnectException as e:
+            self.assertIn("location is not set", str(e))
+
 
 class DataprocSparkConnectClientTest(unittest.TestCase):
+
+    def setUp(self):
+        self.original_environment = dict(os.environ)
+        os.environ.clear()
+        os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
+        os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
 
     @staticmethod
     def stopSession(mock_session_controller_client_instance, session):

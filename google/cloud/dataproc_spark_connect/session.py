@@ -592,6 +592,16 @@ class DataprocSparkSession(SparkSession):
                     session = PySparkSQLSession.builder.getOrCreate()
                     return session  # type: ignore
 
+                if self._project_id is None:
+                    raise DataprocSparkConnectException(
+                        f"Error while creating Dataproc Session: project ID is not set"
+                    )
+
+                if self._region is None:
+                    raise DataprocSparkConnectException(
+                        f"Error while creating Dataproc Session: location is not set"
+                    )
+
                 # Handle custom session ID by setting it early and letting existing logic handle it
                 if self._custom_session_id:
                     self._handle_custom_session_id()
