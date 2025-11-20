@@ -1479,7 +1479,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         except DataprocSparkConnectException as e:
             self.assertIn("project ID is not set", str(e))
 
-
     def test_create_session_without_location(self):
         """Tests that an exception is raised when location is not provided."""
         os.environ.clear()
@@ -1487,6 +1486,7 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
             DataprocSparkSession.builder.projectId("test-project").getOrCreate()
         except DataprocSparkConnectException as e:
             self.assertIn("location is not set", str(e))
+
 
 class DataprocSparkConnectClientTest(unittest.TestCase):
 

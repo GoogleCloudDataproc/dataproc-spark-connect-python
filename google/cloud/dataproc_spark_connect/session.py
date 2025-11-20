@@ -596,7 +596,7 @@ class DataprocSparkSession(SparkSession):
                     raise DataprocSparkConnectException(
                         f"Error while creating Dataproc Session: project ID is not set"
                     )
-                
+
                 if self._region is None:
                     raise DataprocSparkConnectException(
                         f"Error while creating Dataproc Session: location is not set"
