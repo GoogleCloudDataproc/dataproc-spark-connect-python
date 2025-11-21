@@ -1497,7 +1497,6 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         except DataprocSparkConnectException as e:
             self.assertIn("Your default credentials were not found", str(e))
 
-
 class DataprocSparkConnectClientTest(unittest.TestCase):
 
     def setUp(self):
