@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0...v1.0.1) (2025-12-04)
+
+
+### Bug Fixes
+
+* Add validation when location or project ID are not provided ([#168](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/issues/168)) ([8da16ed](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/commit/8da16ede47c3db1a9f2575a8195db381f107da9b))
+
 ## [1.0.0rc7](https://github.com/GoogleCloudDataproc/dataproc-spark-connect-python/compare/v1.0.0rc6...v1.0.0rc7) (2025-11-13)
 
 
