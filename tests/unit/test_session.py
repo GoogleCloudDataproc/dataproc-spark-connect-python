@@ -1487,6 +1487,15 @@ class DataprocRemoteSparkSessionBuilderTests(unittest.TestCase):
         except DataprocSparkConnectException as e:
             self.assertIn("location is not set", str(e))
 
+    def test_create_session_without_application_default_credentials(self):
+        """Tests that an exception is raised when application default credentials is not provided."""
+        os.environ.clear()
+        try:
+            DataprocSparkSession.builder.location("test-region").projectId(
+                "test-project"
+            ).getOrCreate()
+        except DataprocSparkConnectException as e:
+            self.assertIn("Your default credentials were not found", str(e))
 
 class DataprocSparkConnectClientTest(unittest.TestCase):
 

@@ -39,6 +39,7 @@ from google.api_core.exceptions import (
     PermissionDenied,
 )
 from google.api_core.future.polling import POLLING_PREDICATE
+from google.auth.exceptions import DefaultCredentialsError
 from google.cloud.dataproc_spark_connect.client import DataprocChannelBuilder
 from google.cloud.dataproc_spark_connect.exceptions import DataprocSparkConnectException
 from google.cloud.dataproc_spark_connect.pypi_artifacts import PyPiArtifacts
@@ -455,6 +456,15 @@ class DataprocSparkSession(SparkSession):
                     DataprocSparkSession._active_session_uses_custom_id = False
                     raise DataprocSparkConnectException(
                         f"Error while creating Dataproc Session: {e.message}"
+                    )
+                except DefaultCredentialsError as e:
+                    stop_create_session_pbar_event.set()
+                    if create_session_pbar_thread.is_alive():
+                        create_session_pbar_thread.join()
+                    DataprocSparkSession._active_s8s_session_id = None
+                    DataprocSparkSession._active_session_uses_custom_id = False
+                    raise DataprocSparkConnectException(
+                        f"Error while creating Dataproc Session: {e}"
                     )
                 except Exception as e:
                     stop_create_session_pbar_event.set()
