@@ -108,46 +108,6 @@ def _is_valid_session_id(session_id: str) -> bool:
     return bool(re.match(pattern, session_id))
 
 
-def _qualify_session_template(
-    template: str, project_id: Optional[str], region: Optional[str]
-) -> str:
-    """
-    Resolve a session template to a fully qualified resource name.
-
-    The Sessions API accepts only resource names that include the project and
-    location, so a bare template ID is expanded against the session's own
-    project and region. Values that already contain a path separator (the
-    ``projects/...`` resource name and the ``https://...`` URL forms) carry
-    their own project and location, and are returned unchanged.
-
-    Raises:
-        ManagedSparkConnectException: If a bare template ID was given but the
-            project or region needed to resolve it is missing.
-    """
-    if not template or "/" in template:
-        return template
-
-    missing = [
-        field
-        for field, value in (("project ID", project_id), ("location", region))
-        if not value
-    ]
-    if missing:
-        raise ManagedSparkConnectException(
-            f"Error while creating Managed Spark Session: cannot resolve the"
-            f" '{template}' session template because the"
-            f" {' and '.join(missing)}"
-            f" {'are' if len(missing) > 1 else 'is'} not set."
-            f" Either set the project and location, or pass the template's"
-            f" full resource name"
-            f" (projects/<project>/locations/<location>/sessionTemplates/{template})."
-        )
-
-    return (
-        f"projects/{project_id}/locations/{region}/sessionTemplates/{template}"
-    )
-
-
 class ManagedSparkSession(SparkSession):
     """The entry point to programming Spark with the Dataset and DataFrame API.
 
@@ -300,8 +260,10 @@ class ManagedSparkSession(SparkSession):
         def sessionTemplate(self, profile: str):
             """Set the Session Template to use for the session.
 
-            Accepts either a bare template ID, which is resolved against the
-            session's project and region, or a fully qualified resource name.
+            Accepts either a bare template ID, which the service resolves
+            against the session's own project and location, or a fully
+            qualified resource name. Pass the resource name when the template
+            lives in a different project or location than the session.
 
             Args:
                 profile: The template ID (``my-template``) or resource name
@@ -703,13 +665,6 @@ class ManagedSparkSession(SparkSession):
             for k, v in self._options.items():
                 session_config.runtime_config.properties[k] = v
             session_config.spark_connect_session = sessions.SparkConnectConfig()
-            # Resolved here rather than in sessionTemplate() so that the
-            # template may be set before the project and region are.
-            session_config.session_template = _qualify_session_template(
-                session_config.session_template,
-                self._project_id,
-                self._region,
-            )
             if not session_config.runtime_config.version:
                 session_config.runtime_config.version = (
                     ManagedSparkSession._DEFAULT_RUNTIME_VERSION

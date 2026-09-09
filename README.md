@@ -70,8 +70,8 @@ in your code using the builder API:
    ```
 
 5. To start from a [Session Template](https://cloud.google.com/dataproc-serverless/docs/concepts/session-templates),
-   pass its ID. The template is resolved against the project and region you
-   configured, so you don't have to repeat them:
+   pass its ID. The service resolves it against the session's own project and
+   region, so you don't have to repeat them:
 
    ```python
    from google.cloud.managed_spark_connect import ManagedSparkSession

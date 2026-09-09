@@ -2099,7 +2099,7 @@ class ManagedSparkConnectClientTest(unittest.TestCase):
         mock_session_controller_client,
         mock_credentials,
     ):
-        """A bare template ID is expanded before the session is created."""
+        """A bare template ID reaches the service unchanged for it to resolve."""
         session = None
         mock_session_controller_client_instance = (
             self._setup_session_creation_mocks(
@@ -2126,7 +2126,7 @@ class ManagedSparkConnectClientTest(unittest.TestCase):
             ]
             self.assertEqual(
                 create_session_request.session.session_template,
-                "projects/test-project/locations/us-central1/sessionTemplates/test-template",
+                "test-template",
             )
 
         finally:
@@ -2710,143 +2710,6 @@ class SessionIdValidationTests(unittest.TestCase):
         result = builder._get_session_by_id("my-session")
         self.assertIsNone(result)
         mock_client.get_session.assert_called_once()
-
-
-class SessionTemplateExpansionTests(unittest.TestCase):
-    """Test cases for resolving bare session template IDs to resource names."""
-
-    _EXPANDED = (
-        "projects/test-project/locations/test-region/sessionTemplates/tmpl"
-    )
-    _QUALIFIED = (
-        "projects/other-project/locations/other-region/sessionTemplates/tmpl"
-    )
-    _URL = (
-        "https://www.googleapis.com/compute/v1/projects/other-project"
-        "/locations/other-region/sessionTemplates/tmpl"
-    )
-
-    def setUp(self):
-        self.original_environment = dict(os.environ)
-        os.environ.clear()
-
-    def tearDown(self):
-        os.environ.clear()
-        os.environ.update(self.original_environment)
-
-    @staticmethod
-    def _builder():
-        builder = ManagedSparkSession.Builder()
-        builder._project_id = "test-project"
-        builder._region = "test-region"
-        return builder
-
-    def test_bare_template_id_is_expanded(self):
-        """A bare template ID resolves against the session project and region."""
-        builder = self._builder().sessionTemplate("tmpl")
-        self.assertEqual(
-            builder._get_session_config().session_template, self._EXPANDED
-        )
-
-    def test_resource_name_is_left_unchanged(self):
-        """A fully qualified resource name is passed through untouched."""
-        builder = self._builder().sessionTemplate(self._QUALIFIED)
-        self.assertEqual(
-            builder._get_session_config().session_template, self._QUALIFIED
-        )
-
-    def test_url_is_left_unchanged(self):
-        """The googleapis.com URL form is passed through untouched."""
-        builder = self._builder().sessionTemplate(self._URL)
-        self.assertEqual(
-            builder._get_session_config().session_template, self._URL
-        )
-
-    def test_unset_template_is_left_unset(self):
-        """A session without a template does not get an empty template name."""
-        builder = self._builder()
-        self.assertEqual(builder._get_session_config().session_template, "")
-
-    def test_expansion_is_independent_of_builder_call_order(self):
-        """The template may be set before or after the project and region."""
-        template_first = ManagedSparkSession.Builder()
-        template_first.sessionTemplate("tmpl")
-        template_first.projectId("test-project").location("test-region")
-
-        template_last = ManagedSparkSession.Builder()
-        template_last.projectId("test-project").location("test-region")
-        template_last.sessionTemplate("tmpl")
-
-        self.assertEqual(
-            template_first._get_session_config().session_template,
-            self._EXPANDED,
-        )
-        self.assertEqual(
-            template_last._get_session_config().session_template,
-            self._EXPANDED,
-        )
-
-    def test_bare_template_id_in_session_config_is_expanded(self):
-        """A template set through sessionConfig() is expanded too."""
-        session_config = Session()
-        session_config.session_template = "tmpl"
-        builder = self._builder().sessionConfig(session_config)
-        self.assertEqual(
-            builder._get_session_config().session_template, self._EXPANDED
-        )
-
-    def test_bare_template_id_without_project_is_rejected(self):
-        """A bare template ID cannot be resolved without a project."""
-        builder = self._builder().sessionTemplate("tmpl")
-        builder._project_id = None
-        with self.assertRaises(ManagedSparkConnectException) as context:
-            builder._get_session_config()
-        message = str(context.exception)
-        self.assertIn("'tmpl' session template", message)
-        self.assertIn("project ID is not set", message)
-
-    def test_bare_template_id_without_region_is_rejected(self):
-        """A bare template ID cannot be resolved without a location."""
-        builder = self._builder().sessionTemplate("tmpl")
-        builder._region = None
-        with self.assertRaises(ManagedSparkConnectException) as context:
-            builder._get_session_config()
-        self.assertIn("location is not set", str(context.exception))
-
-    def test_bare_template_id_without_either_names_both(self):
-        """The error names every field that is missing."""
-        builder = self._builder().sessionTemplate("tmpl")
-        builder._project_id = None
-        builder._region = None
-        with self.assertRaises(ManagedSparkConnectException) as context:
-            builder._get_session_config()
-        self.assertIn(
-            "project ID and location are not set", str(context.exception)
-        )
-
-    def test_empty_project_is_rejected(self):
-        """A set-but-empty project is treated as missing, not interpolated."""
-        builder = self._builder().sessionTemplate("tmpl")
-        builder._project_id = ""
-        with self.assertRaises(ManagedSparkConnectException) as context:
-            builder._get_session_config()
-        self.assertIn("project ID is not set", str(context.exception))
-
-    def test_resource_name_needs_no_project_or_region(self):
-        """A full resource name carries its own project and location."""
-        builder = self._builder().sessionTemplate(self._QUALIFIED)
-        builder._project_id = None
-        builder._region = None
-        self.assertEqual(
-            builder._get_session_config().session_template, self._QUALIFIED
-        )
-
-    def test_unset_template_needs_no_project_or_region(self):
-        """A session without a template is unaffected by the guard."""
-        builder = self._builder()
-        builder._project_id = None
-        builder._region = None
-        self.assertEqual(builder._get_session_config().session_template, "")
 
 
 if __name__ == "__main__":
