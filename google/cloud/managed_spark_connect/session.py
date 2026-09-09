@@ -109,7 +109,7 @@ def _is_valid_session_id(session_id: str) -> bool:
 
 
 def _qualify_session_template(
-    template: str, project_id: str, region: str
+    template: str, project_id: Optional[str], region: Optional[str]
 ) -> str:
     """
     Resolve a session template to a fully qualified resource name.
@@ -117,11 +117,32 @@ def _qualify_session_template(
     The Sessions API accepts only resource names that include the project and
     location, so a bare template ID is expanded against the session's own
     project and region. Values that already contain a path separator (the
-    ``projects/...`` resource name and the ``https://...`` URL forms) are
-    returned unchanged.
+    ``projects/...`` resource name and the ``https://...`` URL forms) carry
+    their own project and location, and are returned unchanged.
+
+    Raises:
+        ManagedSparkConnectException: If a bare template ID was given but the
+            project or region needed to resolve it is missing.
     """
     if not template or "/" in template:
         return template
+
+    missing = [
+        field
+        for field, value in (("project ID", project_id), ("location", region))
+        if not value
+    ]
+    if missing:
+        raise ManagedSparkConnectException(
+            f"Error while creating Managed Spark Session: cannot resolve the"
+            f" '{template}' session template because the"
+            f" {' and '.join(missing)}"
+            f" {'are' if len(missing) > 1 else 'is'} not set."
+            f" Either set the project and location, or pass the template's"
+            f" full resource name"
+            f" (projects/<project>/locations/<location>/sessionTemplates/{template})."
+        )
+
     return (
         f"projects/{project_id}/locations/{region}/sessionTemplates/{template}"
     )
@@ -633,12 +654,14 @@ class ManagedSparkSession(SparkSession):
                     session = PySparkSQLSession.builder.getOrCreate()
                     return session  # type: ignore
 
-                if self._project_id is None:
+                # Falsy rather than None: an environment variable that is set
+                # but empty reads back as "", which is just as unusable.
+                if not self._project_id:
                     raise ManagedSparkConnectException(
                         f"Error while creating Managed Spark Session: project ID is not set"
                     )
 
-                if self._region is None:
+                if not self._region:
                     raise ManagedSparkConnectException(
                         f"Error while creating Managed Spark Session: location is not set"
                     )

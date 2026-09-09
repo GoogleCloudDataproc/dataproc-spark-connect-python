@@ -1486,6 +1486,24 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         except ManagedSparkConnectException as e:
             self.assertIn("location is not set", str(e))
 
+    def test_create_session_with_empty_project_id(self):
+        """Tests that a set-but-empty project ID is treated as not provided."""
+        os.environ.clear()
+        os.environ["GOOGLE_CLOUD_PROJECT"] = ""
+        os.environ["GOOGLE_CLOUD_REGION"] = "test-region"
+        with self.assertRaises(ManagedSparkConnectException) as context:
+            ManagedSparkSession.builder.getOrCreate()
+        self.assertIn("project ID is not set", str(context.exception))
+
+    def test_create_session_with_empty_location(self):
+        """Tests that a set-but-empty location is treated as not provided."""
+        os.environ.clear()
+        os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project"
+        os.environ["GOOGLE_CLOUD_REGION"] = ""
+        with self.assertRaises(ManagedSparkConnectException) as context:
+            ManagedSparkSession.builder.getOrCreate()
+        self.assertIn("location is not set", str(context.exception))
+
     def test_create_session_without_application_default_credentials(self):
         """Tests that an exception is raised when application default credentials is not provided."""
         os.environ.clear()
@@ -2776,6 +2794,59 @@ class SessionTemplateExpansionTests(unittest.TestCase):
         self.assertEqual(
             builder._get_session_config().session_template, self._EXPANDED
         )
+
+    def test_bare_template_id_without_project_is_rejected(self):
+        """A bare template ID cannot be resolved without a project."""
+        builder = self._builder().sessionTemplate("tmpl")
+        builder._project_id = None
+        with self.assertRaises(ManagedSparkConnectException) as context:
+            builder._get_session_config()
+        message = str(context.exception)
+        self.assertIn("'tmpl' session template", message)
+        self.assertIn("project ID is not set", message)
+
+    def test_bare_template_id_without_region_is_rejected(self):
+        """A bare template ID cannot be resolved without a location."""
+        builder = self._builder().sessionTemplate("tmpl")
+        builder._region = None
+        with self.assertRaises(ManagedSparkConnectException) as context:
+            builder._get_session_config()
+        self.assertIn("location is not set", str(context.exception))
+
+    def test_bare_template_id_without_either_names_both(self):
+        """The error names every field that is missing."""
+        builder = self._builder().sessionTemplate("tmpl")
+        builder._project_id = None
+        builder._region = None
+        with self.assertRaises(ManagedSparkConnectException) as context:
+            builder._get_session_config()
+        self.assertIn(
+            "project ID and location are not set", str(context.exception)
+        )
+
+    def test_empty_project_is_rejected(self):
+        """A set-but-empty project is treated as missing, not interpolated."""
+        builder = self._builder().sessionTemplate("tmpl")
+        builder._project_id = ""
+        with self.assertRaises(ManagedSparkConnectException) as context:
+            builder._get_session_config()
+        self.assertIn("project ID is not set", str(context.exception))
+
+    def test_resource_name_needs_no_project_or_region(self):
+        """A full resource name carries its own project and location."""
+        builder = self._builder().sessionTemplate(self._QUALIFIED)
+        builder._project_id = None
+        builder._region = None
+        self.assertEqual(
+            builder._get_session_config().session_template, self._QUALIFIED
+        )
+
+    def test_unset_template_needs_no_project_or_region(self):
+        """A session without a template is unaffected by the guard."""
+        builder = self._builder()
+        builder._project_id = None
+        builder._region = None
+        self.assertEqual(builder._get_session_config().session_template, "")
 
 
 if __name__ == "__main__":
