@@ -262,8 +262,7 @@ class ManagedSparkSession(SparkSession):
 
             Accepts either a bare template ID, which the service resolves
             against the session's own project and location, or a fully
-            qualified resource name. Pass the resource name when the template
-            lives in a different project or location than the session.
+            qualified resource name.
 
             Args:
                 profile: The template ID (``my-template``) or resource name

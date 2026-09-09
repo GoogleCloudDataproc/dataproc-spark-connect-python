@@ -69,9 +69,8 @@ in your code using the builder API:
    spark = ManagedSparkSession.builder.projectId('my-project').location('us-central1').sessionConfig(session_config).getOrCreate()
    ```
 
-5. To start from a [Session Template](https://cloud.google.com/dataproc-serverless/docs/concepts/session-templates),
-   pass its ID. The service resolves it against the session's own project and
-   region, so you don't have to repeat them:
+5. To start from a Session Template, pass its ID. The service resolves it against the session's own project and
+   region:
 
    ```python
    from google.cloud.managed_spark_connect import ManagedSparkSession
@@ -82,15 +81,6 @@ in your code using the builder API:
            .sessionTemplate('my-template')
            .getOrCreate()
    )
-   ```
-
-   A full resource name is still accepted, and is required when the template
-   lives in a different project or region than the session:
-
-   ```python
-   spark = ManagedSparkSession.builder.sessionTemplate(
-       'projects/other-project/locations/us-east1/sessionTemplates/my-template'
-   ).projectId('my-project').location('us-central1').getOrCreate()
    ```
 
 ### Builder Configuration
