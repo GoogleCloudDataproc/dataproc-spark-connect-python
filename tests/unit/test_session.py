@@ -2073,6 +2073,59 @@ class ManagedSparkConnectClientTest(unittest.TestCase):
     @mock.patch(
         "google.cloud.managed_spark_connect.session.is_s8s_session_active"
     )
+    def test_create_session_with_bare_session_template_id(
+        self,
+        mock_is_s8s_session_active,
+        mock_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+    ):
+        """A bare template ID is expanded before the session is created."""
+        session = None
+        mock_session_controller_client_instance = (
+            self._setup_session_creation_mocks(
+                mock_is_s8s_session_active,
+                mock_session_id,
+                mock_client_config,
+                mock_session_controller_client,
+                mock_credentials,
+            )
+        )
+
+        try:
+            session = (
+                ManagedSparkSession.builder.projectId("test-project")
+                .location("us-central1")
+                .sessionTemplate("test-template")
+                .getOrCreate()
+            )
+
+            create_session_request = mock_session_controller_client_instance.create_session.call_args[
+                0
+            ][
+                0
+            ]
+            self.assertEqual(
+                create_session_request.session.session_template,
+                "projects/test-project/locations/us-central1/sessionTemplates/test-template",
+            )
+
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.managed_spark_connect.ManagedSparkSession.Builder.generate_session_id"
+    )
+    @mock.patch(
+        "google.cloud.managed_spark_connect.session.is_s8s_session_active"
+    )
     def test_builder_pattern_session_template_and_labels(
         self,
         mock_is_s8s_session_active,
@@ -2639,6 +2692,90 @@ class SessionIdValidationTests(unittest.TestCase):
         result = builder._get_session_by_id("my-session")
         self.assertIsNone(result)
         mock_client.get_session.assert_called_once()
+
+
+class SessionTemplateExpansionTests(unittest.TestCase):
+    """Test cases for resolving bare session template IDs to resource names."""
+
+    _EXPANDED = (
+        "projects/test-project/locations/test-region/sessionTemplates/tmpl"
+    )
+    _QUALIFIED = (
+        "projects/other-project/locations/other-region/sessionTemplates/tmpl"
+    )
+    _URL = (
+        "https://www.googleapis.com/compute/v1/projects/other-project"
+        "/locations/other-region/sessionTemplates/tmpl"
+    )
+
+    def setUp(self):
+        self.original_environment = dict(os.environ)
+        os.environ.clear()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self.original_environment)
+
+    @staticmethod
+    def _builder():
+        builder = ManagedSparkSession.Builder()
+        builder._project_id = "test-project"
+        builder._region = "test-region"
+        return builder
+
+    def test_bare_template_id_is_expanded(self):
+        """A bare template ID resolves against the session project and region."""
+        builder = self._builder().sessionTemplate("tmpl")
+        self.assertEqual(
+            builder._get_session_config().session_template, self._EXPANDED
+        )
+
+    def test_resource_name_is_left_unchanged(self):
+        """A fully qualified resource name is passed through untouched."""
+        builder = self._builder().sessionTemplate(self._QUALIFIED)
+        self.assertEqual(
+            builder._get_session_config().session_template, self._QUALIFIED
+        )
+
+    def test_url_is_left_unchanged(self):
+        """The googleapis.com URL form is passed through untouched."""
+        builder = self._builder().sessionTemplate(self._URL)
+        self.assertEqual(
+            builder._get_session_config().session_template, self._URL
+        )
+
+    def test_unset_template_is_left_unset(self):
+        """A session without a template does not get an empty template name."""
+        builder = self._builder()
+        self.assertEqual(builder._get_session_config().session_template, "")
+
+    def test_expansion_is_independent_of_builder_call_order(self):
+        """The template may be set before or after the project and region."""
+        template_first = ManagedSparkSession.Builder()
+        template_first.sessionTemplate("tmpl")
+        template_first.projectId("test-project").location("test-region")
+
+        template_last = ManagedSparkSession.Builder()
+        template_last.projectId("test-project").location("test-region")
+        template_last.sessionTemplate("tmpl")
+
+        self.assertEqual(
+            template_first._get_session_config().session_template,
+            self._EXPANDED,
+        )
+        self.assertEqual(
+            template_last._get_session_config().session_template,
+            self._EXPANDED,
+        )
+
+    def test_bare_template_id_in_session_config_is_expanded(self):
+        """A template set through sessionConfig() is expanded too."""
+        session_config = Session()
+        session_config.session_template = "tmpl"
+        builder = self._builder().sessionConfig(session_config)
+        self.assertEqual(
+            builder._get_session_config().session_template, self._EXPANDED
+        )
 
 
 if __name__ == "__main__":

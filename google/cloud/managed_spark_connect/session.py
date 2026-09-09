@@ -108,6 +108,25 @@ def _is_valid_session_id(session_id: str) -> bool:
     return bool(re.match(pattern, session_id))
 
 
+def _qualify_session_template(
+    template: str, project_id: str, region: str
+) -> str:
+    """
+    Resolve a session template to a fully qualified resource name.
+
+    The Sessions API accepts only resource names that include the project and
+    location, so a bare template ID is expanded against the session's own
+    project and region. Values that already contain a path separator (the
+    ``projects/...`` resource name and the ``https://...`` URL forms) are
+    returned unchanged.
+    """
+    if not template or "/" in template:
+        return template
+    return (
+        f"projects/{project_id}/locations/{region}/sessionTemplates/{template}"
+    )
+
+
 class ManagedSparkSession(SparkSession):
     """The entry point to programming Spark with the Dataset and DataFrame API.
 
@@ -258,7 +277,18 @@ class ManagedSparkSession(SparkSession):
             return self
 
         def sessionTemplate(self, profile: str):
-            """Set the Session Template to use for the session."""
+            """Set the Session Template to use for the session.
+
+            Accepts either a bare template ID, which is resolved against the
+            session's project and region, or a fully qualified resource name.
+
+            Args:
+                profile: The template ID (``my-template``) or resource name
+                    (``projects/p/locations/r/sessionTemplates/my-template``)
+
+            Returns:
+                This Builder instance for method chaining
+            """
             self.session_config.session_template = profile
             return self
 
@@ -650,6 +680,13 @@ class ManagedSparkSession(SparkSession):
             for k, v in self._options.items():
                 session_config.runtime_config.properties[k] = v
             session_config.spark_connect_session = sessions.SparkConnectConfig()
+            # Resolved here rather than in sessionTemplate() so that the
+            # template may be set before the project and region are.
+            session_config.session_template = _qualify_session_template(
+                session_config.session_template,
+                self._project_id,
+                self._region,
+            )
             if not session_config.runtime_config.version:
                 session_config.runtime_config.version = (
                     ManagedSparkSession._DEFAULT_RUNTIME_VERSION
