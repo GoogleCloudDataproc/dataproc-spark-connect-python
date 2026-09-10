@@ -1260,6 +1260,10 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         self.assertIn("Managed Spark Session", html_output)
 
     @mock.patch(
+        "google.cloud.managed_spark_connect.session.environment.is_vscode_extension_installed",
+        return_value=True,
+    )
+    @mock.patch(
         "IPython.core.interactiveshell.InteractiveShell.initialized",
         return_value=True,
     )
@@ -1268,6 +1272,7 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         self,
         mock_display,
         _mock_ipy,
+        _mock_ext_installed,
     ):
         mock.patch.dict(
             os.environ,
@@ -1290,6 +1295,45 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         )
         self.assertNotIn(_MANAGED_SPARK_SESSIONS_BASE_URL, html_output)
 
+    @mock.patch(
+        "google.cloud.managed_spark_connect.session.environment.is_vscode_extension_installed",
+        return_value=False,
+    )
+    @mock.patch(
+        "IPython.core.interactiveshell.InteractiveShell.initialized",
+        return_value=True,
+    )
+    @mock.patch("IPython.display.display")
+    def test_display_session_link_on_creation_vscode_extension_not_installed(
+        self,
+        mock_display,
+        _mock_ipy,
+        _mock_ext_installed,
+    ):
+        mock.patch.dict(
+            os.environ,
+            {
+                "VSCODE_PID": "12345",
+            },
+        ).start()
+        ManagedSparkSession.builder._display_session_link_on_creation(
+            "test_session"
+        )
+
+        mock_display.assert_called_once()
+        args, _ = mock_display.call_args
+        html_output = args[0].data
+        self.assertIn(
+            f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/test-region/"
+            "test_session?project=test-project",
+            html_output,
+        )
+        self.assertNotIn("vscode://", html_output)
+
+    @mock.patch(
+        "google.cloud.managed_spark_connect.session.environment.is_vscode_extension_installed",
+        return_value=True,
+    )
     @mock.patch.object(ManagedSparkSession, "getActiveSession")
     @mock.patch(
         "google.cloud.managed_spark_connect.session.get_active_s8s_session_response"
@@ -1298,6 +1342,7 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         self,
         mock_get_response,
         mock_get_active_session,
+        _mock_ext_installed,
     ):
         mock.patch.dict(
             os.environ,
@@ -1325,7 +1370,13 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         )
         self.assertNotIn(_MANAGED_SPARK_SESSIONS_BASE_URL, printed)
 
-    def test_repr_html_uses_vscode_url_for_session_link(self):
+    @mock.patch(
+        "google.cloud.managed_spark_connect.session.environment.is_vscode_extension_installed",
+        return_value=True,
+    )
+    def test_repr_html_uses_vscode_url_for_session_link(
+        self, _mock_ext_installed
+    ):
         mock.patch.dict(
             os.environ,
             {

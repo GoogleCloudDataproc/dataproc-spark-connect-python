@@ -14,6 +14,7 @@
 
 import os
 import importlib
+import subprocess
 import unittest
 from unittest import mock
 
@@ -53,6 +54,43 @@ class TestEnvironment(unittest.TestCase):
     def test_is_vscode_false(self):
         os.environ.pop("VSCODE_PID", None)
         self.assertFalse(environment.is_vscode())
+
+    @mock.patch("google.cloud.managed_spark_connect.environment.subprocess.run")
+    def test_is_vscode_extension_installed_true(self, mock_run):
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["code", "--list-extensions"],
+            returncode=0,
+            stdout="ms-python.python\ngooglecloudtools.datacloud\n",
+        )
+        self.assertTrue(
+            environment.is_vscode_extension_installed(
+                "googlecloudtools.datacloud"
+            )
+        )
+
+    @mock.patch("google.cloud.managed_spark_connect.environment.subprocess.run")
+    def test_is_vscode_extension_installed_false_not_listed(self, mock_run):
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=["code", "--list-extensions"],
+            returncode=0,
+            stdout="ms-python.python\n",
+        )
+        self.assertFalse(
+            environment.is_vscode_extension_installed(
+                "googlecloudtools.datacloud"
+            )
+        )
+
+    @mock.patch("google.cloud.managed_spark_connect.environment.subprocess.run")
+    def test_is_vscode_extension_installed_false_code_cli_missing(
+        self, mock_run
+    ):
+        mock_run.side_effect = FileNotFoundError()
+        self.assertFalse(
+            environment.is_vscode_extension_installed(
+                "googlecloudtools.datacloud"
+            )
+        )
 
     def test_is_jupyter_true(self):
         os.environ["JPY_PARENT_PID"] = "67890"

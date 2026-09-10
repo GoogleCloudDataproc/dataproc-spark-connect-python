@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import os
+import subprocess
 import sys
 from typing import Callable, Tuple, List
 
@@ -25,6 +27,34 @@ def is_antigravity() -> bool:
 def is_vscode() -> bool:
     """True if running inside VS Code at all."""
     return os.getenv("VSCODE_PID") is not None
+
+
+@functools.lru_cache(maxsize=1)
+def _installed_vscode_extensions() -> frozenset:
+    try:
+        result = subprocess.run(
+            ["code", "--list-extensions"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return frozenset()
+    return frozenset(
+        line.strip().lower()
+        for line in result.stdout.splitlines()
+        if line.strip()
+    )
+
+
+def is_vscode_extension_installed(extension_id: str) -> bool:
+    """True if the given VS Code extension id is installed.
+
+    Fails closed (returns False) if the `code` CLI is unavailable, times
+    out, or exits non-zero.
+    """
+    return extension_id.lower() in _installed_vscode_extensions()
 
 
 def is_jupyter() -> bool:
