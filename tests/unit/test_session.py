@@ -1335,9 +1335,7 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         ManagedSparkSession._project_id = "test-project"
         ManagedSparkSession._region = "test-region"
         ManagedSparkSession._active_s8s_session_id = "test_session"
-        self.addCleanup(
-            setattr, ManagedSparkSession, "_project_id", None
-        )
+        self.addCleanup(setattr, ManagedSparkSession, "_project_id", None)
         self.addCleanup(setattr, ManagedSparkSession, "_region", None)
         self.addCleanup(
             setattr, ManagedSparkSession, "_active_s8s_session_id", None

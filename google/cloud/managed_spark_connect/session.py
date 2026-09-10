@@ -71,10 +71,14 @@ _MANAGED_SPARK_SESSIONS_BASE_URL = (
     "https://console.cloud.google.com/dataproc/interactive"
 )
 
-_VSCODE_SESSION_URI_BASE = "vscode://googlecloudtools.datacloud/dataproc/sessions"
+_VSCODE_SESSION_URI_BASE = (
+    "vscode://googlecloudtools.datacloud/dataproc/sessions"
+)
 
 
-def _build_session_details_url(region: str, project_id: str, session_id: str) -> str:
+def _build_session_details_url(
+    region: str, project_id: str, session_id: str
+) -> str:
     if environment.is_vscode():
         return f"{_VSCODE_SESSION_URI_BASE}/{session_id}?project={project_id}&location={region}"
     return f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/{region}/{session_id}?project={project_id}"
