@@ -1124,17 +1124,20 @@ class ManagedSparkSession(SparkSession):
             <div>No Active Managed Spark Session</div>
             """
 
-        s8s_session = f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/{self._region}/{self._active_s8s_session_id}"
-        ui = f"{s8s_session}/sparkApplications/applications"
         session_url = _build_session_details_url(
             self._region, self._project_id, self._active_s8s_session_id
+        )
+        ui = (
+            f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/{self._region}/"
+            f"{self._active_s8s_session_id}/sparkApplications/applications"
+            f"?project={self._project_id}"
         )
         return f"""
         <div>
             <p><b>Spark Connect</b></p>
 
             <p><a href="{session_url}">Managed Spark Session</a></p>
-            <p><a href="{ui}?project={self._project_id}">Spark UI</a></p>
+            <p><a href="{ui}">Spark UI</a></p>
         </div>
         """
 
