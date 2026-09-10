@@ -77,7 +77,7 @@ _VSCODE_SESSION_URI_BASE = (
 
 
 def _build_session_details_url(
-    region: str, project_id: str, session_id: str
+    region: Optional[str], project_id: Optional[str], session_id: str
 ) -> str:
     if environment.is_vscode():
         return f"{_VSCODE_SESSION_URI_BASE}/{session_id}?project={project_id}&location={region}"
