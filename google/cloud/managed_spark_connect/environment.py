@@ -71,17 +71,31 @@ def _is_extension_dir_present(extension_id: str) -> bool:
     return False
 
 
+def _is_remote_vscode_server() -> bool:
+    """True if this process is running as a vscode-server backend
+    (Remote-SSH, Tunnels, Dev Containers), as opposed to local desktop
+    VS Code.
+    """
+    return os.path.isdir(
+        os.path.join(os.path.expanduser("~"), ".vscode-server")
+    )
+
+
 def is_vscode_extension_installed(extension_id: str) -> bool:
     """True if the given VS Code extension id is installed.
 
     Checks via the `code` CLI first, falling back to scanning the
     on-disk extensions directories directly, since `code` may not be on
     PATH even when VS Code and the extension are installed (e.g. macOS
-    without "Shell Command: Install 'code' command in PATH" run, or a
-    remote/SSH session). Fails closed (returns False) if neither check
-    finds it.
+    without "Shell Command: Install 'code' command in PATH" run). On a
+    vscode-server (Remote-SSH) backend, `code` runs through a
+    client-forwarding shim with unreliable `--list-extensions` behavior,
+    so only the disk scan is used there. Fails closed (returns False)
+    if nothing finds it.
     """
     extension_id = extension_id.lower()
+    if _is_remote_vscode_server():
+        return _is_extension_dir_present(extension_id)
     return extension_id in _installed_vscode_extensions() or (
         _is_extension_dir_present(extension_id)
     )
