@@ -48,13 +48,43 @@ def _installed_vscode_extensions() -> frozenset:
     )
 
 
+def _vscode_extensions_dirs() -> Tuple[str, ...]:
+    home = os.path.expanduser("~")
+    return (
+        os.path.join(home, ".vscode", "extensions"),
+        os.path.join(home, ".vscode-server", "extensions"),
+        os.path.join(home, ".vscode-insiders", "extensions"),
+        os.path.join(home, ".vscode-server-insiders", "extensions"),
+    )
+
+
+@functools.lru_cache(maxsize=None)
+def _is_extension_dir_present(extension_id: str) -> bool:
+    prefix = f"{extension_id}-"
+    for extensions_dir in _vscode_extensions_dirs():
+        try:
+            entries = os.listdir(extensions_dir)
+        except OSError:
+            continue
+        if any(name.lower().startswith(prefix) for name in entries):
+            return True
+    return False
+
+
 def is_vscode_extension_installed(extension_id: str) -> bool:
     """True if the given VS Code extension id is installed.
 
-    Fails closed (returns False) if the `code` CLI is unavailable, times
-    out, or exits non-zero.
+    Checks via the `code` CLI first, falling back to scanning the
+    on-disk extensions directories directly, since `code` may not be on
+    PATH even when VS Code and the extension are installed (e.g. macOS
+    without "Shell Command: Install 'code' command in PATH" run, or a
+    remote/SSH session). Fails closed (returns False) if neither check
+    finds it.
     """
-    return extension_id.lower() in _installed_vscode_extensions()
+    extension_id = extension_id.lower()
+    return extension_id in _installed_vscode_extensions() or (
+        _is_extension_dir_present(extension_id)
+    )
 
 
 def is_jupyter() -> bool:

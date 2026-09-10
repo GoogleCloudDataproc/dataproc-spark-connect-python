@@ -55,38 +55,89 @@ class TestEnvironment(unittest.TestCase):
         os.environ.pop("VSCODE_PID", None)
         self.assertFalse(environment.is_vscode())
 
+    @mock.patch("google.cloud.managed_spark_connect.environment.os.listdir")
     @mock.patch("google.cloud.managed_spark_connect.environment.subprocess.run")
-    def test_is_vscode_extension_installed_true(self, mock_run):
+    def test_is_vscode_extension_installed_true_via_cli(
+        self, mock_run, mock_listdir
+    ):
         mock_run.return_value = subprocess.CompletedProcess(
             args=["code", "--list-extensions"],
             returncode=0,
             stdout="ms-python.python\ngooglecloudtools.datacloud\n",
         )
+        mock_listdir.side_effect = OSError()
         self.assertTrue(
             environment.is_vscode_extension_installed(
                 "googlecloudtools.datacloud"
             )
         )
 
+    @mock.patch("google.cloud.managed_spark_connect.environment.os.listdir")
     @mock.patch("google.cloud.managed_spark_connect.environment.subprocess.run")
-    def test_is_vscode_extension_installed_false_not_listed(self, mock_run):
+    def test_is_vscode_extension_installed_false_not_listed(
+        self, mock_run, mock_listdir
+    ):
         mock_run.return_value = subprocess.CompletedProcess(
             args=["code", "--list-extensions"],
             returncode=0,
             stdout="ms-python.python\n",
         )
+        mock_listdir.side_effect = OSError()
         self.assertFalse(
             environment.is_vscode_extension_installed(
                 "googlecloudtools.datacloud"
             )
         )
 
+    @mock.patch("google.cloud.managed_spark_connect.environment.os.listdir")
     @mock.patch("google.cloud.managed_spark_connect.environment.subprocess.run")
     def test_is_vscode_extension_installed_false_code_cli_missing(
-        self, mock_run
+        self, mock_run, mock_listdir
     ):
         mock_run.side_effect = FileNotFoundError()
+        mock_listdir.side_effect = OSError()
         self.assertFalse(
+            environment.is_vscode_extension_installed(
+                "googlecloudtools.datacloud"
+            )
+        )
+
+    @mock.patch("google.cloud.managed_spark_connect.environment.os.listdir")
+    @mock.patch("google.cloud.managed_spark_connect.environment.subprocess.run")
+    def test_is_vscode_extension_installed_true_via_disk_scan(
+        self, mock_run, mock_listdir
+    ):
+        mock_run.side_effect = FileNotFoundError()
+
+        def fake_listdir(path):
+            if path.endswith(os.path.join(".vscode", "extensions")):
+                return [
+                    "ms-python.python-2024.1.0",
+                    "googlecloudtools.datacloud-1.2.3",
+                ]
+            raise OSError()
+
+        mock_listdir.side_effect = fake_listdir
+        self.assertTrue(
+            environment.is_vscode_extension_installed(
+                "googlecloudtools.datacloud"
+            )
+        )
+
+    @mock.patch("google.cloud.managed_spark_connect.environment.os.listdir")
+    @mock.patch("google.cloud.managed_spark_connect.environment.subprocess.run")
+    def test_is_vscode_extension_installed_true_via_remote_extensions_dir(
+        self, mock_run, mock_listdir
+    ):
+        mock_run.side_effect = FileNotFoundError()
+
+        def fake_listdir(path):
+            if path.endswith(os.path.join(".vscode-server", "extensions")):
+                return ["googlecloudtools.datacloud-1.2.3"]
+            raise OSError()
+
+        mock_listdir.side_effect = fake_listdir
+        self.assertTrue(
             environment.is_vscode_extension_installed(
                 "googlecloudtools.datacloud"
             )
