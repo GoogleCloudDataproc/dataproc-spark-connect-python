@@ -85,7 +85,7 @@ The `ManagedSparkSession.builder` provides a fluent API to configure the session
 | `projectId(project_id)` | Sets the Google Cloud project ID. |
 | `runtimeVersion(version)` | Sets the Managed Spark runtime version (e.g., "3.0"). |
 | `serviceAccount(account)` | Sets the service account for the session. |
-| `sessionTemplate(profile)` | Sets the Session Template to use. |
+| `sessionTemplate(profile)` | Sets the Session Template to use. The session always uses the client's runtime version, so a warning is emitted if the template is configured with a different one. |
 | `subnetwork(subnet)` | Sets the subnetwork URI for the session. |
 | `ttl(duration)` | Sets the time-to-live (TTL) for the session using a `datetime.timedelta` object. |
 

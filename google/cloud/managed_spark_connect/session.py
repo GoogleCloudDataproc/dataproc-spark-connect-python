@@ -156,6 +156,7 @@ class ManagedSparkSession(SparkSession):
             self._session_controller_client: Optional[
                 SessionControllerClient
             ] = None
+            self._session_template_controller_client = None
 
         @property
         def session_controller_client(self) -> SessionControllerClient:
@@ -165,6 +166,21 @@ class ManagedSparkSession(SparkSession):
                     client_options=self._client_options
                 )
             return self._session_controller_client
+
+        @property
+        def session_template_controller_client(self):
+            """Get or create a SessionTemplateControllerClient instance."""
+            from google.cloud.dataproc_v1 import (
+                SessionTemplateControllerClient,
+            )
+
+            if self._session_template_controller_client is None:
+                self._session_template_controller_client = (
+                    SessionTemplateControllerClient(
+                        client_options=self._client_options
+                    )
+                )
+            return self._session_template_controller_client
 
         def projectId(self, project_id):
             self._project_id = project_id
@@ -660,6 +676,9 @@ class ManagedSparkSession(SparkSession):
                 session_config.runtime_config.version
             )
 
+            # Warn when the session template asks for a different runtime version
+            self._check_session_template_runtime_version(session_config)
+
             # Use local variable to improve readability of deeply nested attribute access
             exec_config = session_config.environment_config.execution_config
 
@@ -776,6 +795,54 @@ class ManagedSparkSession(SparkSession):
                         f"Consider using Python {server_python[0]}.{server_python[1]} for optimal UDF execution.",
                         stacklevel=3,
                     )
+
+        def _check_session_template_runtime_version(self, session_config):
+            """Warn when a session template's runtime version will not be used.
+
+            The runtime version is always sent explicitly on the CreateSession
+            request, which takes precedence over the session template. A
+            template configured with a different runtime version therefore has
+            no effect, which is easy to miss, so surface it as a warning.
+
+            Reading the template is best effort: it needs an extra API call and
+            the dataproc.sessionTemplates.get permission, and neither is worth
+            failing session creation over.
+
+            Args:
+                session_config: The Session configuration to be created
+            """
+            import warnings
+
+            from google.cloud.dataproc_v1 import GetSessionTemplateRequest
+
+            template_name = session_config.session_template
+            requested_version = session_config.runtime_config.version
+            if not template_name or not requested_version:
+                return
+
+            try:
+                get_session_template_request = GetSessionTemplateRequest()
+                get_session_template_request.name = template_name
+                session_template = self.session_template_controller_client.get_session_template(
+                    get_session_template_request
+                )
+            except Exception as e:
+                logger.debug(
+                    f"Could not read session template {template_name} to check "
+                    f"its runtime version: {e}"
+                )
+                return
+
+            template_version = session_template.runtime_config.version
+            if template_version and template_version != requested_version:
+                warnings.warn(
+                    f"Session template {template_name} is configured with Managed Spark "
+                    f"runtime version {template_version}, but the session will be created "
+                    f"with runtime version {requested_version}. The runtime version of the "
+                    f"session template is ignored. Use runtimeVersion() to select a "
+                    f"different runtime version.",
+                    stacklevel=3,
+                )
 
         def _check_runtime_compatibility(self, session_config):
             """Check if runtime version 3.0 client is compatible with older runtime versions.

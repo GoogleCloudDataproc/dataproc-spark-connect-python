@@ -15,12 +15,14 @@ from copy import deepcopy
 import datetime
 import os
 import unittest
+import warnings
 
 from google.api_core.exceptions import (
     Aborted,
     FailedPrecondition,
     InvalidArgument,
     NotFound,
+    PermissionDenied,
 )
 from google.cloud.managed_spark_connect import ManagedSparkSession
 from google.cloud.managed_spark_connect.exceptions import ManagedSparkConnectException
@@ -33,6 +35,7 @@ from google.cloud.dataproc_v1 import (
     CreateSessionRequest,
     GetSessionRequest,
     Session,
+    SessionTemplate,
     SparkConnectConfig,
     TerminateSessionRequest,
 )
@@ -44,6 +47,18 @@ from unittest import mock
 _MANAGED_SPARK_SESSIONS_BASE_URL = (
     "https://console.cloud.google.com/dataproc/interactive"
 )
+
+_TEST_SESSION_TEMPLATE = (
+    "projects/test-project/locations/test-region/sessionTemplates/test_template"
+)
+
+
+def _session_template_with_version(name, runtime_version):
+    """Build a SessionTemplate for the GetSessionTemplate response to return."""
+    session_template = SessionTemplate()
+    session_template.name = name
+    session_template.runtime_config.version = runtime_version
+    return session_template
 
 
 class ManagedSparkSessionBuilderTests(unittest.TestCase):
@@ -475,6 +490,7 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
                 get_session_request
             )
 
+    @mock.patch("google.cloud.dataproc_v1.SessionTemplateControllerClient")
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
@@ -491,6 +507,7 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         mock_client_config,
         mock_session_controller_client,
         mock_credentials,
+        mock_session_template_controller_client,
     ):
         session = None
         mock_is_s8s_session_active.return_value = True
@@ -513,6 +530,9 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         mock_operation.result.side_effect = [session_response]
         mock_session_controller_client_instance.create_session.return_value = (
             mock_operation
+        )
+        mock_session_template_controller_client.return_value.get_session_template.return_value = _session_template_with_version(
+            _TEST_SESSION_TEMPLATE, self._default_runtime_version
         )
 
         create_session_request = CreateSessionRequest()
@@ -557,6 +577,7 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
                 get_session_request
             )
 
+    @mock.patch("google.cloud.dataproc_v1.SessionTemplateControllerClient")
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
@@ -573,6 +594,7 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         mock_client_config,
         mock_session_controller_client,
         mock_credentials,
+        mock_session_template_controller_client,
     ):
         session = None
         mock_is_s8s_session_active.return_value = True
@@ -595,6 +617,9 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
         mock_operation.result.side_effect = [session_response]
         mock_session_controller_client_instance.create_session.return_value = (
             mock_operation
+        )
+        mock_session_template_controller_client.return_value.get_session_template.return_value = _session_template_with_version(
+            _TEST_SESSION_TEMPLATE, self._default_runtime_version
         )
 
         create_session_request = CreateSessionRequest()
@@ -644,6 +669,147 @@ class ManagedSparkSessionBuilderTests(unittest.TestCase):
             mock_session_controller_client_instance.get_session.assert_called_once_with(
                 get_session_request
             )
+
+    @mock.patch("google.cloud.dataproc_v1.SessionTemplateControllerClient")
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.managed_spark_connect.ManagedSparkSession.Builder.generate_session_id"
+    )
+    @mock.patch(
+        "google.cloud.managed_spark_connect.session.is_s8s_session_active"
+    )
+    def test_session_template_runtime_version_mismatch_warns(
+        self,
+        mock_is_s8s_session_active,
+        mock_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+        mock_session_template_controller_client,
+    ):
+        """Warn when the template's runtime version is not the one being used."""
+        session = None
+        mock_session_controller_client_instance = (
+            self._setup_session_creation_mocks(
+                mock_is_s8s_session_active,
+                mock_session_id,
+                mock_client_config,
+                mock_session_controller_client,
+                mock_credentials,
+            )
+        )
+        mock_session_template_controller_client.return_value.get_session_template.return_value = _session_template_with_version(
+            _TEST_SESSION_TEMPLATE, "2.3"
+        )
+
+        try:
+            with self.assertWarnsRegex(
+                UserWarning, r"runtime version 2\.3.*runtime version 3\.0"
+            ):
+                session = ManagedSparkSession.builder.sessionTemplate(
+                    _TEST_SESSION_TEMPLATE
+                ).getOrCreate()
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+
+    @mock.patch("google.cloud.dataproc_v1.SessionTemplateControllerClient")
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.managed_spark_connect.ManagedSparkSession.Builder.generate_session_id"
+    )
+    @mock.patch(
+        "google.cloud.managed_spark_connect.session.is_s8s_session_active"
+    )
+    def test_session_template_runtime_version_match_does_not_warn(
+        self,
+        mock_is_s8s_session_active,
+        mock_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+        mock_session_template_controller_client,
+    ):
+        """No warning when the template already asks for the runtime being used."""
+        session = None
+        mock_session_controller_client_instance = (
+            self._setup_session_creation_mocks(
+                mock_is_s8s_session_active,
+                mock_session_id,
+                mock_client_config,
+                mock_session_controller_client,
+                mock_credentials,
+            )
+        )
+        mock_session_template_controller_client.return_value.get_session_template.return_value = _session_template_with_version(
+            _TEST_SESSION_TEMPLATE, self._default_runtime_version
+        )
+
+        try:
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                session = ManagedSparkSession.builder.sessionTemplate(
+                    _TEST_SESSION_TEMPLATE
+                ).getOrCreate()
+            self.assertEqual(
+                [w for w in caught if "runtime version" in str(w.message)], []
+            )
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
+
+    @mock.patch("google.cloud.dataproc_v1.SessionTemplateControllerClient")
+    @mock.patch("google.auth.default")
+    @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
+    @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
+    @mock.patch(
+        "google.cloud.managed_spark_connect.ManagedSparkSession.Builder.generate_session_id"
+    )
+    @mock.patch(
+        "google.cloud.managed_spark_connect.session.is_s8s_session_active"
+    )
+    def test_session_template_unreadable_still_creates_session(
+        self,
+        mock_is_s8s_session_active,
+        mock_session_id,
+        mock_client_config,
+        mock_session_controller_client,
+        mock_credentials,
+        mock_session_template_controller_client,
+    ):
+        """An unreadable session template skips the check instead of failing."""
+        session = None
+        mock_session_controller_client_instance = (
+            self._setup_session_creation_mocks(
+                mock_is_s8s_session_active,
+                mock_session_id,
+                mock_client_config,
+                mock_session_controller_client,
+                mock_credentials,
+            )
+        )
+        mock_session_template_controller_client.return_value.get_session_template.side_effect = PermissionDenied(
+            "caller lacks dataproc.sessionTemplates.get"
+        )
+
+        try:
+            session = ManagedSparkSession.builder.sessionTemplate(
+                _TEST_SESSION_TEMPLATE
+            ).getOrCreate()
+            mock_session_controller_client_instance.create_session.assert_called_once()
+        finally:
+            mock_session_controller_client_instance.terminate_session.return_value = (
+                mock.Mock()
+            )
+            self.stopSession(mock_session_controller_client_instance, session)
 
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
@@ -2064,6 +2230,7 @@ class ManagedSparkConnectClientTest(unittest.TestCase):
             )
             self.stopSession(mock_session_controller_client_instance, session)
 
+    @mock.patch("google.cloud.dataproc_v1.SessionTemplateControllerClient")
     @mock.patch("google.auth.default")
     @mock.patch("google.cloud.dataproc_v1.SessionControllerClient")
     @mock.patch("pyspark.sql.connect.client.SparkConnectClient.config")
@@ -2080,6 +2247,7 @@ class ManagedSparkConnectClientTest(unittest.TestCase):
         mock_client_config,
         mock_session_controller_client,
         mock_credentials,
+        mock_session_template_controller_client,
     ):
         session = None
         mock_session_controller_client_instance = (
@@ -2090,6 +2258,10 @@ class ManagedSparkConnectClientTest(unittest.TestCase):
                 mock_session_controller_client,
                 mock_credentials,
             )
+        )
+        mock_session_template_controller_client.return_value.get_session_template.return_value = _session_template_with_version(
+            "projects/test-project/locations/us-central1/sessionTemplates/test-template",
+            ManagedSparkSession._DEFAULT_RUNTIME_VERSION,
         )
 
         try:
