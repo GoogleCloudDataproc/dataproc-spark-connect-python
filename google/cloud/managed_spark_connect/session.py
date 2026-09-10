@@ -1127,7 +1127,7 @@ class ManagedSparkSession(SparkSession):
         session_url = _build_session_details_url(
             self._region, self._project_id, self._active_s8s_session_id
         )
-        ui = (
+        ssui_url = (
             f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/{self._region}/"
             f"{self._active_s8s_session_id}/sparkApplications/applications"
             f"?project={self._project_id}"
@@ -1137,7 +1137,7 @@ class ManagedSparkSession(SparkSession):
             <p><b>Spark Connect</b></p>
 
             <p><a href="{session_url}">Managed Spark Session</a></p>
-            <p><a href="{ui}">Spark UI</a></p>
+            <p><a href="{ssui_url}">Spark UI</a></p>
         </div>
         """
 
