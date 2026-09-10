@@ -71,6 +71,19 @@ _MANAGED_SPARK_SESSIONS_BASE_URL = (
     "https://console.cloud.google.com/dataproc/interactive"
 )
 
+_VSCODE_EXTENSION_ID = "googlecloudtools.datacloud"
+_VSCODE_SESSION_URI_BASE = f"vscode://{_VSCODE_EXTENSION_ID}/dataproc/sessions"
+
+
+def _build_session_details_url(
+    region: Optional[str], project_id: Optional[str], session_id: str
+) -> str:
+    if environment.is_vscode() and environment.is_vscode_extension_installed(
+        _VSCODE_EXTENSION_ID
+    ):
+        return f"{_VSCODE_SESSION_URI_BASE}/{session_id}?project={project_id}&location={region}"
+    return f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/{region}/{session_id}?project={project_id}"
+
 
 def _is_valid_label_value(value: str) -> bool:
     """
@@ -506,7 +519,9 @@ class ManagedSparkSession(SparkSession):
             )
 
         def _display_session_link_on_creation(self, session_id):
-            session_url = f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/{self._region}/{session_id}?project={self._project_id}"
+            session_url = _build_session_details_url(
+                self._region, self._project_id, session_id
+            )
             plain_message = (
                 f"Creating Managed Spark Connect Session: {session_url}"
             )
@@ -573,8 +588,11 @@ class ManagedSparkSession(SparkSession):
                 session = ManagedSparkSession._default_session
 
             if session_response is not None:
+                session_url = _build_session_details_url(
+                    self._region, self._project_id, s8s_session_id
+                )
                 print(
-                    f"Using existing Managed Spark Session (configuration changes may not be applied): {_MANAGED_SPARK_SESSIONS_BASE_URL}/{self._region}/{s8s_session_id}?project={self._project_id}"
+                    f"Using existing Managed Spark Session (configuration changes may not be applied): {session_url}"
                 )
                 self._display_view_session_details_button(s8s_session_id)
                 if session is None:
@@ -1107,14 +1125,20 @@ class ManagedSparkSession(SparkSession):
             <div>No Active Managed Spark Session</div>
             """
 
-        s8s_session = f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/{self._region}/{self._active_s8s_session_id}"
-        ui = f"{s8s_session}/sparkApplications/applications"
+        session_url = _build_session_details_url(
+            self._region, self._project_id, self._active_s8s_session_id
+        )
+        ssui_url = (
+            f"{_MANAGED_SPARK_SESSIONS_BASE_URL}/{self._region}/"
+            f"{self._active_s8s_session_id}/sparkApplications/applications"
+            f"?project={self._project_id}"
+        )
         return f"""
         <div>
             <p><b>Spark Connect</b></p>
 
-            <p><a href="{s8s_session}?project={self._project_id}">Managed Spark Session</a></p>
-            <p><a href="{ui}?project={self._project_id}">Spark UI</a></p>
+            <p><a href="{session_url}">Managed Spark Session</a></p>
+            <p><a href="{ssui_url}">Spark UI</a></p>
         </div>
         """
 
